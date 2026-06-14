@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sinbad Trade Counter | PCRM</title>
+<title>SPCRM | Sinbad Trade Counter</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -365,6 +365,118 @@ ht:56px;display:flex;align-items:center;justify-content:space-between;padding:0 
 <div class="notify" id="notify"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <script>
+// ── SUPABASE ──────────────────────────────────────────────────────
+var SB_URL = "https://ogkyemjiosgedwgqfvyy.supabase.co";
+var SB_KEY = "sb_publishable_D1c8k6kHAsJbrovvWM5pIg_hkfonge9";
+
+async function sbGet(table) {
+  try {
+    var r = await fetch(SB_URL+"/rest/v1/"+table+"?select=*", {
+      headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json"}
+    });
+    var rows = await r.json();
+    if (!Array.isArray(rows)) return null;
+    return rows.map(function(row){ return row.data; });
+  } catch(e) { console.warn("Supabase get error:", e); return null; }
+}
+
+async function sbUpsert(table, id, data) {
+  try {
+    await fetch(SB_URL+"/rest/v1/"+table, {
+      method: "POST",
+      headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},
+      body: JSON.stringify({id:id, data:data, updated_at: new Date().toISOString()})
+    });
+  } catch(e) { console.warn("Supabase upsert error:", e); }
+}
+
+async function sbDelete(table, id) {
+  try {
+    await fetch(SB_URL+"/rest/v1/"+table+"?id=eq."+id, {
+      method: "DELETE",
+      headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}
+    });
+  } catch(e) { console.warn("Supabase delete error:", e); }
+}
+
+async function sbSaveAll(table, items, idField) {
+  try {
+    // Upsert all items
+    var body = items.map(function(item){
+      return {id: item[idField||"id"], data: item, updated_at: new Date().toISOString()};
+    });
+    if (!body.length) return;
+    await fetch(SB_URL+"/rest/v1/"+table, {
+      method: "POST",
+      headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},
+      body: JSON.stringify(body)
+    });
+  } catch(e) { console.warn("Supabase saveAll error:", e); }
+}
+
+var sbReady = false;
+
+async function loadFromSupabase() {
+  console.log("Loading from Supabase...");
+  try {
+    var [c, r, s, b, comp, d, w, docs2] = await Promise.all([
+      sbGet("clients"), sbGet("reps"), sbGet("samples"),
+      sbGet("birthdays"), sbGet("complaints"), sbGet("diary_events"),
+      sbGet("websites"), sbGet("docs")
+    ]);
+    if (c && c.length > 0) clients = c;
+    if (r && r.length > 0) reps = r;
+    if (s) samples = s;
+    if (b) birthdays = b;
+    if (comp) complaints = comp;
+    if (d) diaryEvents = d;
+    if (w) websites = w;
+    if (docs2) docs = docs2;
+    sbReady = true;
+    console.log("Supabase loaded! Clients:", clients.length);
+    updateStats(); renderList(); renderDash();
+  } catch(e) {
+    console.warn("Supabase load failed, using localStorage:", e);
+    sbReady = false;
+  }
+}
+
+// Override save functions to also save to Supabase
+var _origSaveC = null;
+function saveC() {
+  try { localStorage.setItem(STORE, JSON.stringify(clients)); } catch(e) {}
+  updateStats();
+  if (sbReady) sbSaveAll("clients", clients, "id");
+}
+function saveReps() {
+  try { localStorage.setItem(RSTORE, JSON.stringify(reps)); } catch(e) {}
+  if (sbReady) sbSaveAll("reps", reps, "id");
+}
+function saveSamples() {
+  try { localStorage.setItem(SSTORE, JSON.stringify(samples)); } catch(e) {}
+  if (sbReady) sbSaveAll("samples", samples, "id");
+}
+function saveBirthdays() {
+  try { localStorage.setItem(BSTORE, JSON.stringify(birthdays)); } catch(e) {}
+  if (sbReady) sbSaveAll("birthdays", birthdays, "id");
+}
+function saveComplaints() {
+  try { localStorage.setItem(CSTORE, JSON.stringify(complaints)); } catch(e) {}
+  if (sbReady) sbSaveAll("complaints", complaints, "id");
+}
+function saveDiary() {
+  try { localStorage.setItem(DIARY_STORE, JSON.stringify(diaryEvents)); } catch(e) {}
+  if (sbReady) sbSaveAll("diary_events", diaryEvents, "id");
+}
+function saveWebsites() {
+  try { localStorage.setItem(WEB_STORE, JSON.stringify(websites)); } catch(e) {}
+  if (sbReady) sbSaveAll("websites", websites, "id");
+}
+function saveDocs() {
+  try { localStorage.setItem(DOCS_STORE, JSON.stringify(docs)); } catch(e) {}
+  if (sbReady) sbSaveAll("docs", docs, "id");
+}
+
 // ── PASSWORD ──────────────────────────────────────────────────────
 document.getElementById("gateInput").addEventListener("keydown",function(e){if(e.key==="Enter")checkPassword();});
 function checkPassword(){
@@ -3180,6 +3292,8 @@ function init(){
   diaryEvents=loadDiary();
   activeFilter="All";activeId=null;editId=null;showLF=false;pendingDel=null;
   updateStats();renderList();showDash();
+  // Load from Supabase (cloud sync)
+  loadFromSupabase();
 }
 if(typeof Notification!=="undefined"&&Notification.permission==="default"){Notification.requestPermission();}
 init();
