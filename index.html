@@ -283,6 +283,8 @@ ht:56px;display:flex;align-items:center;justify-content:space-between;padding:0 
       <div class="hs" onclick="showDash()" style="cursor:pointer">Active: <b id="sAct">0</b></div>
       <div class="hs" id="sDueWrap" onclick="showDash()" style="cursor:pointer">Follow-ups: <b id="sDue">0</b></div>
       <div class="hs" onclick="showDash()" style="cursor:pointer">Quotes: <b id="sQ">&#163;0</b></div>
+    <div class="hs" id="sbStatus" title="Checking cloud..." style="cursor:default;font-size:14px">&#8987;</div>
+    <div class="hs" onclick="logOut()" style="cursor:pointer;background:rgba(192,57,43,.3);border-color:rgba(192,57,43,.5)" title="Log out">&#128274; Out</div>
     </div>
   </div>
   <div class="hdr-bottom">
@@ -463,35 +465,35 @@ var _origSaveC = null;
 function saveC() {
   try { localStorage.setItem(STORE, JSON.stringify(clients)); } catch(e) {}
   updateStats();
-  if (sbReady) sbSaveAll("clients", clients, "id");
+  sbSaveAll("clients", clients, "id");
 }
 function saveReps() {
   try { localStorage.setItem(RSTORE, JSON.stringify(reps)); } catch(e) {}
-  if (sbReady) sbSaveAll("reps", reps, "id");
+  sbSaveAll("reps", reps, "id");
 }
 function saveSamples() {
   try { localStorage.setItem(SSTORE, JSON.stringify(samples)); } catch(e) {}
-  if (sbReady) sbSaveAll("samples", samples, "id");
+  sbSaveAll("samples", samples, "id");
 }
 function saveBirthdays() {
   try { localStorage.setItem(BSTORE, JSON.stringify(birthdays)); } catch(e) {}
-  if (sbReady) sbSaveAll("birthdays", birthdays, "id");
+  sbSaveAll("birthdays", birthdays, "id");
 }
 function saveComplaints() {
   try { localStorage.setItem(CSTORE, JSON.stringify(complaints)); } catch(e) {}
-  if (sbReady) sbSaveAll("complaints", complaints, "id");
+  sbSaveAll("complaints", complaints, "id");
 }
 function saveDiary() {
   try { localStorage.setItem(DIARY_STORE, JSON.stringify(diaryEvents)); } catch(e) {}
-  if (sbReady) sbSaveAll("diary_events", diaryEvents, "id");
+  sbSaveAll("diary_events", diaryEvents, "id");
 }
 function saveWebsites() {
   try { localStorage.setItem(WEB_STORE, JSON.stringify(websites)); } catch(e) {}
-  if (sbReady) sbSaveAll("websites", websites, "id");
+  sbSaveAll("websites", websites, "id");
 }
 function saveDocs() {
   try { localStorage.setItem(DOCS_STORE, JSON.stringify(docs)); } catch(e) {}
-  if (sbReady) sbSaveAll("docs", docs, "id");
+  sbSaveAll("docs", docs, "id");
 }
 
 // ── PASSWORD ──────────────────────────────────────────────────────
