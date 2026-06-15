@@ -3564,7 +3564,14 @@ function scanBusinessCard() {
             }]
           })
         });
-        if(!response.ok){var errText=await response.text();toast("\u26A0\uFE0F API error "+response.status);console.error(errText);return;}
+        if(!response.ok){
+          var errText=await response.text();
+          var errMsg="";
+          try{var errJ=JSON.parse(errText);errMsg=errJ.error&&errJ.error.message?errJ.error.message:errText.substring(0,60);}catch(e){errMsg=errText.substring(0,60);}
+          toast("\u26A0\uFE0F "+response.status+": "+errMsg);
+          console.error("API error:",errText);
+          return;
+        }
         var data = await response.json();
         if(!data.content||!data.content[0]){toast("\u26A0\uFE0F No response from AI");return;}
         var text = data.content[0].text.trim().replace(/```json|```/g,"").trim();
