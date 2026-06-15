@@ -521,12 +521,12 @@ function checkPassword(){
         var txt = await r.text();
         if(r.ok){ 
           toast("\u2601\uFE0F Cloud connected! \u2713");
-          document.getElementById("sbStatus").textContent="\u2601\uFE0F";
-          document.getElementById("sbStatus").title="Cloud connected";
+          try{document.getElementById("sbStatus").textContent="\u2601\uFE0F";}catch(e){}
+          try{document.getElementById("sbStatus").title="Cloud connected";}catch(e){}
         } else { 
           console.warn("Supabase test failed:", r.status, txt);
           toast("\u26A0\uFE0F Cloud error "+r.status+" - "+txt.substring(0,40));
-          document.getElementById("sbStatus").textContent="\u26A0\uFE0F";
+          try{document.getElementById("sbStatus").textContent="\u26A0\uFE0F";}catch(e){}
           document.getElementById("sbStatus").title="Error "+r.status;
         }
       } catch(e){ 
