@@ -496,6 +496,16 @@ function saveDocs() {
 
 // ── PASSWORD ──────────────────────────────────────────────────────
 document.getElementById("gateInput").addEventListener("keydown",function(e){if(e.key==="Enter")checkPassword();});
+function logOut() {
+  if(confirm("Log out of SPCRM?")) {
+    try { sessionStorage.removeItem("sftc_auth"); } catch(e) {}
+    document.getElementById("gateOverlay").style.display = "flex";
+    document.getElementById("gateInput").value = "";
+    toast("Logged out \u2713");
+  }
+}
+
+
 function checkPassword(){
   if(document.getElementById("gateInput").value===getCurrentPassword()){
     document.getElementById("gateOverlay").style.display="none";
