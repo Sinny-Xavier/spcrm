@@ -561,7 +561,7 @@ function checkPassword(){
     document.getElementById("gateInput").focus();
   }
 }
-try{if(sessionStorage.getItem("sftc_auth")==="1"){var g=document.getElementById("gateOverlay");if(g)g.style.display="none";init();}}catch(e){}
+// auto-login handled after DOM ready - see bottom of script
 
 // ── DATA ──────────────────────────────────────────────────────────
 var STORE="sftc_v2",RSTORE="sftc_reps_v1",SSTORE="sftc_samples_v1",BSTORE="sftc_bdays_v1",CSTORE="sftc_complaints_v1";
@@ -4197,6 +4197,12 @@ function init(){
   loadFromSupabase();
 }
 if(typeof Notification!=="undefined"&&Notification.permission==="default"){Notification.requestPermission();}
+try{
+  if(sessionStorage.getItem("sftc_auth")==="1"){
+    var g=document.getElementById("gateOverlay");
+    if(g)g.style.display="none";
+  }
+}catch(e){}
 init();
 </script>
 </body>
