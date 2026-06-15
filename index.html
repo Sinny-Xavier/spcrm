@@ -295,8 +295,10 @@ ht:56px;display:flex;align-items:center;justify-content:space-between;padding:0 
     <button class="nav-btn" onclick="showQuotes()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128178; Quotes</button>
       <button class="nav-btn" onclick="showDiary()" style="background:rgba(255,153,0,.25);border-color:rgba(255,153,0,.5)">&#128197; Diary</button>
     <button class="nav-btn" onclick="showChangePassword()" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)">&#128274; Password</button>
+    <button class="nav-btn" onclick="showMonthlyReport()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128202; Report</button>
     <button class="nav-btn" onclick="showWebsites()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#127760; Websites</button>
     <button class="nav-btn" onclick="showDocs()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128196; Docs</button>
+    <button class="nav-btn" onclick="showNotesSearch()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128269; Search Notes</button>
     </div>
   </div>
 </header>
@@ -337,6 +339,7 @@ ht:56px;display:flex;align-items:center;justify-content:space-between;padding:0 
     <div id="quotesView" class="page"></div>
     <div id="websitesView" class="page"></div>
     <div id="docsView" class="page"></div>
+    <div id="notesSearchView" class="page"></div>
   </main>
 </div>
 
@@ -595,7 +598,7 @@ function updateStats(){
 
 // ── VIEW MANAGER ──────────────────────────────────────────────────
 function showView(v){
-  ["dashView","detView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView"].forEach(function(id){
+  ["dashView","detView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView"].forEach(function(id){
     var el=document.getElementById(id);
     el.style.display=(id===v+"View"||(v==="det"&&id==="detView")||(v==="form"&&id==="formView"))?"block":"none";
   });
@@ -820,6 +823,39 @@ function renderDash(){
     dv.appendChild(bdPanel);
   }
 
+  // Rep visits overdue on dashboard
+  var repVisitsDue = reps.filter(function(r){
+    if(!r.lastContact) return false;
+    var s=r.lastContact;
+    var dt=new Date(s);if(isNaN(dt.getTime()))return false;
+    return(new Date()-dt)/86400000>60;
+  }).sort(function(a,b){
+    return new Date(a.lastContact)-new Date(b.lastContact);
+  }).slice(0,4);
+
+  if(repVisitsDue.length){
+    var rvPanel=document.createElement("div");
+    rvPanel.style.cssText="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-top:16px;border-left:4px solid #9b59b6";
+    var rvHdr=document.createElement("div");rvHdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)";
+    var rvTitle=document.createElement("div");rvTitle.style.cssText="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";rvTitle.textContent="\uD83E\uDD1D Rep visits overdue";
+    var rvBadge=document.createElement("span");rvBadge.style.cssText="background:#9b59b6;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px";rvBadge.textContent=repVisitsDue.length+" reps";
+    rvHdr.appendChild(rvTitle);rvHdr.appendChild(rvBadge);rvPanel.appendChild(rvHdr);
+    repVisitsDue.forEach(function(r){
+      var row=document.createElement("div");row.style.cssText="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer";
+      row.addEventListener("click",function(){showReps();});
+      var av=document.createElement("div");av.style.cssText="width:28px;height:28px;border-radius:50%;background:#9b59b6;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0";av.textContent=ini(r.name);
+      var info=document.createElement("div");info.style.flex="1";
+      var nm=document.createElement("div");nm.style.cssText="font-weight:700;font-size:12px";nm.textContent=r.name;
+      var sub=document.createElement("div");sub.style.cssText="font-size:10px;color:var(--muted)";sub.textContent=(r.manufacturer||"")+(r.lastContact?" \u00b7 Last: "+r.lastContact:"");
+      info.appendChild(nm);info.appendChild(sub);
+      var dt=new Date(r.lastContact);var days=Math.round((new Date()-dt)/86400000);
+      var badge=document.createElement("span");badge.style.cssText="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--rbg);color:var(--rtxt);flex-shrink:0";badge.textContent=days+"d ago";
+      row.appendChild(av);row.appendChild(info);row.appendChild(badge);rvPanel.appendChild(row);
+    });
+    var rvLnk=document.createElement("div");rvLnk.style.cssText="font-size:11px;color:var(--navy);cursor:pointer;margin-top:6px;text-align:right";rvLnk.textContent="View all reps \u2192";rvLnk.addEventListener("click",showReps);rvPanel.appendChild(rvLnk);
+    dv.appendChild(rvPanel);
+  }
+
   // Samples awaiting from reps panel
   var pendingSamples=samples.filter(function(s){return s.repId&&s.status==="Sent - Awaiting Return";});
   if(pendingSamples.length){
@@ -891,6 +927,15 @@ function renderDet(){
   grid.appendChild(notesSec);
   var logSec=document.createElement("div");logSec.className="sec full";
   var lt=document.createElement("span");lt.className="stag t-lg";lt.textContent="Interaction log";logSec.appendChild(lt);
+  if(showLF){logSec.appendChild(buildLogForm(c.id));}
+  else{
+    var btnRow=document.createElement("div");btnRow.style.cssText="display:flex;gap:7px;margin-top:6px";
+    var alb=document.createElement("button");alb.className="log-trigger";alb.style.flex="1";
+    alb.textContent="+ Log an interaction";alb.addEventListener("click",function(){showLF=true;renderDet();});
+    var slb=document.createElement("button");slb.className="log-trigger";slb.style.cssText="flex:1;border-color:var(--gtxt);color:var(--gtxt)";
+    slb.textContent="\u00a3 Log a sale";slb.addEventListener("click",function(){showSaleForm(c.id,c.name);});
+    btnRow.appendChild(alb);btnRow.appendChild(slb);logSec.appendChild(btnRow);
+  }
   (c.log||[]).forEach(function(l,idx){
     var entry=document.createElement("div");entry.className="log-entry";
     var meta=document.createElement("div");meta.className="log-meta";
@@ -922,17 +967,7 @@ function renderDet(){
     }
     logSec.appendChild(entry);
   });
-  if(!(c.log||[]).length){var nl=document.createElement("p");nl.style.cssText="font-size:11px;color:var(--muted);margin-bottom:7px";nl.textContent="No interactions logged yet.";logSec.appendChild(nl);}
-  if(showLF){logSec.appendChild(buildLogForm(c.id));}
-  else{
-    var btnRow=document.createElement("div");btnRow.style.cssText="display:flex;gap:7px;margin-top:6px";
-    var alb=document.createElement("button");alb.className="log-trigger";alb.style.flex="1";
-    alb.textContent="+ Log an interaction";alb.addEventListener("click",function(){showLF=true;renderDet();});
-    var slb=document.createElement("button");slb.className="log-trigger";slb.style.cssText="flex:1;border-color:var(--gtxt);color:var(--gtxt)";
-    slb.textContent="\u00a3 Log a sale";slb.addEventListener("click",function(){showSaleForm(c.id,c.name);});
-    btnRow.appendChild(alb);btnRow.appendChild(slb);logSec.appendChild(btnRow);
-  }
-  grid.appendChild(logSec);
+  if(!(c.log||[]).length){var nl=document.createElement("p");nl.style.cssText="font-size:11px;color:var(--muted);margin-bottom:7px";nl.textContent="No interactions logged yet.";logSec.appendChild(nl);}grid.appendChild(logSec);
   var prodMap={},qtrMap={Q1:0,Q2:0,Q3:0,Q4:0};
   (c.log||[]).forEach(function(l){if(l.quote&&(l.quote.status==="Confirmed"||l.quote.status==="Invoiced"||l.quote.status==="Paid")){var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);var prod=l.quote.category||l.quote.products||"Other";prodMap[prod]=(prodMap[prod]||0)+v;if(l.date){var dp=l.date.split("/");if(dp.length===3){var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrMap[q]=(qtrMap[q]||0)+v;}}}}); 
   var hasProd=Object.keys(prodMap).length>0,hasQtr=Object.values(qtrMap).some(function(v){return v>0;});
@@ -1478,6 +1513,21 @@ function showRepForm(id){
   function mkTa2(fid,val,ph){var t=document.createElement("textarea");t.id=fid;t.value=val||"";t.placeholder=ph||"";t.style.cssText="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none;resize:vertical;min-height:70px";return t;}
   var row1=document.createElement("div");row1.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:9px";
   var nw=document.createElement("div");var nl=document.createElement("label");nl.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";nl.textContent="Rep / ASM name *";var ni=mkI2("r_name",r?r.name:"","Full name");nw.appendChild(nl);nw.appendChild(ni);
+  // Business card scanner button
+  var scanWrap = document.createElement("div");
+  scanWrap.style.cssText = "background:#eef1f8;border:1px solid var(--navy);border-radius:var(--rs);padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:4px";
+  var scanIcon = document.createElement("span"); scanIcon.style.fontSize="20px"; scanIcon.textContent="\uD83D\uDCF7";
+  var scanInfo = document.createElement("div"); scanInfo.style.flex="1";
+  var scanTitle = document.createElement("div"); scanTitle.style.cssText="font-weight:700;font-size:12px;color:var(--navy)"; scanTitle.textContent="Scan Business Card";
+  var scanSub = document.createElement("div"); scanSub.style.cssText="font-size:10px;color:var(--muted)"; scanSub.textContent="Take a photo and AI fills in the form automatically";
+  scanInfo.appendChild(scanTitle); scanInfo.appendChild(scanSub);
+  var scanBtn = document.createElement("button");
+  scanBtn.style.cssText = "padding:6px 12px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap";
+  scanBtn.textContent = "\uD83D\uDCF7 Scan";
+  scanBtn.addEventListener("click", function(e){ e.preventDefault(); scanBusinessCard(); });
+  scanWrap.appendChild(scanIcon); scanWrap.appendChild(scanInfo); scanWrap.appendChild(scanBtn);
+  bd.appendChild(scanWrap);
+
   var mw=document.createElement("div");var ml=document.createElement("label");ml.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";ml.textContent="Manufacturer";
   var ms=document.createElement("select");ms.id="r_mfr";ms.style.cssText="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
   MANUFACTURERS.forEach(function(m){var opt=document.createElement("option");opt.value=m;opt.textContent=m;if(r&&r.manufacturer===m)opt.selected=true;ms.appendChild(opt);});
@@ -3269,6 +3319,9 @@ function showAddDoc(editIdx) {
 
 // ── CHANGE PASSWORD ───────────────────────────────────────────────
 var PW_STORE = "spcrm_pw_v1";
+var API_KEY_STORE = "spcrm_api_key_v1";
+function getApiKey(){ try{ return localStorage.getItem(API_KEY_STORE)||""; }catch(e){ return ""; } }
+function setApiKey(k){ try{ localStorage.setItem(API_KEY_STORE,k); }catch(e){} }
 
 function getCurrentPassword() {
   try { var p = localStorage.getItem(PW_STORE); if (p) return p; } catch(e) {}
@@ -3401,6 +3454,346 @@ function autoRateAllClients() {
   renderList();
   if(activeId) renderDet();
   toast("Auto-rated "+updated+" clients \u2713");
+}
+
+
+// ── BUSINESS CARD SCANNER ─────────────────────────────────────────
+function scanBusinessCard() {
+  var apiKey = getApiKey();
+
+  // If no API key, show setup prompt
+  if (!apiKey) {
+    var overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:16px";
+    var box = document.createElement("div");
+    box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:400px;border-top:3px solid var(--navy);padding:24px";
+    box.innerHTML = "<div style=\"font-size:22px;margin-bottom:10px;text-align:center\">\uD83D\uDCF7</div>" +
+      "<h3 style=\"font-size:14px;font-weight:700;margin-bottom:8px;text-align:center\">Business Card Scanner</h3>" +
+      "<p style=\"font-size:12px;color:var(--muted);margin-bottom:16px;text-align:center;line-height:1.5\">To use this feature you need a Claude API key from Anthropic. Each scan costs about 1-2p.</p>" +
+      "<div style=\"margin-bottom:10px\"><label style=\"display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:3px\">Anthropic API Key</label>" +
+      "<input id=\"api_key_inp\" type=\"password\" placeholder=\"sk-ant-...\" style=\"width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit\"></div>" +
+      "<p style=\"font-size:10px;color:var(--muted);margin-bottom:14px\">Get your key at <strong>console.anthropic.com</strong> → API Keys. Add a small amount of credit (£5 lasts hundreds of scans).</p>";
+    var btns = document.createElement("div"); btns.style.cssText = "display:flex;gap:8px";
+    var cancelB = document.createElement("button"); cancelB.style.cssText = "flex:1;padding:8px;background:none;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;cursor:pointer;color:var(--muted)"; cancelB.textContent = "Not yet";
+    cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+    var saveKeyB = document.createElement("button"); saveKeyB.style.cssText = "flex:1;padding:8px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; saveKeyB.textContent = "Save & scan";
+    saveKeyB.addEventListener("click", function(){
+      var key = document.getElementById("api_key_inp").value.trim();
+      if(!key||!key.startsWith("sk-")){ toast("Please enter a valid API key (starts with sk-)"); return; }
+      setApiKey(key);
+      document.body.removeChild(overlay);
+      toast("API key saved \u2713");
+      setTimeout(scanBusinessCard, 300);
+    });
+    btns.appendChild(cancelB); btns.appendChild(saveKeyB);
+    box.appendChild(btns);
+    overlay.appendChild(box); document.body.appendChild(overlay);
+    return;
+  }
+
+  // Have API key - open camera/file picker
+  var inp = document.createElement("input");
+  inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment";
+  inp.addEventListener("change", async function(){
+    if(!this.files||!this.files[0]) return;
+    var file = this.files[0];
+
+    // Show loading toast
+    toast("\uD83D\uDCF7 Reading card...");
+
+    // Convert to base64
+    var reader = new FileReader();
+    reader.onload = async function(e){
+      var base64 = e.target.result.split(",")[1];
+      var mediaType = file.type || "image/jpeg";
+
+      try {
+        var response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true"
+          },
+          body: JSON.stringify({
+            model: "claude-opus-4-6",
+            max_tokens: 500,
+            messages: [{
+              role: "user",
+              content: [
+                { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
+                { type: "text", text: "Read this business card and extract the information. Return ONLY a JSON object with these fields (use empty string if not found): name, company, tel, mobile, email, website, notes. notes should summarise their job title or role if shown. Return raw JSON only, no markdown." }
+              ]
+            }]
+          })
+        });
+
+        var data = await response.json();
+        if(!data.content||!data.content[0]) throw new Error("No response");
+        var text = data.content[0].text.trim().replace(/```json|```/g,"").trim();
+        var parsed = JSON.parse(text);
+
+        // Fill in the form
+        if(parsed.name && document.getElementById("r_name")) document.getElementById("r_name").value = parsed.name;
+        if(parsed.company && document.getElementById("r_company")) document.getElementById("r_company").value = parsed.company;
+        if(parsed.tel && document.getElementById("r_tel")) document.getElementById("r_tel").value = parsed.tel;
+        if(parsed.mobile && document.getElementById("r_mob")) document.getElementById("r_mob").value = parsed.mobile;
+        if(parsed.email && document.getElementById("r_email")) document.getElementById("r_email").value = parsed.email;
+        if(parsed.website && document.getElementById("r_web")) document.getElementById("r_web").value = parsed.website;
+        if(parsed.notes && document.getElementById("r_notes")) document.getElementById("r_notes").value = parsed.notes;
+
+        toast("\u2713 Card scanned! Check the details and save");
+      } catch(err) {
+        console.error("Scan error:", err);
+        toast("\u26A0\uFE0F Scan failed - please fill in manually");
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  inp.click();
+}
+
+
+// ── NOTES SEARCH ──────────────────────────────────────────────────
+function showNotesSearch() {
+  activeId = null; renderList(); showView("notesSearch"); renderNotesSearch();
+}
+
+function renderNotesSearch(query) {
+  var nv = document.getElementById("notesSearchView");
+  nv.innerHTML = "";
+
+  var hdr = document.createElement("div");
+  hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px";
+  var title = document.createElement("div"); title.className = "page-title"; title.textContent = "Search All Notes";
+  hdr.appendChild(title); nv.appendChild(hdr);
+
+  // Search box
+  var srchWrap = document.createElement("div");
+  srchWrap.style.cssText = "display:flex;align-items:center;gap:8px;background:var(--surface);border:2px solid var(--navy);border-radius:var(--rs);padding:9px 12px;margin-bottom:16px";
+  var srchInp = document.createElement("input");
+  srchInp.type = "text"; srchInp.id = "notesSrch";
+  srchInp.placeholder = "Search across all client notes, interactions, quotes...";
+  srchInp.value = query || "";
+  srchInp.style.cssText = "background:none;border:none;outline:none;font-size:13px;color:var(--text);flex:1;min-width:0";
+  srchInp.addEventListener("input", function(){ renderNotesSearch(this.value); });
+  srchWrap.appendChild(srchInp); nv.appendChild(srchWrap);
+
+  if (!query || query.trim().length < 2) {
+    var hint = document.createElement("div"); hint.className = "empty-state";
+    hint.innerHTML = "<div>\uD83D\uDD0D</div><div class='es-title'>Search your notes</div><div class='es-sub'>Type at least 2 characters to search across all client interaction logs, notes and quotes</div>";
+    nv.appendChild(hint);
+    setTimeout(function(){ var el=document.getElementById("notesSrch");if(el)el.focus(); }, 100);
+    return;
+  }
+
+  var q = query.trim().toLowerCase();
+  var results = [];
+
+  clients.forEach(function(c) {
+    // Search last interaction notes
+    if (c.notes && c.notes.toLowerCase().indexOf(q) > -1) {
+      results.push({ client: c, type: "Notes", text: c.notes, date: c.lastContact || "" });
+    }
+    // Search interaction log
+    (c.log||[]).forEach(function(l) {
+      if (l.note && l.note.toLowerCase().indexOf(q) > -1) {
+        results.push({ client: c, type: l.type||"Log", text: l.note, date: l.date||"", quote: l.quote });
+      }
+      // Search quote products
+      if (l.quote && l.quote.products && l.quote.products.toLowerCase().indexOf(q) > -1) {
+        results.push({ client: c, type: "Quote", text: l.quote.products + " — " + (l.quote.status||""), date: l.date||"", quote: l.quote });
+      }
+    });
+  });
+
+  var countEl = document.createElement("div");
+  countEl.style.cssText = "font-size:11px;color:var(--muted);margin-bottom:12px;font-weight:700";
+  countEl.textContent = results.length + " result" + (results.length!==1?"s":"") + " for: " + query;
+  nv.appendChild(countEl);
+
+  if (!results.length) {
+    var em = document.createElement("div"); em.className = "empty-state";
+    em.innerHTML = "<div>\uD83D\uDD0D</div><div class='es-title'>No results found</div><div class='es-sub'>Try different keywords</div>";
+    nv.appendChild(em);
+  } else {
+    results.forEach(function(r) {
+      var card = document.createElement("div");
+      card.style.cssText = "background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:11px 13px;margin-bottom:8px;cursor:pointer";
+      card.addEventListener("click", (function(cid){ return function(){ openC(cid); }; })(r.client.id));
+
+      var top = document.createElement("div"); top.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:6px";
+      var av = document.createElement("div"); av.style.cssText = "width:28px;height:28px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0"; av.textContent = ini(r.client.name);
+      var cname = document.createElement("div"); cname.style.cssText = "font-weight:700;font-size:12px;flex:1"; cname.textContent = r.client.name;
+      var typePill = document.createElement("span"); typePill.style.cssText = "font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--lbg);color:var(--ltxt)"; typePill.textContent = r.type;
+      var dateEl = document.createElement("span"); dateEl.style.cssText = "font-size:9px;color:var(--muted)"; dateEl.textContent = r.date;
+      top.appendChild(av); top.appendChild(cname); top.appendChild(typePill); top.appendChild(dateEl);
+
+      // Highlight matching text
+      var textEl = document.createElement("div"); textEl.style.cssText = "font-size:11px;color:var(--text);line-height:1.5";
+      var highlighted = r.text.replace(new RegExp("("+q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")", "gi"), "<mark style=\"background:#fff3a0;border-radius:2px;padding:0 2px\">$1</mark>");
+      textEl.innerHTML = highlighted.length > 200 ? highlighted.substring(0, 200) + "..." : highlighted;
+
+      card.appendChild(top); card.appendChild(textEl);
+      if(r.quote) {
+        var qv = document.createElement("div"); qv.style.cssText = "font-size:10px;color:var(--gtxt);font-weight:700;margin-top:4px"; qv.textContent = "\u00a3" + (parseFloat(String(r.quote.value||"0").replace(/[^0-9.]/g,""))||0).toLocaleString("en-GB") + " — " + (r.quote.status||"");
+        card.appendChild(qv);
+      }
+      nv.appendChild(card);
+    });
+  }
+
+  var bk = document.createElement("button"); bk.className = "bkl"; bk.textContent = "\u2190 Back to dashboard"; bk.addEventListener("click", showDash); nv.appendChild(bk);
+  setTimeout(function(){ var el=document.getElementById("notesSrch");if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);} }, 100);
+}
+
+
+// ── MONTHLY REPORT ────────────────────────────────────────────────
+function showMonthlyReport() {
+  var now = new Date();
+  var month = now.getMonth();
+  var year = now.getFullYear();
+  var monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+  // Collect this month's data
+  var newClients = clients.filter(function(c){
+    if(!c.log||!c.log.length) return false;
+    var firstLog = c.log[c.log.length-1];
+    if(!firstLog.date) return false;
+    var dp = firstLog.date.split("/");
+    return dp.length===3 && parseInt(dp[1])-1===month && parseInt(dp[2])===year;
+  });
+
+  var monthSales = 0, monthSalesCount = 0;
+  var productMap = {};
+  clients.forEach(function(c){
+    (c.log||[]).forEach(function(l){
+      if(l.quote&&l.quote.status==="Paid"&&l.date){
+        var dp=l.date.split("/");
+        if(dp.length===3&&parseInt(dp[1])-1===month&&parseInt(dp[2])===year){
+          var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
+          monthSales+=v;monthSalesCount++;
+          var cat=l.quote.category||"Other";
+          productMap[cat]=(productMap[cat]||0)+v;
+        }
+      }
+    });
+  });
+
+  var monthInteractions = 0;
+  clients.forEach(function(c){
+    (c.log||[]).forEach(function(l){
+      if(l.date){var dp=l.date.split("/");if(dp.length===3&&parseInt(dp[1])-1===month&&parseInt(dp[2])===year)monthInteractions++;}
+    });
+  });
+
+  var openQuotes=0,openQuoteVal=0;
+  clients.forEach(function(c){
+    (c.log||[]).forEach(function(l){
+      if(l.quote&&(l.quote.status==="Quote"||l.quote.status==="Confirmed")){
+        openQuotes++;openQuoteVal+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
+      }
+    });
+  });
+
+  var topClients = [];
+  clients.forEach(function(c){
+    var spend=0;
+    (c.log||[]).forEach(function(l){
+      if(l.quote&&l.quote.status==="Paid"&&l.date){
+        var dp=l.date.split("/");
+        if(dp.length===3&&parseInt(dp[1])-1===month&&parseInt(dp[2])===year)
+          spend+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
+      }
+    });
+    if(spend>0) topClients.push({name:c.name,spend:spend});
+  });
+  topClients.sort(function(a,b){return b.spend-a.spend;}).splice(5);
+
+  // Build report overlay
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:560px;max-height:90vh;overflow-y:auto";
+
+  // Report header
+  var rptHdr = document.createElement("div");
+  rptHdr.style.cssText = "background:var(--navy);padding:20px 24px;border-radius:var(--r) var(--r) 0 0";
+  var rptLogo = document.createElement("div");rptLogo.style.cssText="display:flex;align-items:center;gap:10px;margin-bottom:6px";
+  var rptLogoBox=document.createElement("div");rptLogoBox.style.cssText="width:40px;height:28px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px;color:#fff";rptLogoBox.textContent="SPCRM";
+  var rptLogoTxt=document.createElement("div");rptLogoTxt.style.cssText="color:rgba(255,255,255,.7);font-size:11px;font-weight:700";rptLogoTxt.textContent="SINBAD TRADE COUNTER | PCRM";
+  rptLogo.appendChild(rptLogoBox);rptLogo.appendChild(rptLogoTxt);
+  var rptTitle=document.createElement("div");rptTitle.style.cssText="font-size:18px;font-weight:700;color:#fff";rptTitle.textContent="Monthly Snapshot Report";
+  var rptPeriod=document.createElement("div");rptPeriod.style.cssText="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px";rptPeriod.textContent=monthNames[month]+" "+year+" \u00b7 Generated: "+new Date().toLocaleDateString("en-GB");
+  rptHdr.appendChild(rptLogo);rptHdr.appendChild(rptTitle);rptHdr.appendChild(rptPeriod);box.appendChild(rptHdr);
+
+  var rptBody = document.createElement("div");rptBody.style.cssText="padding:20px 24px";
+
+  function rptSection(title2){var s=document.createElement("div");s.style.cssText="margin-bottom:20px";var t=document.createElement("div");t.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--navy)";t.textContent=title2;s.appendChild(t);return s;}
+  function rptKpi(lbl,val,col){var k=document.createElement("div");k.style.cssText="background:var(--alt);border-radius:var(--rs);padding:10px 12px;text-align:center";var v=document.createElement("div");v.style.cssText="font-size:20px;font-weight:700;color:"+(col||"var(--navy)");v.textContent=val;var l=document.createElement("div");l.style.cssText="font-size:10px;color:var(--muted);margin-top:2px";l.textContent=lbl;k.appendChild(v);k.appendChild(l);return k;}
+
+  // Sales summary
+  var salesSec=rptSection("Sales This Month");
+  var kpiGrid=document.createElement("div");kpiGrid.style.cssText="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px";
+  kpiGrid.appendChild(rptKpi("Total Sales","\u00a3"+monthSales.toLocaleString("en-GB"),"var(--gtxt)"));
+  kpiGrid.appendChild(rptKpi("Transactions",monthSalesCount,"var(--navy)"));
+  kpiGrid.appendChild(rptKpi("Avg Sale",monthSalesCount>0?"\u00a3"+Math.round(monthSales/monthSalesCount).toLocaleString("en-GB"):"\u2014","var(--navy)"));
+  salesSec.appendChild(kpiGrid);
+  rptBody.appendChild(salesSec);
+
+  // Top products
+  if(Object.keys(productMap).length){
+    var prodSec=rptSection("Top Products");
+    var prodList=Object.keys(productMap).sort(function(a,b){return productMap[b]-productMap[a];}).slice(0,5);
+    prodList.forEach(function(p,i){
+      var row=document.createElement("div");row.style.cssText="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)";
+      var rank=document.createElement("span");rank.style.cssText="width:18px;font-size:10px;font-weight:700;color:var(--muted)";rank.textContent=i+1;
+      var nm=document.createElement("span");nm.style.flex="1";nm.style.fontSize="12px";nm.textContent=p;
+      var val=document.createElement("span");val.style.cssText="font-weight:700;font-size:12px;color:var(--gtxt)";val.textContent="\u00a3"+productMap[p].toLocaleString("en-GB");
+      row.appendChild(rank);row.appendChild(nm);row.appendChild(val);prodSec.appendChild(row);
+    });
+    rptBody.appendChild(prodSec);
+  }
+
+  // Top clients
+  if(topClients.length){
+    var clientSec=rptSection("Top Clients This Month");
+    topClients.forEach(function(c,i){
+      var row=document.createElement("div");row.style.cssText="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)";
+      var rank=document.createElement("span");rank.style.cssText="width:18px;font-size:10px;font-weight:700;color:var(--muted)";rank.textContent=i+1;
+      var nm=document.createElement("span");nm.style.flex="1";nm.style.fontSize="12px";nm.textContent=c.name;
+      var val=document.createElement("span");val.style.cssText="font-weight:700;font-size:12px;color:var(--gtxt)";val.textContent="\u00a3"+c.spend.toLocaleString("en-GB");
+      row.appendChild(rank);row.appendChild(nm);row.appendChild(val);clientSec.appendChild(row);
+    });
+    rptBody.appendChild(clientSec);
+  }
+
+  // Pipeline
+  var pipeSec=rptSection("Pipeline");
+  var pipeGrid=document.createElement("div");pipeGrid.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:8px";
+  pipeGrid.appendChild(rptKpi("Open Quotes",openQuotes,"var(--atxt)"));
+  pipeGrid.appendChild(rptKpi("Pipeline Value","\u00a3"+openQuoteVal.toLocaleString("en-GB"),"var(--atxt)"));
+  pipeSec.appendChild(pipeGrid);rptBody.appendChild(pipeSec);
+
+  // Activity
+  var actSec=rptSection("Activity");
+  var actGrid=document.createElement("div");actGrid.style.cssText="display:grid;grid-template-columns:repeat(3,1fr);gap:8px";
+  actGrid.appendChild(rptKpi("Total Clients",clients.length,"var(--navy)"));
+  actGrid.appendChild(rptKpi("Active",clients.filter(function(c){return c.status==="Active";}).length,"var(--gtxt)"));
+  actGrid.appendChild(rptKpi("Interactions",monthInteractions,"var(--navy)"));
+  actSec.appendChild(actGrid);rptBody.appendChild(actSec);
+
+  box.appendChild(rptBody);
+
+  // Footer buttons
+  var foot=document.createElement("div");foot.style.cssText="padding:14px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center";
+  var closeB=document.createElement("button");closeB.style.cssText="padding:8px 16px;background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer";closeB.textContent="Close";
+  closeB.addEventListener("click",function(){document.body.removeChild(overlay);});
+  var printB=document.createElement("button");printB.style.cssText="padding:8px 16px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer";printB.textContent="\uD83D\uDDA8\uFE0F Print / Save PDF";
+  printB.addEventListener("click",function(){window.print();});
+  foot.appendChild(closeB);foot.appendChild(printB);box.appendChild(foot);
+  overlay.appendChild(box);document.body.appendChild(overlay);
 }
 
 
