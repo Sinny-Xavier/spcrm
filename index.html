@@ -3587,8 +3587,8 @@ function scanBusinessCard() {
           toast("\u2713 Card scanned! Check details and save");
         } catch(pe){ toast("\u26A0\uFE0F Could not parse card - try again"); }
       } catch(err) {
-        toast("\u26A0\uFE0F Error: "+err.message);
-        console.error("Scan error:", err);
+        toast("\u26A0\uFE0F "+err.name+": "+err.message.substring(0,80));
+        console.error("Scan error:", err.name, err.message);
       }
     };
     reader.readAsDataURL(file);
