@@ -561,7 +561,7 @@ function checkPassword(){
     document.getElementById("gateInput").focus();
   }
 }
-try{if(sessionStorage.getItem("sftc_auth")==="1"){var g=document.getElementById("gateOverlay");if(g)g.style.display="none";}}catch(e){}
+try{if(sessionStorage.getItem("sftc_auth")==="1"){var g=document.getElementById("gateOverlay");if(g)g.style.display="none";init();}}catch(e){}
 
 // ── DATA ──────────────────────────────────────────────────────────
 var STORE="sftc_v2",RSTORE="sftc_reps_v1",SSTORE="sftc_samples_v1",BSTORE="sftc_bdays_v1",CSTORE="sftc_complaints_v1";
