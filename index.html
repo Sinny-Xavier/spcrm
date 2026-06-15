@@ -523,9 +523,9 @@ function checkPassword(){
           document.getElementById("sbStatus").title="Cloud connected";
         } else { 
           console.warn("Supabase test failed:", r.status, txt);
-          toast("\u26A0\uFE0F Cloud offline - saving locally only");
-          document.getElementById("sbStatus").textContent="\uD83D\uDDA5\uFE0F";
-          document.getElementById("sbStatus").title="Offline - "+r.status;
+          toast("\u26A0\uFE0F Cloud error "+r.status+" - "+txt.substring(0,40));
+          document.getElementById("sbStatus").textContent="\u26A0\uFE0F";
+          document.getElementById("sbStatus").title="Error "+r.status;
         }
       } catch(e){ 
         console.warn("Connection test error:", e);
