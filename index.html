@@ -413,11 +413,12 @@ async function sbDelete(table, id) {
 }
 
 async function sbSaveAll(table, items, idField) {
+  console.log("sbSaveAll called:", table, items.length, "items");
   try {
     var body = items.map(function(item){
       return {id: item[idField||"id"], data: item, updated_at: new Date().toISOString()};
     });
-    if (!body.length) return;
+    if (!body.length) { console.log("sbSaveAll: empty, skipping"); return; }
     var r = await fetch(SB_URL+"/rest/v1/"+table, {
       method: "POST",
       headers: {
@@ -484,6 +485,7 @@ function saveComplaints() {
   sbSaveAll("complaints", complaints, "id");
 }
 function saveDiary() {
+  console.log("saveDiary called, events:", diaryEvents.length);
   try { localStorage.setItem(DIARY_STORE, JSON.stringify(diaryEvents)); } catch(e) {}
   sbSaveAll("diary_events", diaryEvents, "id");
 }
