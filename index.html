@@ -632,6 +632,13 @@ function showComplaints(){activeId=null;renderList();showView("complaints");rend
 
 // ── SIDEBAR ───────────────────────────────────────────────────────
 function setF(btn){document.querySelectorAll(".fb").forEach(function(b){b.classList.remove("on");});btn.classList.add("on");activeFilter=btn.dataset.f;renderList();}
+function ini(name) {
+  if(!name) return "?";
+  var parts = name.trim().split(" ");
+  if(parts.length >= 2) return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+  return name.substring(0,2).toUpperCase();
+}
+
 function du(dateStr) {
   if(!dateStr||dateStr==="")return 9999;
   var s=dateStr;
