@@ -3529,14 +3529,12 @@ function scanBusinessCard() {
     return;
   }
 
-  // Have API key - open camera/file picker
+  // Have API key - open camera
   var inp = document.createElement("input");
   inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment";
   inp.addEventListener("change", async function(){
     if(!this.files||!this.files[0]) return;
     var file = this.files[0];
-
-    // Show loading toast
     toast("\uD83D\uDCF7 Reading card...");
 
     // Convert to base64
@@ -3544,7 +3542,7 @@ function scanBusinessCard() {
     reader.onload = async function(e){
       var base64 = e.target.result.split(",")[1];
       var mediaType = file.type || "image/jpeg";
-
+      toast("\uD83D\uDCF7 Sending to AI...");
       try {
         var response = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
@@ -3555,36 +3553,35 @@ function scanBusinessCard() {
             "anthropic-dangerous-direct-browser-access": "true"
           },
           body: JSON.stringify({
-            model: "claude-opus-4-6",
+            model: "claude-haiku-4-5-20251001",
             max_tokens: 500,
             messages: [{
               role: "user",
               content: [
                 { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-                { type: "text", text: "Read this business card and extract the information. Return ONLY a JSON object with these fields (use empty string if not found): name, company, tel, mobile, email, website, notes. notes should summarise their job title or role if shown. Return raw JSON only, no markdown." }
+                { type: "text", text: "This is a business card image. Extract all contact information and return ONLY a valid JSON object with no markdown, no backticks, no explanation. Fields: name (full name), company (company name), tel (office/direct phone), mobile (mobile/cell number), email (email address), website (website url), notes (job title or role). Use empty string for any field not found on the card." }
               ]
             }]
           })
         });
-
+        if(!response.ok){var errText=await response.text();toast("\u26A0\uFE0F API error "+response.status);console.error(errText);return;}
         var data = await response.json();
-        if(!data.content||!data.content[0]) throw new Error("No response");
+        if(!data.content||!data.content[0]){toast("\u26A0\uFE0F No response from AI");return;}
         var text = data.content[0].text.trim().replace(/```json|```/g,"").trim();
-        var parsed = JSON.parse(text);
-
-        // Fill in the form
-        if(parsed.name && document.getElementById("r_name")) document.getElementById("r_name").value = parsed.name;
-        if(parsed.company && document.getElementById("r_company")) document.getElementById("r_company").value = parsed.company;
-        if(parsed.tel && document.getElementById("r_tel")) document.getElementById("r_tel").value = parsed.tel;
-        if(parsed.mobile && document.getElementById("r_mob")) document.getElementById("r_mob").value = parsed.mobile;
-        if(parsed.email && document.getElementById("r_email")) document.getElementById("r_email").value = parsed.email;
-        if(parsed.website && document.getElementById("r_web")) document.getElementById("r_web").value = parsed.website;
-        if(parsed.notes && document.getElementById("r_notes")) document.getElementById("r_notes").value = parsed.notes;
-
-        toast("\u2713 Card scanned! Check the details and save");
+        try {
+          var parsed = JSON.parse(text);
+          if(parsed.name && document.getElementById("r_name")) document.getElementById("r_name").value = parsed.name;
+          if(parsed.company && document.getElementById("r_company")) document.getElementById("r_company").value = parsed.company;
+          if(parsed.tel && document.getElementById("r_tel")) document.getElementById("r_tel").value = parsed.tel;
+          if(parsed.mobile && document.getElementById("r_mob")) document.getElementById("r_mob").value = parsed.mobile;
+          if(parsed.email && document.getElementById("r_email")) document.getElementById("r_email").value = parsed.email;
+          if(parsed.website && document.getElementById("r_web")) document.getElementById("r_web").value = parsed.website;
+          if(parsed.notes && document.getElementById("r_notes")) document.getElementById("r_notes").value = parsed.notes;
+          toast("\u2713 Card scanned! Check details and save");
+        } catch(pe){ toast("\u26A0\uFE0F Could not parse card - try again"); }
       } catch(err) {
+        toast("\u26A0\uFE0F Error: "+err.message);
         console.error("Scan error:", err);
-        toast("\u26A0\uFE0F Scan failed - please fill in manually");
       }
     };
     reader.readAsDataURL(file);
