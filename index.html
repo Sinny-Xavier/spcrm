@@ -464,6 +464,20 @@ async function loadFromSupabase() {
   }
 }
 
+function loadReps(){
+  try{var r=localStorage.getItem(RSTORE);if(r){var p=JSON.parse(r);if(p&&p.length>0)return p;}}catch(e){}
+  return REPS_DATA?REPS_DATA.map(function(d){return Object.assign({},d);}):[];
+}
+function loadSamples(){
+  try{var r=localStorage.getItem(SSTORE);if(r)return JSON.parse(r)||[];}catch(e){}return[];
+}
+function loadBirthdays(){
+  try{var r=localStorage.getItem(BSTORE);if(r)return JSON.parse(r)||[];}catch(e){}return[];
+}
+function loadComplaints(){
+  try{var r=localStorage.getItem(CSTORE);if(r)return JSON.parse(r)||[];}catch(e){}return[];
+}
+
 // Override save functions to also save to Supabase
 var _origSaveC = null;
 function saveC() {
@@ -618,6 +632,16 @@ function showComplaints(){activeId=null;renderList();showView("complaints");rend
 
 // ── SIDEBAR ───────────────────────────────────────────────────────
 function setF(btn){document.querySelectorAll(".fb").forEach(function(b){b.classList.remove("on");});btn.classList.add("on");activeFilter=btn.dataset.f;renderList();}
+function du(dateStr) {
+  if(!dateStr||dateStr==="")return 9999;
+  var s=dateStr;
+  if(s.indexOf("/")>-1){var p=s.split("/");s=p[2]+"-"+p[1]+"-"+p[0];}
+  var dt=new Date(s);if(isNaN(dt.getTime()))return 9999;
+  dt.setHours(0,0,0,0);
+  var today=new Date();today.setHours(0,0,0,0);
+  return Math.round((dt-today)/86400000);
+}
+
 function renderList(){
   var q=document.getElementById("sq").value.toLowerCase();
   var fl=clients.filter(function(c){
