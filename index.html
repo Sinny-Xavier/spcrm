@@ -513,8 +513,10 @@ function checkPassword(){
     // Test Supabase connection
     setTimeout(async function(){
       try {
-        var r = await fetch(SB_URL+"/rest/v1/clients?select=id&limit=1", {
-          headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Accept":"application/json"}
+        var testUrl = "https://ogkyemjiosgedwgqfvyy.supabase.co/rest/v1/clients?select=id&limit=1";
+        var testKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9na3llbWppb3NnZWR3Z3Fmdnl5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTQ2MDAyNCwiZXhwIjoyMDk3MDM2MDI0fQ.jk70rSfBupl2tPebhTqjknHoKuozU95i0IjKmdhk0sU";
+        var r = await fetch(testUrl, {
+          headers:{"apikey":testKey,"Authorization":"Bearer "+testKey,"Accept":"application/json"}
         });
         var txt = await r.text();
         if(r.ok){ 
