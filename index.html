@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +19,7 @@
   --grbg:#f0efeb;--grtxt:#4a4845;
 }
 body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(--text)}
-.hdr{background:var(--navy3);position:sticky;top:0;z-index:100;border-bottom:2px solid var(--red3)}.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.1)}.hdr-bottom{display:flex;align-items:center;justify-content:center;padding:5px 16px;background:rgba(0,0,0,.15);flex-wrap:wrap;gap:5px});srchWrap.appendChild(srchInp);rv.appendChild(srchWrap);if(searchTerm){setTimeout(function(){var el=document.getElementById("repSearch");if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}},10);}
+.hdr{background:var(--navy3);position:sticky;top:0;z-index:100;border-bottom:2px solid var(--red3)}.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.1)}.hdr-bottom{display:flex;align-items:center;justify-content:center;padding:5px 10px;background:rgba(0,0,0,.15);flex-wrap:wrap;gap:4px;overflow-x:auto});srchWrap.appendChild(srchInp);rv.appendChild(srchWrap);if(searchTerm){setTimeout(function(){var el=document.getElementById("repSearch");if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}},10);}
   var q=(searchTerm||"").toLowerCase().trim();
   var filteredReps=q?reps.filter(function(r){return[r.name,r.company,r.manufacturer,r.tel].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});}):reps;
 ht:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:100;border-bottom:2px solid var(--red3);gap:8px;flex-wrap:nowrap;overflow-x:auto}
@@ -28,14 +28,14 @@ ht:56px;display:flex;align-items:center;justify-content:space-between;padding:0 
 .hdr h1{font-size:13px;font-weight:700;color:#fff;white-space:nowrap}
 .hdr h1 span{color:#e74c3c}
 .hdr-nav{display:flex;gap:5px;align-items:center;flex-shrink:0}
-.nav-btn{padding:4px 10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:#fff;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap}
+.nav-btn{padding:4px 8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:#fff;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap}
 .nav-btn:hover{background:rgba(255,255,255,.2)}
 .hdr-stats{display:flex;gap:5px;flex-shrink:0}
 .hs{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);padding:3px 9px;border-radius:20px;font-size:10px;color:rgba(255,255,255,.8);white-space:nowrap}
 .hs b{color:#fff}
 .hs.alert{background:rgba(192,57,43,.3);border-color:rgba(192,57,43,.5)}
 .hs.alert b{color:#ff9999}
-.app{display:flex;height:calc(100vh - 88px);overflow:hidden}
+.app{display:flex;height:calc(100vh - 88px);overflow:hidden;min-height:0}
 .sb{width:270px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
 .sb-top{padding:10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:7px}
 .srch{display:flex;align-items:center;gap:6px;background:var(--alt);border:1px solid var(--border);border-radius:var(--rs);padding:6px 9px}
@@ -279,6 +279,7 @@ ht:56px;display:flex;align-items:center;justify-content:space-between;padding:0 
     </div>
     <div class="hdr-stats">
       <div class="hs" onclick="showDash()" style="cursor:pointer">Clients: <b id="sTot">0</b></div>
+    <div class="hs" onclick="autoRateAllClients()" style="cursor:pointer;background:rgba(255,185,0,.2);border-color:rgba(255,185,0,.4)" title="Auto-rate client priorities">&#11088; Auto-rate</div>
       <div class="hs" onclick="showDash()" style="cursor:pointer">Active: <b id="sAct">0</b></div>
       <div class="hs" id="sDueWrap" onclick="showDash()" style="cursor:pointer">Follow-ups: <b id="sDue">0</b></div>
       <div class="hs" onclick="showDash()" style="cursor:pointer">Quotes: <b id="sQ">&#163;0</b></div>
@@ -293,6 +294,7 @@ ht:56px;display:flex;align-items:center;justify-content:space-between;padding:0 
       <button class="nav-btn" onclick="showComplaints()">&#128221; Complaints</button>
     <button class="nav-btn" onclick="showQuotes()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128178; Quotes</button>
       <button class="nav-btn" onclick="showDiary()" style="background:rgba(255,153,0,.25);border-color:rgba(255,153,0,.5)">&#128197; Diary</button>
+    <button class="nav-btn" onclick="showChangePassword()" style="background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)">&#128274; Password</button>
     <button class="nav-btn" onclick="showWebsites()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#127760; Websites</button>
     <button class="nav-btn" onclick="showDocs()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128196; Docs</button>
     </div>
@@ -492,7 +494,7 @@ function saveDocs() {
 // ── PASSWORD ──────────────────────────────────────────────────────
 document.getElementById("gateInput").addEventListener("keydown",function(e){if(e.key==="Enter")checkPassword();});
 function checkPassword(){
-  if(document.getElementById("gateInput").value==="WaffleWoo2026"){
+  if(document.getElementById("gateInput").value===getCurrentPassword()){
     document.getElementById("gateOverlay").style.display="none";
     try{sessionStorage.setItem("sftc_auth","1");}catch(e){}
     // Test Supabase connection
@@ -665,6 +667,7 @@ function renderDash(){
   var t=document.createElement("div");t.style.cssText="font-size:16px;font-weight:700;margin-bottom:16px";
   t.textContent="Good day, Sinbad \uD83D\uDC4B Here\u2019s your morning briefing";dv.appendChild(t);
   var kg=document.createElement("div");kg.className="kpi-grid";
+  var selfGen=clients.filter(function(c){return c.source==="New - Self Generated"||c.source==="New - Walk In"||c.source==="New - Referral";}).length;
   [{l:"Total clients",v:clients.length,c:"kv-blue",s:"in your black book"},{l:"Active",v:clients.filter(function(c){return c.status==="Active";}).length,c:"kv-green",s:"clients"},{l:"Overdue follow-ups",v:overdue.length,c:overdue.length>0?"kv-red":"kv-green",s:"need chasing"},{l:"Open quote value",v:"\u00a3"+qTotal.toLocaleString("en-GB"),c:"kv-amber",s:"quote + confirmed"}].forEach(function(k){
     var card=document.createElement("div");card.className="kpi";
     var lbl=document.createElement("div");lbl.className="kpi-lbl";lbl.textContent=k.l;
@@ -875,7 +878,9 @@ function renderDet(){
     fields.forEach(function(f){if(!f)return;var fi=document.createElement("div");fi.className="fi"+(f.wide?" s2":"");var lbl=document.createElement("label");lbl.textContent=f.label;var val=document.createElement("div");val.className="fv";if(f.html){val.innerHTML=f.html;}else{val.textContent=f.val||"\u2014";}fi.appendChild(lbl);fi.appendChild(val);fg.appendChild(fi);});
     sec.appendChild(fg);return sec;
   }
-  grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",val:c.binder},{label:"Manager",val:c.manager},{label:"Account name",val:c.name,wide:true},{label:"Contact name",val:c.contact,wide:true}]));
+    var sourceColors = {"Existing":"background:#e8edf6;color:#2348b0","New - Self Generated":"background:var(--gbg);color:var(--gtxt)","New - Walk In":"background:#e8f5e0;color:#2d6a0f","New - Referral":"background:#fff3e0;color:#854f0b","Fitter":"background:var(--lbg);color:var(--ltxt)"};
+  var sourceHtml = c.source ? "<span style=\'font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;"+(sourceColors[c.source]||"background:var(--alt);color:var(--muted)")+"\'>"+c.source+"</span>" : "&mdash;";
+  grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",val:c.binder},{label:"Manager",val:c.manager},{label:"Account name",val:c.name,wide:true},{label:"Contact name",val:c.contact,wide:true},{label:"Customer source",html:sourceHtml}]));
   grid.appendChild(addSec("","t-ct","Contact",[{label:"Telephone",val:c.tel},{label:"Mobile",val:c.mobile},{label:"Email",val:c.email,wide:true},{label:"Website",val:c.website},{label:"Address",val:c.address}]));
   grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",val:c.product,wide:true},{label:"Est. annual spend",val:c.spend},{label:"Priority",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Paid"){t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Paid")t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",val:c.wontBuy,wide:true}]));
   grid.appendChild(addSec("","t-ch","Competitor notes",[{label:"Who else they buy from",val:c.competitorNotes,wide:true}]));
@@ -1138,6 +1143,9 @@ function showForm(id){
   mkF(g1,"Account manager",mkI("e_mgr",c?c.manager:"Sinbad",""));
   mkF(g1,"Account name *",mkI("e_name",c?c.name:"","Company or client name"),true);
   mkF(g1,"Contact name",mkI("e_contact",c?c.contact:"","Primary contact person"),true);
+  var srcSel=document.createElement("select");srcSel.id="e_source";srcSel.style.cssText="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;color:var(--text);outline:none";
+  ["","Existing","New - Self Generated","New - Walk In","New - Referral","Fitter"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2||"-- Select source --";if(c&&c.source===s2)opt.selected=true;srcSel.appendChild(opt);});
+  mkF(g1,"Customer source",srcSel,true);
 
   var g2=mkSec("Contact");
   mkF(g2,"Telephone",mkI("e_tel",c?c.tel:"","0113 000 0000","tel"));
@@ -1149,7 +1157,17 @@ function showForm(id){
   var g3=mkSec("Intelligence");
   mkF(g3,"Product interest",mkI("e_prod",c?c.product:"","e.g. LVT, SPC, Safety Vinyl"),true);
   mkF(g3,"Est. annual spend",mkI("e_spend",c?c.spend:"","e.g. 8000"));
-  mkF(g3,"Priority rating",mkS("e_pri",["","\u2605","\u2605\u2605","\u2605\u2605\u2605","\u2605\u2605\u2605\u2605","\u2605\u2605\u2605\u2605\u2605"],c?c.priority:""));
+  var priWrap = document.createElement("div"); priWrap.className = "ff";
+  var priLbl = document.createElement("label"); priLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; priLbl.textContent = "Priority rating";
+  var priSel = mkS("e_pri",["","\u2605","\u2605\u2605","\u2605\u2605\u2605","\u2605\u2605\u2605\u2605","\u2605\u2605\u2605\u2605\u2605"],c?c.priority:"");
+  var autoVal = c ? calcAutoPriority(c) : "";
+  var priNote = document.createElement("div"); priNote.style.cssText = "font-size:9px;color:var(--muted);margin-top:3px"; priNote.textContent = autoVal ? "Auto-calculated: "+autoVal+" (override above to set manually)" : "No auto-rating yet (needs interactions/sales)";
+  var manChk = document.createElement("div"); manChk.style.cssText = "display:flex;align-items:center;gap:5px;margin-top:4px";
+  var manInp = document.createElement("input"); manInp.type="checkbox"; manInp.id="e_manual_pri"; manInp.checked=!!(c&&c.manualPriority);
+  var manLbl2 = document.createElement("label"); manLbl2.setAttribute("for","e_manual_pri"); manLbl2.style.cssText="font-size:10px;color:var(--muted)"; manLbl2.textContent="Lock this rating (stop auto-updates)";
+  manChk.appendChild(manInp); manChk.appendChild(manLbl2);
+  priWrap.appendChild(priLbl); priWrap.appendChild(priSel); priWrap.appendChild(priNote); priWrap.appendChild(manChk);
+  g3.appendChild(priWrap);
   mkF(g3,"Wont buy / not interested in",mkTa("e_wont",c?c.wontBuy:"","Products or ranges they are not interested in"),true);
   mkF(g3,"Competitor notes",mkTa("e_comp",c?c.competitorNotes:"","Who else they buy from"),true);
 
@@ -1185,6 +1203,8 @@ function submitForm(){
     product:document.getElementById("e_prod").value.trim(),
     spend:document.getElementById("e_spend").value.trim(),
     priority:document.getElementById("e_pri").value,
+    manualPriority:document.getElementById("e_manual_pri")?document.getElementById("e_manual_pri").checked:false,
+    source:document.getElementById("e_source")?document.getElementById("e_source").value:"",
     wontBuy:document.getElementById("e_wont").value.trim(),
     competitorNotes:document.getElementById("e_comp").value.trim(),
     status:document.getElementById("e_stat").value,
@@ -1211,7 +1231,7 @@ function saveQA(){
   var name=document.getElementById("qa_name").value.trim();
   if(!name){toast("Name is required");return;}
   var id=nextId();
-  clients.push({id:id,binder:id,name:name,contact:document.getElementById("qa_contact").value.trim(),manager:"Sinbad",tel:document.getElementById("qa_tel").value.trim(),mobile:"",email:"",website:"",address:document.getElementById("qa_city").value.trim(),product:"",spend:"",priority:"",status:"Prospect",interactionType:"",lastContact:"",followup:"",notes:"Quick add - fill details later",wontBuy:"",competitorNotes:"",keyDates:"",log:[]});
+  clients.push({id:id,binder:id,name:name,contact:document.getElementById("qa_contact").value.trim(),manager:"Sinbad",tel:document.getElementById("qa_tel").value.trim(),mobile:"",email:"",website:"",address:document.getElementById("qa_city").value.trim(),product:"",spend:"",priority:"",status:"Prospect",source:"",interactionType:"",lastContact:"",followup:"",notes:"Quick add - fill details later",wontBuy:"",competitorNotes:"",keyDates:"",log:[]});
   saveC();renderList();["qa_name","qa_contact","qa_tel","qa_city"].forEach(function(i){document.getElementById(i).value="";});closeQA();
   toast("Client added \u2713 - fill details later");activeId=id;showView("det");renderDet();
 }
@@ -1998,6 +2018,64 @@ function showBdayForm() {
   });
   foot.appendChild(cancelB); foot.appendChild(saveB);
   box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
+}
+
+
+function renderComplaintsView() {
+  var sv = document.getElementById("complaintsView");
+  sv.innerHTML = "";
+  var hdr = document.createElement("div");
+  hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px";
+  var title = document.createElement("div"); title.className = "page-title"; title.textContent = "Complaint Tracker";
+  var addBtn = document.createElement("button");
+  addBtn.style.cssText = "padding:7px 16px;background:var(--red);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer";
+  addBtn.textContent = "+ Log complaint";
+  addBtn.addEventListener("click", function(){ showComplaintForm(); });
+  hdr.appendChild(title); hdr.appendChild(addBtn); sv.appendChild(hdr);
+
+  var sr = document.createElement("div"); sr.className = "stat-row cols4";
+  [{l:"Total logged",v:complaints.length,c:"kv-blue"},
+   {l:"Open",v:complaints.filter(function(c){return c.status==="Open";}).length,c:"kv-red"},
+   {l:"In progress",v:complaints.filter(function(c){return c.status==="In Progress";}).length,c:"kv-amber"},
+   {l:"Resolved",v:complaints.filter(function(c){return c.status==="Resolved";}).length,c:"kv-green"}
+  ].forEach(function(k){
+    var card=document.createElement("div");card.className="stat-card";
+    var lbl=document.createElement("div");lbl.className="sc-lbl";lbl.textContent=k.l;
+    var val=document.createElement("div");val.className="sc-val "+k.c;val.textContent=k.v;
+    card.appendChild(lbl);card.appendChild(val);sr.appendChild(card);
+  });
+  sv.appendChild(sr);
+
+  if (!complaints.length) {
+    var em = document.createElement("div"); em.className = "empty-state";
+    em.innerHTML = "<div>&#128221;</div><div class='es-title'>No complaints logged yet</div><div class='es-sub'>Log complaints for clients and reps and track them through to resolution</div>";
+    sv.appendChild(em);
+  } else {
+    var scols = {"Open":"background:var(--rbg);color:var(--rtxt)","In Progress":"background:var(--abg);color:var(--atxt)","Resolved":"background:var(--gbg);color:var(--gtxt)","Closed":"background:var(--grbg);color:var(--grtxt)"};
+    var order = {Open:0,"In Progress":1,Resolved:2,Closed:3};
+    complaints.slice().sort(function(a,b){return(order[a.status]||0)-(order[b.status]||0);}).forEach(function(c){
+      var card = document.createElement("div"); card.className = "cmp-card";
+      var top = document.createElement("div"); top.style.cssText = "display:flex;align-items:flex-start;justify-content:space-between;gap:9px;margin-bottom:7px;flex-wrap:wrap";
+      var left = document.createElement("div");
+      var nm = document.createElement("div"); nm.style.cssText = "font-weight:700;font-size:12px;margin-bottom:2px"; nm.textContent = c.clientName+(c.type?" ["+c.type+"]":"");
+      var subj = document.createElement("div"); subj.style.cssText = "font-size:12px;color:var(--text);margin-bottom:2px"; subj.textContent = c.subject;
+      var meta = document.createElement("div"); meta.style.cssText = "font-size:10px;color:var(--muted)"; meta.textContent = "Logged: "+c.dateLogged+(c.product?" | "+c.product:"");
+      left.appendChild(nm); left.appendChild(subj); left.appendChild(meta);
+      var right = document.createElement("div"); right.style.cssText = "display:flex;align-items:center;gap:6px;flex-shrink:0";
+      var pill = document.createElement("span"); pill.style.cssText = "font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;"+(scols[c.status]||"background:var(--lbg);color:var(--ltxt)"); pill.textContent = c.status;
+      var sel = document.createElement("select"); sel.style.cssText = "padding:4px 7px;border:1px solid var(--border);border-radius:var(--rs);font-size:10px;background:#fff;cursor:pointer;outline:none";
+      ["Open","In Progress","Resolved","Closed"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(c.status===s2)opt.selected=true;sel.appendChild(opt);});
+      sel.addEventListener("change",(function(cid){return function(e){var comp=complaints.find(function(x){return x.id===cid;});if(comp){comp.status=e.target.value;saveComplaints();renderComplaintsView();toast("Updated");}};})(c.id));
+      var delBtn=document.createElement("button");delBtn.style.cssText="padding:4px 7px;background:none;border:1px solid var(--border);border-radius:var(--rs);font-size:10px;color:var(--muted);cursor:pointer";delBtn.textContent="Delete";
+      delBtn.addEventListener("click",(function(cid){return function(){if(confirm("Delete?")){complaints=complaints.filter(function(x){return x.id!==cid;});saveComplaints();renderComplaintsView();toast("Deleted");}};})(c.id));
+      right.appendChild(pill);right.appendChild(sel);right.appendChild(delBtn);
+      top.appendChild(left);top.appendChild(right);card.appendChild(top);
+      if(c.description){var desc=document.createElement("div");desc.style.cssText="background:var(--alt);border-radius:var(--rs);padding:7px 9px;font-size:11px;color:var(--text);line-height:1.5;margin-bottom:7px";desc.textContent=c.description;card.appendChild(desc);}
+      if(c.resolution){var res=document.createElement("div");res.style.cssText="background:var(--gbg);border-radius:var(--rs);padding:7px 9px;font-size:11px;color:var(--gtxt);line-height:1.5";res.innerHTML="<strong>Resolution:</strong> "+c.resolution;card.appendChild(res);}
+      sv.appendChild(card);
+    });
+  }
+  var bk = document.createElement("button"); bk.className = "bkl"; bk.textContent = "← Back to dashboard"; bk.addEventListener("click", showDash); sv.appendChild(bk);
 }
 
 
@@ -3186,6 +3264,143 @@ function showAddDoc(editIdx) {
   });
   foot.appendChild(cancelB);foot.appendChild(saveB);
   box.appendChild(foot);overlay.appendChild(box);document.body.appendChild(overlay);
+}
+
+
+// ── CHANGE PASSWORD ───────────────────────────────────────────────
+var PW_STORE = "spcrm_pw_v1";
+
+function getCurrentPassword() {
+  try { var p = localStorage.getItem(PW_STORE); if (p) return p; } catch(e) {}
+  return "WaffleWoo2026"; // default
+}
+
+function showChangePassword() {
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:380px;border-top:3px solid var(--navy)";
+  var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy);padding:13px 16px;display:flex;align-items:center;justify-content:space-between";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:13px;font-weight:700;color:#fff"; bht.textContent = "\uD83D\uDD12 Change Password";
+  var cx = document.createElement("button"); cx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:26px;height:26px;color:#fff;font-size:17px;cursor:pointer;line-height:1"; cx.textContent = "\u00d7";
+  cx.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  bh.appendChild(bht); bh.appendChild(cx); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:16px;display:flex;flex-direction:column;gap:10px";
+
+  function mkPwF(lbl, inp2) { var w=document.createElement("div"); var l=document.createElement("label"); l.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:3px"; l.textContent=lbl; w.appendChild(l); w.appendChild(inp2); return w; }
+  function mkPwI(id2, ph) {
+    var wrap = document.createElement("div"); wrap.style.cssText = "position:relative";
+    var i = document.createElement("input"); i.id=id2; i.type="password"; i.placeholder=ph||"";
+    i.autocomplete="new-password"; i.autocorrect="off"; i.autocapitalize="none";
+    i.style.cssText="width:100%;padding:8px 40px 8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;color:var(--text);outline:none";
+    var eye = document.createElement("button"); eye.type="button"; eye.textContent="\uD83D\uDC41";
+    eye.style.cssText="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;padding:0;line-height:1";
+    eye.addEventListener("click",function(){i.type=i.type==="password"?"text":"password";eye.textContent=i.type==="password"?"\uD83D\uDC41":"\uD83D\uDE48";});
+    wrap.appendChild(i); wrap.appendChild(eye); return wrap;
+  }
+
+  var note = document.createElement("div"); note.style.cssText = "font-size:11px;color:var(--muted);background:var(--alt);border-radius:var(--rs);padding:8px 10px"; note.textContent = "Your new password will be saved to this device. Make it something memorable but not obvious!";
+  bd.appendChild(note);
+  bd.appendChild(mkPwF("Current password", mkPwI("pw_current", "Enter current password")));
+  bd.appendChild(mkPwF("New password *", mkPwI("pw_new", "Enter new password")));
+  bd.appendChild(mkPwF("Confirm new password *", mkPwI("pw_confirm", "Repeat new password")));
+  box.appendChild(bd);
+
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
+  var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:7px 12px;background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
+  cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  var saveB = document.createElement("button"); saveB.style.cssText = "padding:7px 16px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; saveB.textContent = "Change password";
+  saveB.addEventListener("click", function(){
+    var current = document.getElementById("pw_current").value;
+    var newPw = document.getElementById("pw_new").value;
+    var confirm2 = document.getElementById("pw_confirm").value;
+    if (current !== getCurrentPassword()) { toast("Current password is incorrect"); return; }
+    if (!newPw || newPw.length < 6) { toast("New password must be at least 6 characters"); return; }
+    if (newPw !== confirm2) { toast("Passwords don\'t match"); return; }
+    try { localStorage.setItem(PW_STORE, newPw); } catch(e) {}
+    document.body.removeChild(overlay);
+    toast("Password changed \u2713");
+  });
+  foot.appendChild(cancelB); foot.appendChild(saveB);
+  box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
+  setTimeout(function(){ document.getElementById("pw_current").focus(); }, 100);
+}
+
+
+// ── AUTO PRIORITY ─────────────────────────────────────────────────
+function calcAutoPriority(c) {
+  var score = 0;
+
+  // Total paid sales (up to 40 points)
+  var totalSales = 0;
+  (c.log||[]).forEach(function(l){
+    if(l.quote&&l.quote.status==="Paid")
+      totalSales += (parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
+  });
+  if(totalSales >= 10000) score += 40;
+  else if(totalSales >= 5000) score += 30;
+  else if(totalSales >= 2000) score += 20;
+  else if(totalSales >= 500) score += 10;
+  else if(totalSales > 0) score += 5;
+
+  // Open quote value (up to 20 points)
+  var openVal = 0;
+  (c.log||[]).forEach(function(l){
+    if(l.quote&&(l.quote.status==="Quote"||l.quote.status==="Confirmed"))
+      openVal += (parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
+  });
+  if(openVal >= 5000) score += 20;
+  else if(openVal >= 2000) score += 15;
+  else if(openVal >= 500) score += 10;
+  else if(openVal > 0) score += 5;
+
+  // Number of interactions (up to 20 points)
+  var logs = (c.log||[]).length;
+  if(logs >= 20) score += 20;
+  else if(logs >= 10) score += 15;
+  else if(logs >= 5) score += 10;
+  else if(logs >= 2) score += 5;
+  else if(logs >= 1) score += 2;
+
+  // Recency - how recently contacted (up to 20 points)
+  if(c.lastContact) {
+    var s = c.lastContact;
+    if(s.indexOf("/")>-1){var p=s.split("/");s=p[2]+"-"+p[1]+"-"+p[0];}
+    var dt = new Date(s);
+    if(!isNaN(dt.getTime())) {
+      var days = (new Date()-dt)/86400000;
+      if(days <= 7) score += 20;
+      else if(days <= 14) score += 15;
+      else if(days <= 30) score += 10;
+      else if(days <= 60) score += 5;
+    }
+  }
+
+  // Convert score to stars
+  if(score >= 70) return "\u2605\u2605\u2605\u2605\u2605";
+  if(score >= 50) return "\u2605\u2605\u2605\u2605";
+  if(score >= 30) return "\u2605\u2605\u2605";
+  if(score >= 15) return "\u2605\u2605";
+  if(score >= 5)  return "\u2605";
+  return "";
+}
+
+function autoRateAllClients() {
+  var updated = 0;
+  clients.forEach(function(c){
+    if(c.status==="Active"||c.status==="Prospect") {
+      var auto = calcAutoPriority(c);
+      if(!c.manualPriority) { // only auto-rate if not manually overridden
+        c.priority = auto;
+        updated++;
+      }
+    }
+  });
+  saveC();
+  renderList();
+  if(activeId) renderDet();
+  toast("Auto-rated "+updated+" clients \u2713");
 }
 
 
