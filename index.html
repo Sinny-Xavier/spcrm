@@ -507,10 +507,15 @@ function checkPassword(){
           headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Accept":"application/json"}
         });
         var txt = await r.text();
-        if(r.ok){ toast("\u2601\uFE0F Cloud connected! \u2713"); }
-        else { 
+        if(r.ok){ 
+          toast("\u2601\uFE0F Cloud connected! \u2713");
+          document.getElementById("sbStatus").textContent="\u2601\uFE0F";
+          document.getElementById("sbStatus").title="Cloud connected";
+        } else { 
           console.warn("Supabase test failed:", r.status, txt);
           toast("\u26A0\uFE0F Cloud offline - saving locally only");
+          document.getElementById("sbStatus").textContent="\uD83D\uDDA5\uFE0F";
+          document.getElementById("sbStatus").title="Offline - "+r.status;
         }
       } catch(e){ 
         console.warn("Connection test error:", e);
