@@ -1005,7 +1005,7 @@ function renderDet(){
   grid.appendChild(addSec("","t-ct","Contact",[{label:"Telephone",val:c.tel},{label:"Mobile",val:c.mobile},{label:"Email",val:c.email,wide:true},{label:"Website",val:c.website},{label:"Address",val:c.address}]));
   grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",val:c.product,wide:true},{label:"Est. annual spend",val:c.spend},{label:"Priority",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Paid"){t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Paid")t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",val:c.wontBuy,wide:true}]));
   grid.appendChild(addSec("","t-ch","Competitor notes",[{label:"Who else they buy from",val:c.competitorNotes,wide:true}]));
-  grid.appendChild(addSec("","t-tr","Tracking",[{label:"Status",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",val:c.interactionType},{label:"Last contacted",val:c.lastContact},{label:"Follow-up date",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Key dates",val:c.keyDates,wide:true}]));
+  grid.appendChild(addSec("","t-tr","Tracking",[{label:"Status",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",val:c.interactionType},{label:"Last contacted",val:c.lastContact},{label:"Follow-up date",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Account opened",val:c.dateOpened||"—"},{label:"Key dates",val:c.keyDates,wide:true}]));
   var notesSec=document.createElement("div");notesSec.className="sec full";
   var nt=document.createElement("span");nt.className="stag t-tr";nt.textContent="Last interaction notes";notesSec.appendChild(nt);
   var nb=document.createElement("div");nb.className="nbox";nb.textContent=c.notes||"No notes yet.";notesSec.appendChild(nb);
@@ -1314,6 +1314,7 @@ function showForm(id){
   mkF(g4,"Interaction type",mkS("e_itype",["","Phone","Text","Email","Store Visit"],c?c.interactionType:""));
   mkF(g4,"Last contacted",mkI("e_lc",c?ti(c.lastContact):"","","date"));
   mkF(g4,"Follow-up date",mkI("e_fu",c?ti(c.followup):"","","date"));
+  mkF(g4,"Account opened",mkI("e_opened",c?ti(c.dateOpened||""):c?"":new Date().toISOString().split("T")[0],"","date"));
   mkF(g4,"Key dates",mkI("e_keyDates",c?c.keyDates:"","e.g. Contract renewal 01/09/2026"),true);
   mkF(g4,"Last interaction notes",mkTa("e_notes",c?c.notes:"","Notes from last conversation"),true);
 
@@ -1349,6 +1350,7 @@ function submitForm(){
     interactionType:document.getElementById("e_itype").value,
     lastContact:fd(document.getElementById("e_lc").value),
     followup:fd(document.getElementById("e_fu").value),
+    dateOpened:fd(document.getElementById("e_opened").value),
     keyDates:document.getElementById("e_keyDates").value.trim(),
     notes:document.getElementById("e_notes").value.trim(),
     log:editId?(function(){for(var i=0;i<clients.length;i++){if(clients[i].id===editId)return clients[i].log||[];}return[];})():[]
@@ -1369,7 +1371,7 @@ function saveQA(){
   var name=document.getElementById("qa_name").value.trim();
   if(!name){toast("Name is required");return;}
   var id=nextId();
-  clients.push({id:id,binder:id,name:name,contact:document.getElementById("qa_contact").value.trim(),manager:"Sinbad",tel:document.getElementById("qa_tel").value.trim(),mobile:"",email:"",website:"",address:document.getElementById("qa_city").value.trim(),product:"",spend:"",priority:"",status:"Prospect",source:"",interactionType:"",lastContact:"",followup:"",notes:"Quick add - fill details later",wontBuy:"",competitorNotes:"",keyDates:"",log:[]});
+  var todayFd=(function(){var d=new Date();return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();})();clients.push({id:id,binder:id,name:name,contact:document.getElementById("qa_contact").value.trim(),manager:"Sinbad",tel:document.getElementById("qa_tel").value.trim(),mobile:"",email:"",website:"",address:document.getElementById("qa_city").value.trim(),product:"",spend:"",priority:"",status:"Prospect",source:"",interactionType:"",lastContact:"",followup:"",notes:"Quick add - fill details later",wontBuy:"",competitorNotes:"",keyDates:"",dateOpened:todayFd,log:[]});
   saveC();renderList();["qa_name","qa_contact","qa_tel","qa_city"].forEach(function(i){document.getElementById(i).value="";});closeQA();
   toast("Client added \u2713 - fill details later");activeId=id;showView("det");renderDet();
 }
@@ -3870,7 +3872,9 @@ function showMonthlyReport() {
       var sourceMap={};var monthMap={};var mnames2=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
       clients.forEach(function(c){
         var src=c.source||"Unknown";sourceMap[src]=(sourceMap[src]||0)+1;
-        if(c.log&&c.log.length){var fl=c.log[c.log.length-1];if(fl.date){var dp=fl.date.split("/");if(dp.length===3){var key=mnames2[parseInt(dp[1])-1]+" "+dp[2];monthMap[key]=(monthMap[key]||0)+1;}}}
+        // Use dateOpened if available, else first log date
+        var openDate=c.dateOpened||(c.log&&c.log.length?c.log[c.log.length-1].date:"");
+        if(openDate){var dp=openDate.split("/");if(dp.length===3){var key=mnames2[parseInt(dp[1])-1]+" "+dp[2];monthMap[key]=(monthMap[key]||0)+1;}}
       });
       var ss=rptSection("By Source");
       var total=clients.length;
