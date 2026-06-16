@@ -2450,9 +2450,7 @@ function loadDiary() {
   try { var r = localStorage.getItem(DIARY_STORE); if (r) return JSON.parse(r); } catch(e) {}
   return [];
 }
-function saveDiary() {
-  try { localStorage.setItem(DIARY_STORE, JSON.stringify(diaryEvents)); } catch(e) {}
-}
+// saveDiary handled by Supabase version above
 
 function showDiary() {
   activeId = null; renderList(); showView("diary"); renderDiaryView();
@@ -3026,9 +3024,7 @@ function loadWebsites() {
   try { var r = localStorage.getItem(WEB_STORE); if (r) return JSON.parse(r); } catch(e) {}
   return [];
 }
-function saveWebsites() {
-  try { localStorage.setItem(WEB_STORE, JSON.stringify(websites)); } catch(e) {}
-}
+// saveWebsites handled by Supabase version above
 
 function showWebsites() {
   activeId = null; renderList(); showView("websites"); renderWebsitesView();
@@ -3216,9 +3212,7 @@ function loadDocs() {
   try { var r = localStorage.getItem(DOCS_STORE); if (r) return JSON.parse(r); } catch(e) {}
   return [];
 }
-function saveDocs() {
-  try { localStorage.setItem(DOCS_STORE, JSON.stringify(docs)); } catch(e) {}
-}
+// saveDocs handled by Supabase version above
 
 function showDocs() {
   activeId = null; renderList(); showView("docs"); renderDocsView();
