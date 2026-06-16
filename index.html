@@ -979,9 +979,11 @@ function renderDet(){
   var archB2=document.createElement("button");archB2.className="dbtn";archB2.style.cssText+="background:rgba(155,89,182,.15);border-color:#9b59b6;color:#9b59b6";archB2.textContent="\uD83D\uDDC4\uFE0F Archive";archB2.addEventListener("click",function(){
     try {
       archivedClients.push(c);
-      clients=clients.filter(function(x){return x.id!==c.id;});
+      var archId=c.id;
+      clients=clients.filter(function(x){return x.id!==archId;});
       try{localStorage.setItem(ARCHIVE_STORE,JSON.stringify(archivedClients));}catch(e){}
       saveC();
+      sbDelete("clients",archId);
       activeId=null;
       renderList();
       updateStats();
@@ -1362,7 +1364,7 @@ function saveQA(){
 // ── DELETE ────────────────────────────────────────────────────────
 function askDel(id,name){pendingDel=id;document.getElementById("confMsg").textContent="This will permanently remove "+name+" and all their history.";document.getElementById("confOverlay").classList.remove("hidden");}
 function closeConf(){document.getElementById("confOverlay").classList.add("hidden");pendingDel=null;}
-function doDelete(){clients=clients.filter(function(c){return c.id!==pendingDel;});saveC();closeConf();activeId=null;renderList();showDash();toast("Client deleted");}
+function doDelete(){var delId=pendingDel;clients=clients.filter(function(c){return c.id!==delId;});saveC();sbDelete("clients",delId);closeConf();activeId=null;renderList();showDash();toast("Client deleted");}
 
 // ── REPS ──────────────────────────────────────────────────────────
 function renderRepsView(searchTerm){
