@@ -4066,6 +4066,17 @@ function showAdmin() {
 
   // SECURITY
   bd.appendChild(divider("Security & Settings"));
+  bd.appendChild(adminSection("\u26A0\uFE0F", "Wipe all clients", "Permanently delete ALL clients from this device and Supabase. Cannot be undone.", "Wipe all clients", "#c0392b", function(ov){
+    if(confirm("WARNING: This will permanently delete ALL "+clients.length+" clients from both this device and Supabase.\n\nThis CANNOT be undone.\n\nAre you absolutely sure?")){
+      if(confirm("Last chance — delete all "+clients.length+" clients?")){
+        clients=[];
+        try{localStorage.setItem(STORE,JSON.stringify([]));localStorage.setItem(ARCHIVE_STORE,JSON.stringify([]));}catch(e){}
+        fetch(SB_URL+"/rest/v1/clients?id=neq.NEVER",{method:"DELETE",headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}})
+          .then(function(){toast("All clients wiped \u2713");updateStats();renderList();showDash();document.body.removeChild(ov);})
+          .catch(function(){toast("Wiped locally");updateStats();renderList();showDash();document.body.removeChild(ov);});
+      }
+    }
+  }));
   bd.appendChild(adminSection("\uD83D\uDD12", "Change password", "Update your CRM login password", "Change", "var(--navy)", function(ov){
     document.body.removeChild(ov);
     showChangePassword();
