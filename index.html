@@ -22,10 +22,8 @@
   --grbg:#f0efeb;--grtxt:#4a4845;
 }
 body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(--text)}
-.hdr{background:var(--navy3);position:sticky;top:0;z-index:100;border-bottom:2px solid var(--red3)}.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.1)}.hdr-bottom{display:flex;align-items:center;justify-content:flex-start;padding:5px 10px;background:rgba(0,0,0,.15);flex-wrap:nowrap;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.hdr-bottom::-webkit-scrollbar{display:none});srchWrap.appendChild(srchInp);rv.appendChild(srchWrap);if(searchTerm){setTimeout(function(){var el=document.getElementById("repSearch");if(el){el.focus();el.setSelectionRange(el.value.length,el.value.length);}},10);}
-  var q=(searchTerm||"").toLowerCase().trim();
-  var filteredReps=q?reps.filter(function(r){return[r.name,r.company,r.manufacturer,r.tel].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});}):reps;
-ht:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:100;border-bottom:2px solid var(--red3);gap:8px;flex-wrap:nowrap;overflow-x:auto}
+.hdr{background:var(--navy3);position:sticky;top:0;z-index:100;border-bottom:2px solid var(--red3)}.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.1)}.hdr-bottom{display:flex;align-items:center;justify-content:flex-start;padding:5px 10px;background:rgba(0,0,0,.15);flex-wrap:nowrap;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.hdr-bottom::-webkit-scrollbar{display:none}
+.hdr-inner{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:100;border-bottom:2px solid var(--red3);gap:8px;flex-wrap:nowrap;overflow-x:auto}
 .hdr-logo{display:flex;flex-direction:row;align-items:center;gap:10px;flex-shrink:0}
 .sq-logo{width:44px;height:34px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px;color:#fff;line-height:1.1;text-align:center;flex-shrink:0}
 .hdr h1{font-size:13px;font-weight:700;color:#fff;white-space:nowrap}
