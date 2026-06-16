@@ -461,9 +461,15 @@ async function loadFromSupabase() {
       sbGet("websites"), sbGet("docs")
     ]);
 
-    // CLIENTS: if cloud has data use it, else push local up
+    // CLIENTS: use whichever has more records; if equal use cloud
     if (c && c.length > 0) {
-      clients = c;
+      if (clients.length > c.length) {
+        // Local has more - push local up to Supabase
+        console.log("Local has more clients ("+clients.length+" vs "+c.length+") - pushing up");
+        await sbSaveAll("clients", clients, "id");
+      } else {
+        clients = c;
+      }
     } else {
       // Cloud empty - push local clients up to Supabase
       console.log("Cloud empty - pushing", clients.length, "clients up to Supabase");
