@@ -446,26 +446,44 @@ async function sbSaveAll(table, items, idField) {
 var sbReady = false;
 
 async function loadFromSupabase() {
-  console.log("Loading from Supabase...");
   try {
     var [c, r, s, b, comp, d, w, docs2] = await Promise.all([
       sbGet("clients"), sbGet("reps"), sbGet("samples"),
       sbGet("birthdays"), sbGet("complaints"), sbGet("diary_events"),
       sbGet("websites"), sbGet("docs")
     ]);
-    if (c && c.length > 0) clients = c;
-    if (r && r.length > 0) reps = r;
-    if (s) samples = s;
-    if (b) birthdays = b;
-    if (comp) complaints = comp;
-    if (d) diaryEvents = d;
-    if (w) websites = w;
-    if (docs2) docs = docs2;
+
+    // CLIENTS: if cloud has data use it, else push local up
+    if (c && c.length > 0) {
+      clients = c;
+    } else {
+      // Cloud empty - push local clients up to Supabase
+      console.log("Cloud empty - pushing", clients.length, "clients up to Supabase");
+      await sbSaveAll("clients", clients, "id");
+    }
+
+    // REPS: same logic
+    if (r && r.length > 0) {
+      reps = r;
+    } else if (reps && reps.length > 0) {
+      await sbSaveAll("reps", reps, "id");
+    }
+
+    // Other tables - use cloud if available
+    if (s && s.length > 0) samples = s;
+    if (b && b.length > 0) birthdays = b;
+    if (comp && comp.length > 0) complaints = comp;
+    if (d && d.length > 0) diaryEvents = d;
+    if (w && w.length > 0) websites = w;
+    if (docs2 && docs2.length > 0) docs = docs2;
+
     sbReady = true;
-    console.log("Supabase loaded! Clients:", clients.length);
+    console.log("Supabase ready! Clients:", clients.length);
+    try{document.getElementById("sbStatus").textContent="☁️";document.getElementById("sbStatus").title="Cloud synced";}catch(e){}
     updateStats(); renderList(); renderDash();
   } catch(e) {
     console.warn("Supabase load failed, using localStorage:", e);
+    try{document.getElementById("sbStatus").textContent="⚠️";document.getElementById("sbStatus").title="Cloud offline";}catch(e2){}
     sbReady = false;
   }
 }
