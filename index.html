@@ -309,6 +309,7 @@ ht:56px;display:flex;align-items:center;justify-content:space-between;padding:0 
   <button class="mob-menu-btn" id="mobMenuBtn" onclick="toggleMobSidebar()">&#9776; Clients</button>
   <input type="text" id="mobSq" placeholder="Search clients..." oninput="mobSearch(this.value)">
   <button class="mob-menu-btn" onclick="showDash()" style="background:var(--red)">&#127968;</button>
+  <button class="mob-menu-btn" onclick="logOut()" style="background:rgba(192,57,43,.8)">&#128274;</button>
 </div>
 <div class="app">
   <aside class="sb" id="sidebar">
@@ -413,12 +414,11 @@ async function sbDelete(table, id) {
 }
 
 async function sbSaveAll(table, items, idField) {
-  console.log("sbSaveAll called:", table, items.length, "items");
   try {
     var body = items.map(function(item){
       return {id: item[idField||"id"], data: item, updated_at: new Date().toISOString()};
     });
-    if (!body.length) { console.log("sbSaveAll: empty, skipping"); return; }
+    if (!body.length) return;
     var r = await fetch(SB_URL+"/rest/v1/"+table, {
       method: "POST",
       headers: {
@@ -430,8 +430,17 @@ async function sbSaveAll(table, items, idField) {
       },
       body: JSON.stringify(body)
     });
-    if (!r.ok) { console.warn("sbSaveAll error:", r.status, await r.text()); }
-  } catch(e) { console.warn("Supabase saveAll error:", e); }
+    if (!r.ok) {
+      var errText = await r.text();
+      console.warn("sbSaveAll error:", table, r.status, errText);
+      try{document.getElementById("sbStatus").textContent="⚠️";document.getElementById("sbStatus").title="Save error "+r.status+": "+errText.substring(0,80);}catch(e){}
+    } else {
+      try{document.getElementById("sbStatus").textContent="☁️";document.getElementById("sbStatus").title="Cloud synced";}catch(e){}
+    }
+  } catch(e) {
+    console.warn("Supabase saveAll error:", e);
+    try{document.getElementById("sbStatus").textContent="⚠️";document.getElementById("sbStatus").title="Offline: "+e.message;}catch(e2){}
+  }
 }
 
 var sbReady = false;
