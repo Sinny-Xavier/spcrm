@@ -609,19 +609,13 @@ function loadClients(){
   return def;
 }
 function copyC(d){return{id:d.id,binder:d.binder,name:d.name,contact:d.contact||"",manager:d.manager||"Sinbad",tel:d.tel||"",mobile:d.mobile||"",email:d.email||"",website:d.website||"",address:d.address||"",product:d.product||"",spend:d.spend||"",priority:d.priority||"",status:d.status||"Prospect",interactionType:d.interactionType||"",lastContact:d.lastContact||"",followup:d.followup||"",notes:d.notes||"",competitorNotes:d.competitorNotes||"",wontBuy:d.wontBuy||"",keyDates:d.keyDates||"",log:[]}}
-function saveC(){try{localStorage.setItem(STORE,JSON.stringify(clients));}catch(e){}updateStats();}
-
 function loadReps(){
   try{var r=localStorage.getItem(RSTORE);if(r){var s=JSON.parse(r);if(s&&s.length>0)return s;}}catch(e){}
   var d=JSON.parse(JSON.stringify(DEFAULT_REPS));try{localStorage.setItem(RSTORE,JSON.stringify(d));}catch(e){}return d;
 }
-function saveReps(){try{localStorage.setItem(RSTORE,JSON.stringify(reps));}catch(e){}}
 function loadSamples(){try{var r=localStorage.getItem(SSTORE);if(r)return JSON.parse(r);}catch(e){}return[];}
-function saveSamples(){try{localStorage.setItem(SSTORE,JSON.stringify(samples));}catch(e){}}
 function loadBirthdays(){try{var r=localStorage.getItem(BSTORE);if(r)return JSON.parse(r);}catch(e){}return[];}
-function saveBirthdays(){try{localStorage.setItem(BSTORE,JSON.stringify(birthdays));}catch(e){}}
 function loadComplaints(){try{var r=localStorage.getItem(CSTORE);if(r)return JSON.parse(r);}catch(e){}return[];}
-function saveComplaints(){try{localStorage.setItem(CSTORE,JSON.stringify(complaints));}catch(e){}}
 
 // ── UTILS ─────────────────────────────────────────────────────────
 function ini(n){return(n||"").trim().split(/\s+/).slice(0,2).map(function(w){return w.charAt(0)||"";}). join("").toUpperCase();}
