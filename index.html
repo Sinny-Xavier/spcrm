@@ -529,6 +529,7 @@ function checkPassword(){
   if(document.getElementById("gateInput").value===getCurrentPassword()){
     document.getElementById("gateOverlay").style.display="none";
     try{sessionStorage.setItem("sftc_auth","1");}catch(e){}
+    try{ init(); }catch(e){ console.error("Init after login error:",e); }
     // Test Supabase connection
     setTimeout(async function(){
       try {
@@ -617,6 +618,7 @@ function updateStats(){
 function showView(v){
   ["dashView","detView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView"].forEach(function(id){
     var el=document.getElementById(id);
+    if(!el) return;
     el.style.display=(id===v+"View"||(v==="det"&&id==="detView")||(v==="form"&&id==="formView"))?"block":"none";
   });
 }
@@ -4201,7 +4203,7 @@ try{
     if(g)g.style.display="none";
   }
 }catch(e){}
-init();
+try{ init(); }catch(e){ console.error("Init error:",e); }
 </script>
 </body>
 </html>
