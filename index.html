@@ -2312,6 +2312,19 @@ function showSaleForm(clientId, clientName) {
   PRODUCTS.forEach(function(p) { var opt = document.createElement("option"); opt.value = p; opt.textContent = p; prodSel.appendChild(opt); });
   bd.appendChild(mkF2("Product *", prodSel));
 
+  // Other product specify field (hidden unless Other selected)
+  var otherWrap = document.createElement("div");
+  otherWrap.id = "sl_other_wrap";
+  otherWrap.style.display = "none";
+  var otherInp = document.createElement("input");
+  otherInp.id = "sl_other"; otherInp.placeholder = "e.g. Stair rods, Door bars...";
+  otherInp.style.cssText = "width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+  otherWrap.appendChild((function(){var w=mkF2("Specify product",otherInp);return w;})());
+  bd.appendChild(otherWrap);
+  prodSel.addEventListener("change", function(){
+    otherWrap.style.display = this.value === "Other" ? "" : "none";
+  });
+
   // Sale amount
   var valInp = document.createElement("input");
   valInp.id = "sl_val"; valInp.type = "number"; valInp.placeholder = "e.g. 245.00";
@@ -2353,6 +2366,8 @@ function showSaleForm(clientId, clientName) {
 
   saveB.addEventListener("click", function() {
     var prod = document.getElementById("sl_prod").value;
+    var otherTxt = (document.getElementById("sl_other")||{}).value || "";
+    if (prod === "Other" && otherTxt.trim()) prod = "Other: " + otherTxt.trim();
     var val = document.getElementById("sl_val").value;
     var det = document.getElementById("sl_det").value.trim();
     var date = document.getElementById("sl_date").value;
@@ -2389,6 +2404,8 @@ function showSaleForm(clientId, clientName) {
       document.getElementById("sl_val").value = "";
       document.getElementById("sl_det").value = "";
       document.getElementById("sl_another").checked = false;
+      var otherEl=document.getElementById("sl_other");if(otherEl)otherEl.value="";
+      var otherWrapEl=document.getElementById("sl_other_wrap");if(otherWrapEl)otherWrapEl.style.display="none";
     } else {
       document.body.removeChild(overlay);
       renderDet();
