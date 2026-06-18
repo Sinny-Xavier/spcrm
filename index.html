@@ -44,8 +44,10 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .add-btn{width:100%;padding:7px;background:var(--red);border:none;border-radius:var(--rs);color:#1a1a1a;font-size:12px;font-weight:700;cursor:pointer}
 .add-btn:hover{background:var(--red3)}
 .clist{flex:1;overflow-y:auto}
-.clist::-webkit-scrollbar{width:3px}
-.clist::-webkit-scrollbar-thumb{background:var(--border)}
+.clist::-webkit-scrollbar{width:6px}
+.clist::-webkit-scrollbar-track{background:var(--alt)}
+.clist::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.clist::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 .ci{padding:9px 11px;border-bottom:1px solid var(--border);cursor:pointer}
 .ci:hover{background:var(--alt)}
 .ci.on{background:#eef1f8;border-left:3px solid var(--navy)}
@@ -66,8 +68,10 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .fok{background:var(--gbg);color:var(--gtxt)}
 .famb{background:var(--abg);color:var(--atxt)}
 .main{flex:1;overflow-y:auto;background:var(--bg)}
-.main::-webkit-scrollbar{width:4px}
-.main::-webkit-scrollbar-thumb{background:var(--border)}
+.main::-webkit-scrollbar{width:8px}
+.main::-webkit-scrollbar-track{background:var(--alt)}
+.main::-webkit-scrollbar-thumb{background:var(--navy3);border-radius:4px}
+.main::-webkit-scrollbar-thumb:hover{background:var(--navy)}
 .page{padding:18px;display:none}
 .dash{padding:18px;display:none}
 .page-title{font-size:16px;font-weight:700;margin-bottom:16px}
