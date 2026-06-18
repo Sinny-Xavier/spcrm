@@ -1831,7 +1831,8 @@ function renderSamplesView(){
         var lnOut = lnLabels.map(function(k){ return loanData[k]; });
         var lnBack = lnLabels.map(function(k){ return loanReturned[k]||0; });
         var ctx = document.getElementById("smpLoanChart");
-        if (ctx) new Chart(ctx.getContext("2d"), {
+        if (chartInstances["smpLoanChart"]) { chartInstances["smpLoanChart"].destroy(); delete chartInstances["smpLoanChart"]; }
+        if (ctx) chartInstances["smpLoanChart"] = new Chart(ctx.getContext("2d"), {
           type: "bar",
           data: {
             labels: lnLabels,
@@ -4236,9 +4237,11 @@ function showArchiveView() {
 
 
 // ── CHART HELPERS ──────────────────────────────────────────────────
+var chartInstances = {}; // canvas id -> Chart.js instance, so we can destroy before re-creating
 function mkBarChart(id, data4) {
   var ctx = document.getElementById(id);
   if (!ctx) return;
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
   var cfg = {
     type: "bar",
     data: {
@@ -4263,12 +4266,13 @@ function mkBarChart(id, data4) {
       }
     }
   };
-  new Chart(ctx.getContext("2d"), cfg);
+  chartInstances[id] = new Chart(ctx.getContext("2d"), cfg);
 }
 
 function mkPieChart(id, labels, values) {
   var ctx = document.getElementById(id);
   if (!ctx) return;
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
   var colors = ["#305CDE","#C0392B","#2ecc71","#f39c12","#9b59b6","#1abc9c","#e67e22","#34495e","#16a085","#8e44ad","#2980b9","#27ae60","#d35400","#e74c3c","#95a5a6"];
   var total = values.reduce(function(a,b){return a+b;},0);
   var cfg = {
@@ -4305,7 +4309,7 @@ function mkPieChart(id, labels, values) {
       }
     }
   };
-  new Chart(ctx.getContext("2d"), cfg);
+  chartInstances[id] = new Chart(ctx.getContext("2d"), cfg);
 }
 
 
