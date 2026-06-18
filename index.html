@@ -2481,6 +2481,41 @@ function isBankHoliday(y,m,d) {
   var key = y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
   return UK_BANK_HOLIDAYS[key]||null;
 }
+// UK Observances (Saints' days, Valentine's, Mother's & Father's Day) - shown as labels, not day-off holidays
+var UK_OBSERVANCES = {
+  "2026-02-14":"Valentine's Day","2026-03-01":"St David's Day","2026-03-15":"Mother's Day",
+  "2026-03-17":"St Patrick's Day","2026-03-29":"Clocks Forward (BST starts)","2026-04-23":"St George's Day",
+  "2026-06-21":"Father's Day","2026-10-25":"Clocks Back (BST ends)","2026-11-08":"Remembrance Sunday",
+  "2026-11-11":"Remembrance Day","2026-11-30":"St Andrew's Day",
+  "2027-02-14":"Valentine's Day","2027-03-01":"St David's Day","2027-03-07":"Mother's Day",
+  "2027-03-17":"St Patrick's Day","2027-03-28":"Clocks Forward (BST starts)","2027-04-23":"St George's Day",
+  "2027-06-20":"Father's Day","2027-10-31":"Clocks Back (BST ends)","2027-11-11":"Remembrance Day",
+  "2027-11-14":"Remembrance Sunday","2027-11-30":"St Andrew's Day",
+  "2028-02-14":"Valentine's Day","2028-03-01":"St David's Day","2028-03-17":"St Patrick's Day",
+  "2028-03-26":"Mother's Day & Clocks Forward (BST starts)","2028-04-23":"St George's Day",
+  "2028-06-18":"Father's Day","2028-10-29":"Clocks Back (BST ends)","2028-11-11":"Remembrance Day",
+  "2028-11-12":"Remembrance Sunday","2028-11-30":"St Andrew's Day",
+  "2029-02-14":"Valentine's Day","2029-03-01":"St David's Day","2029-03-11":"Mother's Day",
+  "2029-03-17":"St Patrick's Day","2029-03-25":"Clocks Forward (BST starts)","2029-04-23":"St George's Day",
+  "2029-06-17":"Father's Day","2029-10-28":"Clocks Back (BST ends)","2029-11-11":"Remembrance Day (Remembrance Sunday)",
+  "2029-11-30":"St Andrew's Day",
+  "2030-02-14":"Valentine's Day","2030-03-01":"St David's Day","2030-03-17":"St Patrick's Day",
+  "2030-03-31":"Mother's Day & Clocks Forward (BST starts)","2030-04-23":"St George's Day",
+  "2030-06-16":"Father's Day","2030-10-27":"Clocks Back (BST ends)","2030-11-10":"Remembrance Sunday",
+  "2030-11-11":"Remembrance Day","2030-11-30":"St Andrew's Day"
+};
+function getObservance(y,m,d) {
+  var key = y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+  return UK_OBSERVANCES[key]||null;
+}
+// ISO 8601 week number (Mon-start weeks, week 1 = week containing first Thursday of the year)
+function isoWeekNumber(y,m,d) {
+  var date = new Date(Date.UTC(y, m, d));
+  var dayNum = date.getUTCDay() || 7; // Mon=1..Sun=7
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  var yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
 var diaryEvents = [];
 var diaryYear = new Date().getFullYear();
 var diaryMonth = new Date().getMonth(); // 0-11
@@ -2578,12 +2613,27 @@ function renderDiaryView() {
 
     var dayNum = document.createElement("div"); dayNum.style.cssText = "font-size:11px;font-weight:700;margin-bottom:3px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;" + (isToday ? "background:var(--navy);color:#fff;" : "color:var(--text);");
     dayNum.textContent = day; cell.appendChild(dayNum);
+    // Week number (ISO, shown on Mondays only)
+    if (cellDow === 1) {
+      var wkEl = document.createElement("div");
+      wkEl.style.cssText = "position:absolute;top:4px;right:4px;font-size:8px;color:var(--muted);font-weight:700;";
+      wkEl.textContent = "Wk "+isoWeekNumber(diaryYear, diaryMonth, day);
+      cell.appendChild(wkEl);
+    }
     // Bank holiday label
     if (bh) {
       var bhEl = document.createElement("div");
       bhEl.style.cssText = "font-size:8px;color:#854f0b;font-weight:700;margin-bottom:2px;line-height:1.2;background:#fff3e0;padding:1px 3px;border-radius:2px";
       bhEl.textContent = bh;
       cell.appendChild(bhEl);
+    }
+    // Observance label (saints' days, Valentine's, Mother's/Father's Day)
+    var obs = getObservance(diaryYear, diaryMonth, day);
+    if (obs) {
+      var obsEl = document.createElement("div");
+      obsEl.style.cssText = "font-size:8px;color:#6b2d8b;font-weight:700;margin-bottom:2px;line-height:1.2;background:#f0e6f6;padding:1px 3px;border-radius:2px";
+      obsEl.textContent = obs;
+      cell.appendChild(obsEl);
     }
     // Weekend indicator
     if (isWeekend && !isToday) {
