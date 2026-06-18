@@ -1359,6 +1359,7 @@ function submitForm(){
     notes:document.getElementById("e_notes").value.trim(),
     log:editId?(function(){for(var i=0;i<clients.length;i++){if(clients[i].id===editId)return clients[i].log||[];}return[];})():[]
   };
+  if(editId&&!data.dateOpened&&(data.source==="Existing Customer"||data.source==="Existing Customer (Dormant 12m+)")){data.dateOpened="01/01/2000";}
   if(editId){for(var i=0;i<clients.length;i++){if(clients[i].id===editId){clients[i]=data;break;}}}
   else{clients.push(data);activeId=data.id;}
   saveC();renderList();
