@@ -360,9 +360,11 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   <div class="conf-box">
     <h4>Delete this client?</h4>
     <p id="confMsg">This cannot be undone.</p>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:4px">Type <b>Delete</b> to confirm:</p>
+    <input type="text" id="confTypeInput" autocomplete="off" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;margin-bottom:10px" oninput="document.getElementById('confDelBtn').disabled=(this.value!=='Delete')">
     <div class="conf-btns">
       <button class="conf-no" onclick="closeConf()">Cancel</button>
-      <button class="conf-del" onclick="doDelete()">Delete</button>
+      <button class="conf-del" id="confDelBtn" onclick="doDelete()" disabled>Delete</button>
     </div>
   </div>
 </div>
@@ -600,7 +602,7 @@ function loadClients(){
   }catch(e){}
   return [];
 }
-function copyC(d){return{id:d.id,binder:d.binder,name:d.name,contact:d.contact||"",manager:d.manager||"Sinbad",tel:d.tel||"",mobile:d.mobile||"",email:d.email||"",website:d.website||"",address:d.address||"",product:d.product||"",spend:d.spend||"",priority:d.priority||"",status:d.status||"Prospect",interactionType:d.interactionType||"",lastContact:d.lastContact||"",followup:d.followup||"",notes:d.notes||"",competitorNotes:d.competitorNotes||"",wontBuy:d.wontBuy||"",keyDates:d.keyDates||"",log:[]}}
+function copyC(d){return{id:d.id,binder:d.binder,name:d.name,contact:d.contact||"",manager:d.manager||"Sinbad",tel:d.tel||"",mobile:d.mobile||"",address:d.address||"",product:d.product||"",spend:d.spend||"",priority:d.priority||"",status:d.status||"Prospect",interactionType:d.interactionType||"",lastContact:d.lastContact||"",followup:d.followup||"",notes:d.notes||"",competitorNotes:d.competitorNotes||"",wontBuy:d.wontBuy||"",keyDates:d.keyDates||"",log:[]}}
 function loadReps(){
   try{var r=localStorage.getItem(RSTORE);if(r){var s=JSON.parse(r);if(s&&s.length>0)return s;}}catch(e){}
   var d=JSON.parse(JSON.stringify(DEFAULT_REPS));try{localStorage.setItem(RSTORE,JSON.stringify(d));}catch(e){}return d;
@@ -660,12 +662,12 @@ function setF(btn){document.querySelectorAll(".fb").forEach(function(b){b.classL
 function renderList(){
   var q=document.getElementById("sq").value.toLowerCase();
   var fl=clients.filter(function(c){
-    var mq=!q||[c.name,c.binder,c.tel,c.mobile,c.contact,c.email].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
+    var mq=!q||[c.name,c.binder,c.tel,c.mobile,c.contact].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
     return mq&&(activeFilter==="All"||c.status===activeFilter);
   });
   var el=document.getElementById("clist");
   if(!fl.length){
-    var archivedMatch=q?archivedClients.filter(function(c){return[c.name,c.binder,c.tel,c.mobile,c.contact,c.email].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});}):[];
+    var archivedMatch=q?archivedClients.filter(function(c){return[c.name,c.binder,c.tel,c.mobile,c.contact].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});}):[];
     if(archivedMatch.length){
       el.innerHTML="";
       var archNote=document.createElement("div");archNote.style.cssText="padding:10px 12px;background:#f5f0ff;border:1px solid #9b59b6;border-radius:var(--rs);margin:8px;font-size:11px;color:#6c3483;font-weight:700";archNote.textContent="\uD83D\uDDC4\uFE0F "+archivedMatch.length+" archived result"+(archivedMatch.length>1?"s":"")+" found:";el.appendChild(archNote);
@@ -999,7 +1001,7 @@ function renderDet(){
     var sourceColors = {"Existing Customer":"background:#e8edf6;color:#2348b0","Existing Customer (Dormant 12m+)":"background:#f0e6f6;color:#6b2d8b","New - Sinbad's Old Customer":"background:var(--gbg);color:var(--gtxt)","New - Walk In":"background:#e8f5e0;color:#2d6a0f","New - Referral":"background:#fff3e0;color:#854f0b","Fitter":"background:var(--lbg);color:var(--ltxt)"};
   var sourceHtml = c.source ? "<span style=\'font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;"+(sourceColors[c.source]||"background:var(--alt);color:var(--muted)")+"\'>"+c.source+"</span>" : "&mdash;";
   grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",val:c.binder},{label:"Manager",val:c.manager},{label:"Account name",val:c.name,wide:true},{label:"Contact name",val:c.contact,wide:true},{label:"Customer source",html:sourceHtml}]));
-  grid.appendChild(addSec("","t-ct","Contact",[{label:"Telephone",val:c.tel},{label:"Mobile",val:c.mobile},{label:"Email",val:c.email,wide:true},{label:"Website",val:c.website},{label:"Address",val:c.address}]));
+  grid.appendChild(addSec("","t-ct","Contact",[{label:"Telephone",val:c.tel},{label:"Mobile",val:c.mobile},{label:"Area",val:c.address}]));
   grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",val:c.product,wide:true},{label:"Est. annual spend",val:c.spend},{label:"Priority",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Paid"){t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Paid")t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",val:c.wontBuy,wide:true}]));
   grid.appendChild(addSec("","t-ch","Competitor notes",[{label:"Who else they buy from",val:c.competitorNotes,wide:true}]));
   grid.appendChild(addSec("","t-tr","Tracking",[{label:"Status",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",val:c.interactionType},{label:"Last contacted",val:c.lastContact},{label:"Follow-up date",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Account opened",val:c.dateOpened||"—"},{label:"Key dates",val:c.keyDates,wide:true}]));
@@ -1289,9 +1291,7 @@ function showForm(id){
   var g2=mkSec("Contact");
   mkF(g2,"Telephone",mkI("e_tel",c?c.tel:"","0113 000 0000","tel"));
   mkF(g2,"Mobile",mkI("e_mob",c?c.mobile:"","07700 000000","tel"));
-  mkF(g2,"Email",mkI("e_email",c?c.email:"","name@company.co.uk","email"),true);
-  mkF(g2,"Website",mkI("e_web",c?c.website:"",""));
-  mkF(g2,"Address and region",mkI("e_addr",c?c.address:"","City, Region"));
+  mkF(g2,"Area",mkI("e_addr",c?c.address:"","e.g. Leeds, Sheffield"));
 
   var g3=mkSec("Intelligence");
   mkF(g3,"Product interest",mkI("e_prod",c?c.product:"","e.g. LVT, SPC, Safety Vinyl"),true);
@@ -1337,8 +1337,6 @@ function submitForm(){
     manager:document.getElementById("e_mgr").value.trim(),
     tel:document.getElementById("e_tel").value.trim(),
     mobile:document.getElementById("e_mob").value.trim(),
-    email:document.getElementById("e_email").value.trim(),
-    website:document.getElementById("e_web").value.trim(),
     address:document.getElementById("e_addr").value.trim(),
     product:document.getElementById("e_prod").value.trim(),
     spend:document.getElementById("e_spend").value.trim(),
@@ -1373,14 +1371,14 @@ function saveQA(){
   var name=document.getElementById("qa_name").value.trim();
   if(!name){toast("Name is required");return;}
   var id=nextId();
-  var todayFd=(function(){var d=new Date();return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();})();clients.push({id:id,binder:id,name:name,contact:document.getElementById("qa_contact").value.trim(),manager:"Sinbad",tel:document.getElementById("qa_tel").value.trim(),mobile:"",email:"",website:"",address:document.getElementById("qa_city").value.trim(),product:"",spend:"",priority:"",status:"Prospect",source:"",interactionType:"",lastContact:"",followup:"",notes:"Quick add - fill details later",wontBuy:"",competitorNotes:"",keyDates:"",dateOpened:todayFd,log:[]});
+  var todayFd=(function(){var d=new Date();return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();})();clients.push({id:id,binder:id,name:name,contact:document.getElementById("qa_contact").value.trim(),manager:"Sinbad",tel:document.getElementById("qa_tel").value.trim(),mobile:"",address:document.getElementById("qa_city").value.trim(),product:"",spend:"",priority:"",status:"Prospect",source:"",interactionType:"",lastContact:"",followup:"",notes:"Quick add - fill details later",wontBuy:"",competitorNotes:"",keyDates:"",dateOpened:todayFd,log:[]});
   saveC();renderList();["qa_name","qa_contact","qa_tel","qa_city"].forEach(function(i){document.getElementById(i).value="";});closeQA();
   toast("Client added \u2713 - fill details later");activeId=id;showView("det");renderDet();
 }
 
 // ── DELETE ────────────────────────────────────────────────────────
-function askDel(id,name){pendingDel=id;document.getElementById("confMsg").textContent="This will permanently remove "+name+" and all their history.";document.getElementById("confOverlay").classList.remove("hidden");}
-function closeConf(){document.getElementById("confOverlay").classList.add("hidden");pendingDel=null;}
+function askDel(id,name){pendingDel=id;document.getElementById("confMsg").textContent="This will permanently remove "+name+" and all their history.";document.getElementById("confTypeInput").value="";document.getElementById("confDelBtn").disabled=true;document.getElementById("confOverlay").classList.remove("hidden");}
+function closeConf(){document.getElementById("confOverlay").classList.add("hidden");document.getElementById("confTypeInput").value="";document.getElementById("confDelBtn").disabled=true;pendingDel=null;}
 function doDelete(){var delId=pendingDel;clients=clients.filter(function(c){return c.id!==delId;});saveC();sbDelete("clients",delId);closeConf();activeId=null;renderList();showDash();toast("Client deleted");}
 
 // ── REPS ──────────────────────────────────────────────────────────
