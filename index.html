@@ -322,7 +322,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
         <button class="fb" data-f="On Hold" onclick="setF(this)">On Hold</button>
         <button class="fb" data-f="Lost" onclick="setF(this)">Lost</button>
       </div>
-      <button class="add-btn" onclick="showQA()">&#9889; Quick add client</button>
+      <button class="add-btn" onclick="showForm()">&#9889; Add client</button>
     </div>
     <div class="clist" id="clist"></div>
   </aside>
@@ -341,19 +341,6 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
     <div id="docsView" class="page"></div>
     <div id="notesSearchView" class="page"></div>
   </main>
-</div>
-
-<div class="overlay hidden" id="qaOverlay">
-  <div class="modal">
-    <div class="modal-hdr"><h3>&#9889; Quick add client</h3><button class="modal-close" onclick="closeQA()">&#215;</button></div>
-    <div class="modal-body">
-      <input id="qa_name" placeholder="Business / client name *">
-      <input id="qa_contact" placeholder="Contact name">
-      <input id="qa_tel" type="tel" placeholder="Telephone">
-      <input id="qa_city" placeholder="City / area">
-      <button onclick="saveQA()" style="padding:8px;background:var(--red);border:none;border-radius:var(--rs);color:#fff;font-size:13px;font-weight:700;cursor:pointer;width:100%">Save &mdash; fill details later</button>
-    </div>
-  </div>
 </div>
 
 <div class="conf-overlay hidden" id="confOverlay">
@@ -1315,7 +1302,7 @@ function showForm(id){
   mkF(g4,"Interaction type",mkS("e_itype",["","Phone","Text","Email","Store Visit"],c?c.interactionType:""));
   mkF(g4,"Last contacted",mkI("e_lc",c?ti(c.lastContact):"","","date"));
   mkF(g4,"Follow-up date",mkI("e_fu",c?ti(c.followup):"","","date"));
-  mkF(g4,"Account opened",mkI("e_opened",c?ti(c.dateOpened||""):c?"":new Date().toISOString().split("T")[0],"","date"));
+  mkF(g4,"Account opened",mkI("e_opened",c?ti(c.dateOpened||""):"","","date"));
   mkF(g4,"Key dates",mkI("e_keyDates",c?c.keyDates:"","e.g. Contract renewal 01/09/2026"),true);
   mkF(g4,"Last interaction notes",mkTa("e_notes",c?c.notes:"","Notes from last conversation"),true);
 
@@ -1354,7 +1341,7 @@ function submitForm(){
     notes:document.getElementById("e_notes").value.trim(),
     log:editId?(function(){for(var i=0;i<clients.length;i++){if(clients[i].id===editId)return clients[i].log||[];}return[];})():[]
   };
-  if(editId&&!data.dateOpened&&(data.source==="Existing Customer"||data.source==="Existing Customer (Dormant 12m+)")){data.dateOpened="01/01/2000";}
+  if(!data.dateOpened&&(data.source==="Existing Customer"||data.source==="Existing Customer (Dormant 12m+)")){data.dateOpened="01/01/2000";}
   if(editId){for(var i=0;i<clients.length;i++){if(clients[i].id===editId){clients[i]=data;break;}}}
   else{clients.push(data);activeId=data.id;}
   saveC();renderList();
@@ -1364,17 +1351,7 @@ function submitForm(){
 }
 
 
-// ── QUICK ADD ─────────────────────────────────────────────────────
-function showQA(){document.getElementById("qaOverlay").classList.remove("hidden");document.getElementById("qa_name").focus();}
-function closeQA(){document.getElementById("qaOverlay").classList.add("hidden");}
-function saveQA(){
-  var name=document.getElementById("qa_name").value.trim();
-  if(!name){toast("Name is required");return;}
-  var id=nextId();
-  var todayFd=(function(){var d=new Date();return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();})();clients.push({id:id,binder:id,name:name,contact:document.getElementById("qa_contact").value.trim(),manager:"Sinbad",tel:document.getElementById("qa_tel").value.trim(),mobile:"",address:document.getElementById("qa_city").value.trim(),product:"",spend:"",priority:"",status:"Prospect",source:"",interactionType:"",lastContact:"",followup:"",notes:"Quick add - fill details later",wontBuy:"",competitorNotes:"",keyDates:"",dateOpened:todayFd,log:[]});
-  saveC();renderList();["qa_name","qa_contact","qa_tel","qa_city"].forEach(function(i){document.getElementById(i).value="";});closeQA();
-  toast("Client added \u2713 - fill details later");activeId=id;showView("det");renderDet();
-}
+
 
 // ── DELETE ────────────────────────────────────────────────────────
 function askDel(id,name){pendingDel=id;document.getElementById("confMsg").textContent="This will permanently remove "+name+" and all their history.";document.getElementById("confTypeInput").value="";document.getElementById("confDelBtn").disabled=true;document.getElementById("confOverlay").classList.remove("hidden");}
