@@ -815,8 +815,8 @@ function renderDash(){
     var wdays = workingDaysFromNow(e);
     return wdays <= 5; // overdue (=-1) or within 5 working days
   }).sort(function(a,b){
-    var da = new Date(a.year,a.month,a.day)*1000 + a.hour*60+a.minute;
-    var db = new Date(b.year,b.month,b.day)*1000 + b.hour*60+b.minute;
+    var da = new Date(a.year,a.month,a.day)*1000 + (a.allDay?0:a.hour*60+a.minute);
+    var db = new Date(b.year,b.month,b.day)*1000 + (b.allDay?0:b.hour*60+b.minute);
     return da-db;
   });
   if(allDiaryEvts.length) {
@@ -827,13 +827,13 @@ function renderDash(){
     var dpTitle = document.createElement("div"); dpTitle.style.cssText = "font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; dpTitle.textContent = "Diary — Today";
     var dpBadge = document.createElement("span"); dpBadge.style.cssText = "background:#e8a020;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px"; dpBadge.textContent = allDiaryEvts.length+" event"+(allDiaryEvts.length!==1?"s":"");
     dpHdr.appendChild(dpTitle); dpHdr.appendChild(dpBadge); diaryPanel.appendChild(dpHdr);
-    var typeColors2 = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Birthday":"#e8a020","Other":"#7f8c8d"};
+    var typeColors2 = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
     allDiaryEvts.forEach(function(e){
       var er = document.createElement("div"); er.style.cssText = "display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--alt);border-radius:var(--rs);margin-bottom:5px;cursor:pointer";
       er.addEventListener("click", function(){ showDiary(); });
       var dot3 = document.createElement("div"); dot3.style.cssText = "width:8px;height:8px;border-radius:50%;background:"+(typeColors2[e.type]||"#305CDE")+";flex-shrink:0";
       var info2 = document.createElement("div"); info2.style.flex="1";
-      var et2 = document.createElement("div"); et2.style.cssText="font-size:12px;font-weight:700"; et2.textContent = String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0")+" "+e.title;
+      var et2 = document.createElement("div"); et2.style.cssText="font-size:12px;font-weight:700"; et2.textContent = (e.allDay?"All day":String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"))+" "+e.title;
       var em2 = document.createElement("div"); em2.style.cssText="font-size:10px;color:var(--muted)"; em2.textContent = e.type+(e.withName?" with "+e.withName:"");
       info2.appendChild(et2); info2.appendChild(em2);
       var evtDate2 = new Date(e.year,e.month,e.day); var t2=new Date(); t2.setHours(0,0,0,0);
@@ -1118,13 +1118,13 @@ function renderDet(){
   if(cDE.length||cDEpast.length){
     var dSec=document.createElement("div");dSec.className="sec full";
     var dTag=document.createElement("span");dTag.className="stag";dTag.style.cssText="display:inline-block;font-size:9px;font-weight:700;padding:2px 9px;border-radius:20px;margin-bottom:11px;letter-spacing:.5px;text-transform:uppercase;background:#fff3e0;color:#854f0b";dTag.textContent="Diary events";dSec.appendChild(dTag);
-    var tC3={"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Birthday":"#e8a020","Other":"#7f8c8d"};
+    var tC3={"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
     cDE.forEach(function(e){
       var er=document.createElement("div");er.style.cssText="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff8f0;border:1px solid #ffd699;border-radius:var(--rs);margin-bottom:6px;cursor:pointer";
       er.addEventListener("click",function(){showDiary();});
       var dot4=document.createElement("div");dot4.style.cssText="width:8px;height:8px;border-radius:50%;background:"+(tC3[e.type]||"#305CDE")+";flex-shrink:0";
       var inf3=document.createElement("div");inf3.style.flex="1";
-      var t3=document.createElement("div");t3.style.cssText="font-size:12px;font-weight:700";t3.textContent=String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0")+" "+e.title;
+      var t3=document.createElement("div");t3.style.cssText="font-size:12px;font-weight:700";t3.textContent=(e.allDay?"All day":String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"))+" "+e.title;
       var m3=document.createElement("div");m3.style.cssText="font-size:10px;color:var(--muted)";m3.textContent=e.type+" · "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][e.month]+" "+e.day+", "+e.year;
       inf3.appendChild(t3);inf3.appendChild(m3);
       var evD3=new Date(e.year,e.month,e.day);var tn=new Date();tn.setHours(0,0,0,0);
@@ -2569,7 +2569,7 @@ function renderDiaryView() {
   function eventsForDay(y, m, d) {
     return diaryEvents.filter(function(e){
       return e.year===y && e.month===m && e.day===d && !e.completed;
-    }).sort(function(a,b){ return a.hour*60+a.minute - (b.hour*60+b.minute); });
+    }).sort(function(a,b){ return (a.allDay?0:a.hour*60+a.minute) - (b.allDay?0:b.hour*60+b.minute); });
   }
 
   // Prev month padding
@@ -2620,10 +2620,10 @@ function renderDiaryView() {
     var dayEvts = eventsForDay(diaryYear, diaryMonth, day);
     dayEvts.slice(0, 3).forEach(function(e) {
       var evtEl = document.createElement("div");
-      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Birthday":"#e8a020","Other":"#7f8c8d"};
+      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
       var col = typeColors[e.type] || "#305CDE";
       evtEl.style.cssText = "font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;background:"+col;
-      var timeStr = String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0")+" ";
+      var timeStr = e.allDay ? "" : String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0")+" ";
       evtEl.textContent = timeStr + e.title; cell.appendChild(evtEl);
     });
     if (dayEvts.length > 3) {
@@ -2647,8 +2647,8 @@ function renderDiaryView() {
     var diff = Math.ceil((evtDate - new Date()) / 86400000);
     return diff >= -1;
   }).sort(function(a,b){
-    var da = new Date(a.year,a.month,a.day)*1000000 + a.hour*60+a.minute;
-    var db = new Date(b.year,b.month,b.day)*1000000 + b.hour*60+b.minute;
+    var da = new Date(a.year,a.month,a.day)*1000000 + (a.allDay?0:a.hour*60+a.minute);
+    var db = new Date(b.year,b.month,b.day)*1000000 + (b.allDay?0:b.hour*60+b.minute);
     return da-db;
   }).slice(0,10);
 
@@ -2660,14 +2660,14 @@ function renderDiaryView() {
       var diff = Math.ceil((evtDate - new Date()) / 86400000);
       var diffStr = diff < 0 ? Math.abs(diff)+"d ago" : diff === 0 ? "Today" : diff === 1 ? "Tomorrow" : diff+"d";
       var diffCls = diff < 0 ? "background:var(--rbg);color:var(--rtxt)" : diff <= 1 ? "background:var(--abg);color:var(--atxt)" : "background:var(--lbg);color:var(--ltxt)";
-      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Birthday":"#e8a020","Other":"#7f8c8d"};
+      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
       var col = typeColors[e.type] || "#305CDE";
       var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:7px;border-left:4px solid "+col;
       var dot = document.createElement("div"); dot.style.cssText = "width:10px;height:10px;border-radius:50%;background:"+col+";flex-shrink:0";
       var info = document.createElement("div"); info.style.flex = "1";
       var etitle = document.createElement("div"); etitle.style.cssText = "font-weight:700;font-size:12px"; etitle.textContent = e.title;
       var emeta = document.createElement("div"); emeta.style.cssText = "font-size:10px;color:var(--muted)";
-      var timeStr = String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0");
+      var timeStr = e.allDay ? "All day" : String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0");
       emeta.textContent = e.type + " · " + timeStr + " · " + ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][e.month]+" "+e.day+", "+e.year + (e.withName ? " · With: "+e.withName : "");
       info.appendChild(etitle); info.appendChild(emeta);
       if (e.notes) { var en = document.createElement("div"); en.style.cssText = "font-size:11px;color:var(--muted);margin-top:3px"; en.textContent = e.notes; info.appendChild(en); }
@@ -2704,9 +2704,9 @@ function openDiaryDay(day) {
     bd.appendChild(existTitle);
     dayEvts.forEach(function(e) {
       var er = document.createElement("div"); er.style.cssText = "display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--alt);border-radius:var(--rs);margin-bottom:4px";
-      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Birthday":"#e8a020","Other":"#7f8c8d"};
+      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
       var dot2 = document.createElement("div"); dot2.style.cssText = "width:8px;height:8px;border-radius:50%;background:"+(typeColors[e.type]||"#305CDE")+";flex-shrink:0";
-      var et = document.createElement("div"); et.style.flex="1"; et.style.fontSize="12px"; et.style.fontWeight="700"; et.textContent = String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0")+" "+e.title+(e.withName?" with "+e.withName:"");
+      var et = document.createElement("div"); et.style.flex="1"; et.style.fontSize="12px"; et.style.fontWeight="700"; et.textContent = (e.allDay?"All day":String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"))+" "+e.title+(e.withName?" with "+e.withName:"");
       var db2 = document.createElement("button"); db2.style.cssText = "padding:3px 7px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);font-size:10px;color:var(--rtxt);cursor:pointer"; db2.textContent = "Delete";
       db2.addEventListener("click", (function(eid){ return function(){ diaryEvents=diaryEvents.filter(function(x){return x.id!==eid;});saveDiary();document.body.removeChild(overlay);renderDiaryView(); }; })(e.id));
       er.appendChild(dot2); er.appendChild(et); er.appendChild(db2); bd.appendChild(er);
@@ -2719,6 +2719,12 @@ function openDiaryDay(day) {
   bd.appendChild(formTitle);
 
   function mkFd(lbl, inp2) { var w=document.createElement("div"); var l=document.createElement("label"); l.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; l.textContent=lbl; w.appendChild(l); w.appendChild(inp2); return w; }
+
+  // All day toggle
+  var allDayWrap = document.createElement("label"); allDayWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--text);cursor:pointer;margin-bottom:2px";
+  var allDayChk = document.createElement("input"); allDayChk.type = "checkbox"; allDayChk.id = "ev_allday"; allDayChk.style.cssText = "width:14px;height:14px;cursor:pointer";
+  allDayWrap.appendChild(allDayChk); allDayWrap.appendChild(document.createTextNode("All day (no specific time)"));
+  bd.appendChild(allDayWrap);
 
   // Time row
   var timeRow = document.createElement("div"); timeRow.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:9px";
@@ -2735,10 +2741,11 @@ function openDiaryDay(day) {
   var mwrap = document.createElement("div"); var ml2 = document.createElement("label"); ml2.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; ml2.textContent = "Mins"; mwrap.appendChild(ml2); mwrap.appendChild(minSel);
   timeRow.appendChild(hwrap); timeRow.appendChild(mwrap);
   bd.appendChild(timeRow);
+  allDayChk.addEventListener("change", function(){ timeRow.style.display = this.checked ? "none" : "grid"; });
 
   // Event type
   var typeSel2 = document.createElement("select"); typeSel2.id = "ev_type"; typeSel2.style.cssText = "width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
-  ["Meeting","Site Visit","Call","Rep Visit","Delivery","Other"].forEach(function(t){ var o=document.createElement("option"); o.value=t; o.textContent=t; typeSel2.appendChild(o); });
+  ["Meeting","Site Visit","Call","Rep Visit","Delivery","Family Event","Other"].forEach(function(t){ var o=document.createElement("option"); o.value=t; o.textContent=t; typeSel2.appendChild(o); });
   bd.appendChild(mkFd("Event type", typeSel2));
 
   // Title
@@ -2753,16 +2760,21 @@ function openDiaryDay(day) {
   var withToggle = document.createElement("div"); withToggle.style.cssText = "background:var(--alt);border-radius:var(--rs);padding:10px";
   var withLbl = document.createElement("div"); withLbl.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:7px"; withLbl.textContent = "Who is it with? (optional)";
   withToggle.appendChild(withLbl);
-  var withTypeRow = document.createElement("div"); withTypeRow.style.cssText = "display:flex;gap:6px;margin-bottom:8px";
+  var withTypeRow = document.createElement("div"); withTypeRow.style.cssText = "display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap";
   var withNone = document.createElement("button"); withNone.style.cssText = "padding:4px 10px;border-radius:20px;border:1px solid var(--navy);background:var(--navy);color:#fff;font-size:11px;cursor:pointer;font-weight:700"; withNone.textContent = "No one specific";
   var withClient = document.createElement("button"); withClient.style.cssText = "padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer"; withClient.textContent = "Client";
   var withRep = document.createElement("button"); withRep.style.cssText = "padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer"; withRep.textContent = "Rep / ASM";
-  withTypeRow.appendChild(withNone); withTypeRow.appendChild(withClient); withTypeRow.appendChild(withRep);
+  var withFamily = document.createElement("button"); withFamily.style.cssText = "padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer"; withFamily.textContent = "Family";
+  withTypeRow.appendChild(withNone); withTypeRow.appendChild(withClient); withTypeRow.appendChild(withRep); withTypeRow.appendChild(withFamily);
   withToggle.appendChild(withTypeRow);
 
   var withSelWrap = document.createElement("div"); withSelWrap.style.display = "none";
   var withSel = document.createElement("select"); withSel.id = "ev_with"; withSel.style.cssText = "width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
   withSelWrap.appendChild(withSel); withToggle.appendChild(withSelWrap);
+
+  var withFamilyWrap = document.createElement("div"); withFamilyWrap.style.display = "none";
+  var withFamilyInp = document.createElement("input"); withFamilyInp.type="text"; withFamilyInp.id = "ev_with_family"; withFamilyInp.placeholder = "e.g. Mum, the kids, whole family"; withFamilyInp.style.cssText = "width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+  withFamilyWrap.appendChild(withFamilyInp); withToggle.appendChild(withFamilyWrap);
   bd.appendChild(withToggle);
 
   var currentWithType = "none";
@@ -2771,8 +2783,12 @@ function openDiaryDay(day) {
     withNone.style.background = type==="none"?"var(--navy)":"var(--surface)"; withNone.style.color = type==="none"?"#fff":"var(--muted)"; withNone.style.borderColor = type==="none"?"var(--navy)":"var(--border)";
     withClient.style.background = type==="client"?"var(--navy)":"var(--surface)"; withClient.style.color = type==="client"?"#fff":"var(--muted)"; withClient.style.borderColor = type==="client"?"var(--navy)":"var(--border)";
     withRep.style.background = type==="rep"?"var(--navy)":"var(--surface)"; withRep.style.color = type==="rep"?"#fff":"var(--muted)"; withRep.style.borderColor = type==="rep"?"var(--navy)":"var(--border)";
+    withFamily.style.background = type==="family"?"var(--navy)":"var(--surface)"; withFamily.style.color = type==="family"?"#fff":"var(--muted)"; withFamily.style.borderColor = type==="family"?"var(--navy)":"var(--border)";
     withSel.innerHTML = "";
-    if (type === "none") { withSelWrap.style.display = "none"; return; }
+    withSelWrap.style.display = "none";
+    withFamilyWrap.style.display = "none";
+    if (type === "none") { return; }
+    if (type === "family") { withFamilyWrap.style.display = "block"; return; }
     withSelWrap.style.display = "block";
     var defOpt = document.createElement("option"); defOpt.value = ""; defOpt.textContent = "-- Select --"; withSel.appendChild(defOpt);
     if (type === "client") {
@@ -2784,6 +2800,7 @@ function openDiaryDay(day) {
   withNone.addEventListener("click", function(){ setWithType("none"); });
   withClient.addEventListener("click", function(){ setWithType("client"); });
   withRep.addEventListener("click", function(){ setWithType("rep"); });
+  withFamily.addEventListener("click", function(){ setWithType("family"); });
 
   box.appendChild(bd);
 
@@ -2794,10 +2811,14 @@ function openDiaryDay(day) {
   saveB.addEventListener("click", function(){
     var evTitle = document.getElementById("ev_title").value.trim();
     if (!evTitle) { toast("Please add an event title"); return; }
-    var withName = (currentWithType !== "none" && document.getElementById("ev_with").value) ? document.getElementById("ev_with").value : "";
+    var withName = "";
+    if (currentWithType === "family") { withName = document.getElementById("ev_with_family").value.trim(); }
+    else if (currentWithType !== "none" && document.getElementById("ev_with").value) { withName = document.getElementById("ev_with").value; }
+    var isAllDay = document.getElementById("ev_allday").checked;
     var newEvt={id:"EV-"+Date.now(),year:diaryYear,month:diaryMonth,day:day,
-      hour:parseInt(document.getElementById("ev_hour").value),
-      minute:parseInt(document.getElementById("ev_min").value),
+      hour:isAllDay?null:parseInt(document.getElementById("ev_hour").value),
+      minute:isAllDay?null:parseInt(document.getElementById("ev_min").value),
+      allDay:isAllDay,
       type:document.getElementById("ev_type").value,
       title:evTitle,
       notes:document.getElementById("ev_notes").value.trim(),
