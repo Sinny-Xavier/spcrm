@@ -582,6 +582,7 @@ var MANUFACTURERS=["Aegean Sea", "Altro", "Amtico", "Axminster", "Brintons", "Ca
 var clients,reps,samples,birthdays,complaints;
 var activeFilter="All",activeId=null,editId=null,showLF=false,pendingDel=null;
 var currentSalesYear=new Date().getFullYear();
+var currentSalesMonth=new Date().getMonth();
 
 function loadClients(){
   try{
@@ -1648,6 +1649,20 @@ function showRepForm(id){
 }
 
 // ── SALES ─────────────────────────────────────────────────────────
+function getDailySalesData(year, month){ // month is 0-indexed (0=Jan)
+  var daysInMonth = new Date(year, month+1, 0).getDate();
+  var days = []; for (var d=1; d<=daysInMonth; d++) days.push(0);
+  var monthTotal = 0;
+  clients.forEach(function(c){(c.log||[]).forEach(function(l){
+    if(!l.quote||l.quote.status!=="Paid"||!l.date)return;
+    var dp=l.date.split("/");if(dp.length!==3)return;
+    var d=parseInt(dp[0]),m=parseInt(dp[1])-1,y=parseInt(dp[2]);
+    if(y!==year||m!==month)return;
+    var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
+    days[d-1]+=v; monthTotal+=v;
+  });});
+  return{days:days,monthTotal:monthTotal,daysInMonth:daysInMonth};
+}
 function getSalesData(year){
   var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},qtrProd={Q1:{},Q2:{},Q3:{},Q4:{}},yearTotal=0;
   PRODUCTS.forEach(function(p){prodTotals[p]=0;});
@@ -1679,6 +1694,36 @@ function renderSalesView(){
     var val=document.createElement("div");val.style.cssText="font-size:"+(k.hi?"22":"18")+"px;font-weight:700;color:"+(k.hi?"var(--navy)":"var(--text)");val.textContent=k.v;
     card.appendChild(lbl);card.appendChild(val);kr.appendChild(card);
   });sv.appendChild(kr);
+  var monthNames=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var dailyData=getDailySalesData(currentSalesYear,currentSalesMonth);
+  var dailyCard=document.createElement("div");dailyCard.style.cssText="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+  var dHdr=document.createElement("div");dHdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px";
+  var dTitle=document.createElement("div");dTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";dTitle.textContent="Daily sales \u2014 "+monthNames[currentSalesMonth]+" "+currentSalesYear+" (\u00a3"+dailyData.monthTotal.toLocaleString("en-GB")+")";
+  var dNav=document.createElement("div");dNav.style.cssText="display:flex;align-items:center;gap:8px";
+  var prevBtn=document.createElement("button");prevBtn.textContent="\u2190";prevBtn.style.cssText="padding:4px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;cursor:pointer;font-weight:700";
+  var monthSel=document.createElement("select");monthSel.style.cssText="padding:4px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;color:var(--text)";
+  monthNames.forEach(function(mn,mi){var o=document.createElement("option");o.value=mi;o.textContent=mn;if(mi===currentSalesMonth)o.selected=true;monthSel.appendChild(o);});
+  var nextBtn=document.createElement("button");nextBtn.textContent="\u2192";nextBtn.style.cssText="padding:4px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;cursor:pointer;font-weight:700";
+  prevBtn.addEventListener("click",function(){currentSalesMonth--;if(currentSalesMonth<0){currentSalesMonth=11;currentSalesYear--;}renderSalesView();});
+  nextBtn.addEventListener("click",function(){currentSalesMonth++;if(currentSalesMonth>11){currentSalesMonth=0;currentSalesYear++;}renderSalesView();});
+  monthSel.addEventListener("change",function(){currentSalesMonth=parseInt(this.value);renderSalesView();});
+  dNav.appendChild(prevBtn);dNav.appendChild(monthSel);dNav.appendChild(nextBtn);
+  dHdr.appendChild(dTitle);dHdr.appendChild(dNav);dailyCard.appendChild(dHdr);
+  var dBody=document.createElement("div");dBody.style.cssText="display:grid;grid-template-columns:1fr 200px;gap:14px";
+  var dChartWrap=document.createElement("div");dChartWrap.style.cssText="position:relative;height:220px";var dCan=document.createElement("canvas");dCan.id="sDailyCh";dChartWrap.appendChild(dCan);
+  var dListWrap=document.createElement("div");dListWrap.style.cssText="max-height:220px;overflow-y:auto";
+  var dListTitle=document.createElement("div");dListTitle.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px";dListTitle.textContent="Best days";
+  dListWrap.appendChild(dListTitle);
+  var rankedDays=dailyData.days.map(function(v,i){return{day:i+1,value:v};}).filter(function(d){return d.value>0;}).sort(function(a,b){return b.value-a.value;});
+  if(!rankedDays.length){var noD=document.createElement("div");noD.style.cssText="font-size:11px;color:var(--muted);padding:8px 0";noD.textContent="No paid sales this month yet";dListWrap.appendChild(noD);}
+  else{rankedDays.forEach(function(d){
+    var row=document.createElement("div");row.style.cssText="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px";
+    var dLbl=document.createElement("span");dLbl.style.cssText="color:var(--muted)";dLbl.textContent=d.day+" "+monthNames[currentSalesMonth].slice(0,3);
+    var dVal=document.createElement("span");dVal.style.cssText="font-weight:700;color:var(--navy)";dVal.textContent="\u00a3"+d.value.toLocaleString("en-GB");
+    row.appendChild(dLbl);row.appendChild(dVal);dListWrap.appendChild(row);
+  });}
+  dBody.appendChild(dChartWrap);dBody.appendChild(dListWrap);dailyCard.appendChild(dBody);
+  sv.appendChild(dailyCard);
   var cr=document.createElement("div");cr.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px";
   var barCard=document.createElement("div");barCard.style.cssText="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px";
   var bTitle=document.createElement("div");bTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)";bTitle.textContent="Quarterly sales "+currentSalesYear;
@@ -1711,6 +1756,7 @@ function renderSalesView(){
   sv.appendChild(tblCard);
   var bk=document.createElement("button");bk.className="bkl";bk.textContent="\u2190 Back to dashboard";bk.addEventListener("click",showDash);sv.appendChild(bk);
   setTimeout(function(){
+    mkDailyBarChart("sDailyCh",dailyData.days,currentSalesYear,currentSalesMonth);
     mkBarChart("sBarCh",[data.qtrs.Q1,data.qtrs.Q2,data.qtrs.Q3,data.qtrs.Q4]);
     var ap=PRODUCTS.filter(function(p){return(data.prodTotals[p]||0)>0;});
     if(ap.length)mkPieChart("sPieCh",ap,ap.map(function(p){return data.prodTotals[p]||0;}));
@@ -4276,6 +4322,40 @@ function mkBarChart(id, data4) {
             callback: function(v) { return "£" + v.toLocaleString(); }
           }
         }
+      }
+    }
+  };
+  chartInstances[id] = new Chart(ctx.getContext("2d"), cfg);
+}
+function mkDailyBarChart(id, dayValues, year, month) {
+  var ctx = document.getElementById(id);
+  if (!ctx) return;
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+  var today = new Date();
+  var isCurrentMonth = today.getFullYear()===year && today.getMonth()===month;
+  var labels = dayValues.map(function(v,i){return String(i+1);});
+  var colors = dayValues.map(function(v,i){
+    if (isCurrentMonth && (i+1)===today.getDate()) return "#e8a020";
+    return "#305CDE";
+  });
+  var cfg = {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Sales",
+        data: dayValues,
+        backgroundColor: colors,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { callback: function(v) { return "£" + v.toLocaleString(); } } },
+        x: { ticks: { font: { size: 9 } } }
       }
     }
   };
