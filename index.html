@@ -515,23 +515,90 @@ function saveDiary() {
   sbSaveAll("diary_events", diaryEvents, "id");
 }
 
-function openWipeDiaryConfirm() {
+function getPersonalDiaryEvents() {
+  return diaryEvents.filter(function(e){ return e.category === "personal"; });
+}
+function getWorkDiaryEvents() {
+  return diaryEvents.filter(function(e){ return e.category !== "personal"; });
+}
+function getPersonalBirthdays() {
+  return birthdays.filter(function(b){ return b.category === "personal"; });
+}
+function getWorkBirthdays() {
+  return birthdays.filter(function(b){ return b.category !== "personal"; });
+}
+
+function csvEscape(val) {
+  if (val === null || val === undefined) return "";
+  var s = String(val);
+  if (s.indexOf(",") !== -1 || s.indexOf("\"") !== -1 || s.indexOf("\n") !== -1) {
+    s = "\"" + s.replace(/"/g, "\"\"") + "\"";
+  }
+  return s;
+}
+
+function exportPersonalData() {
+  var monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var personalEvts = getPersonalDiaryEvents();
+  var personalBdays = getPersonalBirthdays();
+
+  if (!personalEvts.length && !personalBdays.length) {
+    toast("No personal entries to export");
+    return;
+  }
+
+  var rows = [["Record Type","Title / Name","Date","Time","Notes / Company","With"]];
+  personalEvts.forEach(function(e){
+    var dateStr = monthNames[e.month] + " " + e.day + ", " + e.year;
+    var timeStr = e.allDay ? "All day" : (String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"));
+    rows.push(["Diary Event", e.title, dateStr, timeStr, e.notes||"", e.withName||""]);
+  });
+  personalBdays.forEach(function(b){
+    rows.push(["Birthday", b.name, b.date||"", "", b.company||"", ""]);
+  });
+
+  var csv = rows.map(function(r){ return r.map(csvEscape).join(","); }).join("\n");
+  var blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  var today = new Date();
+  var fname = "personal-data-export-" + today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0") + "-" + String(today.getDate()).padStart(2,"0") + ".csv";
+  a.href = url; a.download = fname;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast("Exported " + personalEvts.length + " events + " + personalBdays.length + " birthdays \u2713");
+}
+
+function openWipeConfirm(scope) {
+  // scope: "personal" | "work" | "all"
+  var evtsToWipe = scope==="personal" ? getPersonalDiaryEvents() : scope==="work" ? getWorkDiaryEvents() : diaryEvents.slice();
+  var bdaysToWipe = scope==="personal" ? getPersonalBirthdays() : scope==="work" ? getWorkBirthdays() : birthdays.slice();
+
+  var labels = {personal:"personal", work:"work", all:"all"};
+  var scopeLbl = labels[scope];
+
   var overlay = document.createElement("div");
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:250;display:flex;align-items:center;justify-content:center;padding:16px";
   var box = document.createElement("div");
   box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:420px;border-top:3px solid var(--rtxt)";
 
   var bh = document.createElement("div"); bh.style.cssText = "background:var(--rbg);padding:13px 16px";
-  var bht = document.createElement("h2"); bht.style.cssText = "font-size:13px;font-weight:700;color:var(--rtxt)"; bht.textContent = "⚠ Wipe diary & birthdays";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:13px;font-weight:700;color:var(--rtxt)"; bht.textContent = "⚠ Wipe " + scopeLbl + " diary & birthdays";
   bh.appendChild(bht); box.appendChild(bh);
 
   var bd = document.createElement("div"); bd.style.cssText = "padding:16px;display:flex;flex-direction:column;gap:10px";
 
-  var dCount = diaryEvents.length;
-  var bCount = birthdays.length;
+  var dCount = evtsToWipe.length;
+  var bCount = bdaysToWipe.length;
   var warn = document.createElement("div"); warn.style.cssText = "font-size:12px;line-height:1.5;color:var(--text)";
-  warn.textContent = "This will permanently delete all " + dCount + " diary entries AND all " + bCount + " birthday records — every event, appointment, birthday and reminder currently stored. This cannot be undone. Bank holidays and observances are calculated automatically and are not affected.";
+  warn.textContent = "This will permanently delete " + dCount + " " + scopeLbl + " diary entries and " + bCount + " " + scopeLbl + " birthday records. This cannot be undone. Bank holidays and observances are calculated automatically and are not affected.";
   bd.appendChild(warn);
+
+  if (scope === "personal") {
+    var hint = document.createElement("div"); hint.style.cssText = "font-size:11px;color:#9333ea;background:#f4ecfd;padding:8px 10px;border-radius:var(--rs)";
+    hint.textContent = "Tip: use Export Personal first if you want to keep a copy before deleting.";
+    bd.appendChild(hint);
+  }
 
   var lbl = document.createElement("label"); lbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-top:4px"; lbl.textContent = "Type DELETE to confirm";
   bd.appendChild(lbl);
@@ -543,7 +610,7 @@ function openWipeDiaryConfirm() {
   var foot = document.createElement("div"); foot.style.cssText = "padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
   var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:7px 12px;background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
   cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
-  var wipeB = document.createElement("button"); wipeB.style.cssText = "padding:7px 16px;background:var(--rtxt);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer;opacity:.5"; wipeB.textContent = "Wipe everything";
+  var wipeB = document.createElement("button"); wipeB.style.cssText = "padding:7px 16px;background:var(--rtxt);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer;opacity:.5"; wipeB.textContent = "Wipe " + scopeLbl;
   wipeB.disabled = true;
   confirmInp.addEventListener("input", function(){
     var ok = confirmInp.value.trim().toUpperCase() === "DELETE";
@@ -553,34 +620,36 @@ function openWipeDiaryConfirm() {
   wipeB.addEventListener("click", async function(){
     if (confirmInp.value.trim().toUpperCase() !== "DELETE") return;
     wipeB.disabled = true; wipeB.textContent = "Wiping...";
-    await wipeAllDiaryEvents();
-    await wipeAllBirthdays();
+    await wipeDiaryEvents(evtsToWipe);
+    await wipeBirthdays(bdaysToWipe);
     document.body.removeChild(overlay);
     renderDiaryView();
     renderDash();
-    toast("Wiped \u2713 " + dCount + " diary entries, " + bCount + " birthdays deleted");
+    toast("Wiped \u2713 " + dCount + " " + scopeLbl + " diary entries, " + bCount + " " + scopeLbl + " birthdays deleted");
   });
   foot.appendChild(cancelB); foot.appendChild(wipeB);
   box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
   setTimeout(function(){ confirmInp.focus(); }, 100);
 }
 
-async function wipeAllDiaryEvents() {
-  var idsToDelete = diaryEvents.map(function(e){ return e.id; });
-  // Delete every row individually from Supabase so old entries don't resurface on next sync
+async function wipeDiaryEvents(eventsToDelete) {
+  var idsToDelete = eventsToDelete.map(function(e){ return e.id; });
+  var idSet = {}; idsToDelete.forEach(function(id){ idSet[id] = true; });
+  // Delete every targeted row individually from Supabase so it doesn't resurface on next sync
   for (var i = 0; i < idsToDelete.length; i++) {
     await sbDelete("diary_events", idsToDelete[i]);
   }
-  diaryEvents = [];
+  diaryEvents = diaryEvents.filter(function(e){ return !idSet[e.id]; });
   try { localStorage.setItem(DIARY_STORE, JSON.stringify(diaryEvents)); } catch(e) {}
 }
 
-async function wipeAllBirthdays() {
-  var idsToDelete = birthdays.map(function(b){ return b.id; });
+async function wipeBirthdays(birthdaysToDelete) {
+  var idsToDelete = birthdaysToDelete.map(function(b){ return b.id; });
+  var idSet = {}; idsToDelete.forEach(function(id){ idSet[id] = true; });
   for (var i = 0; i < idsToDelete.length; i++) {
     await sbDelete("birthdays", idsToDelete[i]);
   }
-  birthdays = [];
+  birthdays = birthdays.filter(function(b){ return !idSet[b.id]; });
   try { localStorage.setItem(BSTORE, JSON.stringify(birthdays)); } catch(e) {}
   try { renderBirthdaysView && renderBirthdaysView(); } catch(e) {}
 }
@@ -902,7 +971,7 @@ function renderDash(){
     allDiaryEvts.forEach(function(e){
       var er = document.createElement("div"); er.style.cssText = "display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--alt);border-radius:var(--rs);margin-bottom:5px;cursor:pointer";
       er.addEventListener("click", function(){ showDiary(); });
-      var dot3 = document.createElement("div"); dot3.style.cssText = "width:8px;height:8px;border-radius:50%;background:"+(typeColors2[e.type]||"#305CDE")+";flex-shrink:0";
+      var dot3 = document.createElement("div"); dot3.style.cssText = "width:8px;height:8px;border-radius:50%;background:"+(e.category==="personal"?"#9333ea":(typeColors2[e.type]||"#305CDE"))+";flex-shrink:0";
       var info2 = document.createElement("div"); info2.style.flex="1";
       var et2 = document.createElement("div"); et2.style.cssText="font-size:12px;font-weight:700"; et2.textContent = (e.allDay?"All day":String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"))+" "+e.title;
       var em2 = document.createElement("div"); em2.style.cssText="font-size:10px;color:var(--muted)"; em2.textContent = e.type+(e.withName?" with "+e.withName:"");
@@ -2203,6 +2272,24 @@ function showBdayForm() {
 
   var typeLblWrap = document.createElement("div"); typeLblWrap.appendChild(typeLbl); typeLblWrap.appendChild(toggle);
   bd.appendChild(typeLblWrap);
+
+  // Work / Personal category toggle
+  var bdCatLbl = document.createElement("label"); bdCatLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:5px;margin-top:4px"; bdCatLbl.textContent = "Category";
+  var bdCatWrap = document.createElement("div"); bdCatWrap.style.cssText = "display:flex;gap:6px";
+  var bdCatWork = document.createElement("button"); bdCatWork.type = "button"; bdCatWork.style.cssText = "flex:1;padding:7px 10px;border-radius:var(--rs);border:1px solid var(--navy);background:var(--navy);color:#fff;font-size:11px;font-weight:700;cursor:pointer"; bdCatWork.textContent = "💼 Work";
+  var bdCatPersonal = document.createElement("button"); bdCatPersonal.type = "button"; bdCatPersonal.style.cssText = "flex:1;padding:7px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer"; bdCatPersonal.textContent = "🏠 Personal";
+  bdCatWrap.appendChild(bdCatWork); bdCatWrap.appendChild(bdCatPersonal);
+  var bdCatWrapOuter = document.createElement("div"); bdCatWrapOuter.appendChild(bdCatLbl); bdCatWrapOuter.appendChild(bdCatWrap);
+  bd.appendChild(bdCatWrapOuter);
+  var currentBdCategory = "work";
+  function setBdCategory(cat) {
+    currentBdCategory = cat;
+    bdCatWork.style.background = cat==="work"?"var(--navy)":"var(--surface)"; bdCatWork.style.color = cat==="work"?"#fff":"var(--muted)"; bdCatWork.style.borderColor = cat==="work"?"var(--navy)":"var(--border)";
+    bdCatPersonal.style.background = cat==="personal"?"#e91e8c":"var(--surface)"; bdCatPersonal.style.color = cat==="personal"?"#fff":"var(--muted)"; bdCatPersonal.style.borderColor = cat==="personal"?"#e91e8c":"var(--border)";
+  }
+  bdCatWork.addEventListener("click", function(){ setBdCategory("work"); });
+  bdCatPersonal.addEventListener("click", function(){ setBdCategory("personal"); });
+
   bd.appendChild(nameWrap);
   bd.appendChild(compInp);
   bd.appendChild(dateWrap);
@@ -2227,7 +2314,8 @@ function showBdayForm() {
       company: document.getElementById("bd_company").value.trim(),
       type: currentType==="client"?"Client":currentType==="rep"?"Rep/ASM":"Other",
       date: date,
-      linkedType: currentType
+      linkedType: currentType,
+      category: currentBdCategory
     });
     saveBirthdays();
     // Auto-create diary event for this year's birthday
@@ -2258,7 +2346,8 @@ function showBdayForm() {
             withName: currentType!=="other"?name:"",
             withType: currentType!=="other"?currentType:"none",
             completed: false,
-            isBirthday: true
+            isBirthday: true,
+            category: currentBdCategory
           });
           saveDiary();
         }
@@ -2658,12 +2747,26 @@ function renderDiaryView() {
   var todayBtn = document.createElement("button"); todayBtn.style.cssText = "padding:4px 12px;border:1px solid var(--navy);border-radius:var(--rs);background:var(--navy);color:#fff;cursor:pointer;font-size:11px;font-weight:700;margin-left:6px"; todayBtn.textContent = "Today";
   todayBtn.addEventListener("click", function(){ diaryYear=new Date().getFullYear(); diaryMonth=new Date().getMonth(); renderDiaryView(); });
 
-  // Wipe diary + birthdays button
-  var wipeBtn = document.createElement("button"); wipeBtn.style.cssText = "padding:4px 12px;border:1px solid var(--rtxt);border-radius:var(--rs);background:var(--rbg);color:var(--rtxt);cursor:pointer;font-size:11px;font-weight:700;margin-left:6px"; wipeBtn.textContent = "🗑 Wipe Diary + Birthdays";
-  wipeBtn.addEventListener("click", function(){ openWipeDiaryConfirm(); });
-
-  nav.appendChild(pyr); nav.appendChild(pm); nav.appendChild(monthLbl); nav.appendChild(nm2); nav.appendChild(nyr); nav.appendChild(todayBtn); nav.appendChild(wipeBtn);
+  nav.appendChild(pyr); nav.appendChild(pm); nav.appendChild(monthLbl); nav.appendChild(nm2); nav.appendChild(nyr); nav.appendChild(todayBtn);
   hdr.appendChild(title); hdr.appendChild(nav); dv.appendChild(hdr);
+
+  // Data management row (export / wipe by category)
+  var mgmtRow = document.createElement("div"); mgmtRow.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px";
+
+  var exportPersonalBtn = document.createElement("button"); exportPersonalBtn.style.cssText = "padding:5px 12px;border:1px solid #9333ea;border-radius:var(--rs);background:#f4ecfd;color:#9333ea;cursor:pointer;font-size:11px;font-weight:700"; exportPersonalBtn.textContent = "⬇ Export Personal";
+  exportPersonalBtn.addEventListener("click", function(){ exportPersonalData(); });
+
+  var wipePersonalBtn = document.createElement("button"); wipePersonalBtn.style.cssText = "padding:5px 12px;border:1px solid #9333ea;border-radius:var(--rs);background:#fff;color:#9333ea;cursor:pointer;font-size:11px;font-weight:700"; wipePersonalBtn.textContent = "🗑 Wipe Personal Only";
+  wipePersonalBtn.addEventListener("click", function(){ openWipeConfirm("personal"); });
+
+  var wipeWorkBtn = document.createElement("button"); wipeWorkBtn.style.cssText = "padding:5px 12px;border:1px solid var(--navy);border-radius:var(--rs);background:#fff;color:var(--navy);cursor:pointer;font-size:11px;font-weight:700"; wipeWorkBtn.textContent = "🗑 Wipe Work Only";
+  wipeWorkBtn.addEventListener("click", function(){ openWipeConfirm("work"); });
+
+  var wipeAllBtn = document.createElement("button"); wipeAllBtn.style.cssText = "padding:5px 12px;border:1px solid var(--rtxt);border-radius:var(--rs);background:var(--rbg);color:var(--rtxt);cursor:pointer;font-size:11px;font-weight:700"; wipeAllBtn.textContent = "🗑 Wipe Everything";
+  wipeAllBtn.addEventListener("click", function(){ openWipeConfirm("all"); });
+
+  mgmtRow.appendChild(exportPersonalBtn); mgmtRow.appendChild(wipePersonalBtn); mgmtRow.appendChild(wipeWorkBtn); mgmtRow.appendChild(wipeAllBtn);
+  dv.appendChild(mgmtRow);
 
   // Calendar grid
   var cal = document.createElement("div"); cal.style.cssText = "background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:20px";
@@ -2741,7 +2844,7 @@ function renderDiaryView() {
     dayEvts.slice(0, 3).forEach(function(e) {
       var evtEl = document.createElement("div");
       var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
-      var col = typeColors[e.type] || "#305CDE";
+      var col = e.category==="personal" ? "#9333ea" : (typeColors[e.type] || "#305CDE");
       evtEl.style.cssText = "font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;background:"+col;
       var timeStr = e.allDay ? "" : String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0")+" ";
       evtEl.textContent = timeStr + e.title; cell.appendChild(evtEl);
@@ -2781,7 +2884,7 @@ function renderDiaryView() {
       var diffStr = diff < 0 ? Math.abs(diff)+"d ago" : diff === 0 ? "Today" : diff === 1 ? "Tomorrow" : diff+"d";
       var diffCls = diff < 0 ? "background:var(--rbg);color:var(--rtxt)" : diff <= 1 ? "background:var(--abg);color:var(--atxt)" : "background:var(--lbg);color:var(--ltxt)";
       var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
-      var col = typeColors[e.type] || "#305CDE";
+      var col = e.category==="personal" ? "#9333ea" : (typeColors[e.type] || "#305CDE");
       var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:7px;border-left:4px solid "+col;
       var dot = document.createElement("div"); dot.style.cssText = "width:10px;height:10px;border-radius:50%;background:"+col+";flex-shrink:0";
       var info = document.createElement("div"); info.style.flex = "1";
@@ -2825,7 +2928,7 @@ function openDiaryDay(day) {
     dayEvts.forEach(function(e) {
       var er = document.createElement("div"); er.style.cssText = "display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--alt);border-radius:var(--rs);margin-bottom:4px";
       var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
-      var dot2 = document.createElement("div"); dot2.style.cssText = "width:8px;height:8px;border-radius:50%;background:"+(typeColors[e.type]||"#305CDE")+";flex-shrink:0";
+      var dot2 = document.createElement("div"); dot2.style.cssText = "width:8px;height:8px;border-radius:50%;background:"+(e.category==="personal"?"#9333ea":(typeColors[e.type]||"#305CDE"))+";flex-shrink:0";
       var et = document.createElement("div"); et.style.flex="1"; et.style.fontSize="12px"; et.style.fontWeight="700"; et.textContent = (e.allDay?"All day":String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"))+" "+e.title+(e.withName?" with "+e.withName:"");
       var db2 = document.createElement("button"); db2.style.cssText = "padding:3px 7px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);font-size:10px;color:var(--rtxt);cursor:pointer"; db2.textContent = "Delete";
       db2.addEventListener("click", (function(eid){ return function(){ diaryEvents=diaryEvents.filter(function(x){return x.id!==eid;});saveDiary();document.body.removeChild(overlay);renderDiaryView(); }; })(e.id));
@@ -2839,6 +2942,14 @@ function openDiaryDay(day) {
   bd.appendChild(formTitle);
 
   function mkFd(lbl, inp2) { var w=document.createElement("div"); var l=document.createElement("label"); l.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; l.textContent=lbl; w.appendChild(l); w.appendChild(inp2); return w; }
+
+  // Work / Personal toggle
+  var catWrap = document.createElement("div"); catWrap.style.cssText = "display:flex;gap:6px;margin-bottom:2px";
+  var catWork = document.createElement("button"); catWork.type = "button"; catWork.style.cssText = "flex:1;padding:7px 10px;border-radius:var(--rs);border:1px solid var(--navy);background:var(--navy);color:#fff;font-size:11px;font-weight:700;cursor:pointer"; catWork.textContent = "💼 Work";
+  var catPersonal = document.createElement("button"); catPersonal.type = "button"; catPersonal.style.cssText = "flex:1;padding:7px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer"; catPersonal.textContent = "🏠 Personal";
+  catWrap.appendChild(catWork); catWrap.appendChild(catPersonal);
+  bd.appendChild(catWrap);
+  var currentCategory = "work";
 
   // All day toggle
   var allDayWrap = document.createElement("label"); allDayWrap.style.cssText = "display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--text);cursor:pointer;margin-bottom:2px";
@@ -2922,6 +3033,19 @@ function openDiaryDay(day) {
   withRep.addEventListener("click", function(){ setWithType("rep"); });
   withFamily.addEventListener("click", function(){ setWithType("family"); });
 
+  function setCategory(cat) {
+    currentCategory = cat;
+    catWork.style.background = cat==="work"?"var(--navy)":"var(--surface)"; catWork.style.color = cat==="work"?"#fff":"var(--muted)"; catWork.style.borderColor = cat==="work"?"var(--navy)":"var(--border)";
+    catPersonal.style.background = cat==="personal"?"#e91e8c":"var(--surface)"; catPersonal.style.color = cat==="personal"?"#fff":"var(--muted)"; catPersonal.style.borderColor = cat==="personal"?"#e91e8c":"var(--border)";
+    withClient.style.display = cat==="personal" ? "none" : "inline-block";
+    withRep.style.display = cat==="personal" ? "none" : "inline-block";
+    if (cat === "personal" && (currentWithType==="client" || currentWithType==="rep")) {
+      setWithType("family");
+    }
+  }
+  catWork.addEventListener("click", function(){ setCategory("work"); });
+  catPersonal.addEventListener("click", function(){ setCategory("personal"); });
+
   box.appendChild(bd);
 
   var foot = document.createElement("div"); foot.style.cssText = "padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
@@ -2942,7 +3066,7 @@ function openDiaryDay(day) {
       type:document.getElementById("ev_type").value,
       title:evTitle,
       notes:document.getElementById("ev_notes").value.trim(),
-      withName:withName,withType:currentWithType,completed:false};
+      withName:withName,withType:currentWithType,completed:false,category:currentCategory};
     diaryEvents.push(newEvt);
     saveDiary();
     // Auto-log on linked client
