@@ -514,6 +514,76 @@ function saveDiary() {
   try { localStorage.setItem(DIARY_STORE, JSON.stringify(diaryEvents)); } catch(e) {}
   sbSaveAll("diary_events", diaryEvents, "id");
 }
+
+function openWipeDiaryConfirm() {
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:250;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:420px;border-top:3px solid var(--rtxt)";
+
+  var bh = document.createElement("div"); bh.style.cssText = "background:var(--rbg);padding:13px 16px";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:13px;font-weight:700;color:var(--rtxt)"; bht.textContent = "⚠ Wipe diary & birthdays";
+  bh.appendChild(bht); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:16px;display:flex;flex-direction:column;gap:10px";
+
+  var dCount = diaryEvents.length;
+  var bCount = birthdays.length;
+  var warn = document.createElement("div"); warn.style.cssText = "font-size:12px;line-height:1.5;color:var(--text)";
+  warn.textContent = "This will permanently delete all " + dCount + " diary entries AND all " + bCount + " birthday records — every event, appointment, birthday and reminder currently stored. This cannot be undone. Bank holidays and observances are calculated automatically and are not affected.";
+  bd.appendChild(warn);
+
+  var lbl = document.createElement("label"); lbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-top:4px"; lbl.textContent = "Type DELETE to confirm";
+  bd.appendChild(lbl);
+  var confirmInp = document.createElement("input"); confirmInp.id = "wipe_confirm_inp"; confirmInp.placeholder = "DELETE"; confirmInp.style.cssText = "width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  bd.appendChild(confirmInp);
+
+  box.appendChild(bd);
+
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
+  var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:7px 12px;background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
+  cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  var wipeB = document.createElement("button"); wipeB.style.cssText = "padding:7px 16px;background:var(--rtxt);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer;opacity:.5"; wipeB.textContent = "Wipe everything";
+  wipeB.disabled = true;
+  confirmInp.addEventListener("input", function(){
+    var ok = confirmInp.value.trim().toUpperCase() === "DELETE";
+    wipeB.disabled = !ok;
+    wipeB.style.opacity = ok ? "1" : ".5";
+  });
+  wipeB.addEventListener("click", async function(){
+    if (confirmInp.value.trim().toUpperCase() !== "DELETE") return;
+    wipeB.disabled = true; wipeB.textContent = "Wiping...";
+    await wipeAllDiaryEvents();
+    await wipeAllBirthdays();
+    document.body.removeChild(overlay);
+    renderDiaryView();
+    renderDash();
+    toast("Wiped \u2713 " + dCount + " diary entries, " + bCount + " birthdays deleted");
+  });
+  foot.appendChild(cancelB); foot.appendChild(wipeB);
+  box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
+  setTimeout(function(){ confirmInp.focus(); }, 100);
+}
+
+async function wipeAllDiaryEvents() {
+  var idsToDelete = diaryEvents.map(function(e){ return e.id; });
+  // Delete every row individually from Supabase so old entries don't resurface on next sync
+  for (var i = 0; i < idsToDelete.length; i++) {
+    await sbDelete("diary_events", idsToDelete[i]);
+  }
+  diaryEvents = [];
+  try { localStorage.setItem(DIARY_STORE, JSON.stringify(diaryEvents)); } catch(e) {}
+}
+
+async function wipeAllBirthdays() {
+  var idsToDelete = birthdays.map(function(b){ return b.id; });
+  for (var i = 0; i < idsToDelete.length; i++) {
+    await sbDelete("birthdays", idsToDelete[i]);
+  }
+  birthdays = [];
+  try { localStorage.setItem(BSTORE, JSON.stringify(birthdays)); } catch(e) {}
+  try { renderBirthdaysView && renderBirthdaysView(); } catch(e) {}
+}
 function saveWebsites() {
   try { localStorage.setItem(WEB_STORE, JSON.stringify(websites)); } catch(e) {}
   sbSaveAll("websites", websites, "id");
@@ -2588,7 +2658,11 @@ function renderDiaryView() {
   var todayBtn = document.createElement("button"); todayBtn.style.cssText = "padding:4px 12px;border:1px solid var(--navy);border-radius:var(--rs);background:var(--navy);color:#fff;cursor:pointer;font-size:11px;font-weight:700;margin-left:6px"; todayBtn.textContent = "Today";
   todayBtn.addEventListener("click", function(){ diaryYear=new Date().getFullYear(); diaryMonth=new Date().getMonth(); renderDiaryView(); });
 
-  nav.appendChild(pyr); nav.appendChild(pm); nav.appendChild(monthLbl); nav.appendChild(nm2); nav.appendChild(nyr); nav.appendChild(todayBtn);
+  // Wipe diary + birthdays button
+  var wipeBtn = document.createElement("button"); wipeBtn.style.cssText = "padding:4px 12px;border:1px solid var(--rtxt);border-radius:var(--rs);background:var(--rbg);color:var(--rtxt);cursor:pointer;font-size:11px;font-weight:700;margin-left:6px"; wipeBtn.textContent = "🗑 Wipe Diary + Birthdays";
+  wipeBtn.addEventListener("click", function(){ openWipeDiaryConfirm(); });
+
+  nav.appendChild(pyr); nav.appendChild(pm); nav.appendChild(monthLbl); nav.appendChild(nm2); nav.appendChild(nyr); nav.appendChild(todayBtn); nav.appendChild(wipeBtn);
   hdr.appendChild(title); hdr.appendChild(nav); dv.appendChild(hdr);
 
   // Calendar grid
