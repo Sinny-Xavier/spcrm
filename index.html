@@ -2758,24 +2758,6 @@ function renderDiaryView() {
   nav.appendChild(pyr); nav.appendChild(pm); nav.appendChild(monthLbl); nav.appendChild(nm2); nav.appendChild(nyr); nav.appendChild(todayBtn);
   hdr.appendChild(title); hdr.appendChild(nav); dv.appendChild(hdr);
 
-  // Data management row (export / wipe by category)
-  var mgmtRow = document.createElement("div"); mgmtRow.style.cssText = "display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px";
-
-  var exportPersonalBtn = document.createElement("button"); exportPersonalBtn.style.cssText = "padding:5px 12px;border:1px solid #9333ea;border-radius:var(--rs);background:#f4ecfd;color:#9333ea;cursor:pointer;font-size:11px;font-weight:700"; exportPersonalBtn.textContent = "⬇ Export Personal";
-  exportPersonalBtn.addEventListener("click", function(){ exportPersonalData(); });
-
-  var wipePersonalBtn = document.createElement("button"); wipePersonalBtn.style.cssText = "padding:5px 12px;border:1px solid #9333ea;border-radius:var(--rs);background:#fff;color:#9333ea;cursor:pointer;font-size:11px;font-weight:700"; wipePersonalBtn.textContent = "🗑 Wipe Personal Only";
-  wipePersonalBtn.addEventListener("click", function(){ openWipeConfirm("personal"); });
-
-  var wipeWorkBtn = document.createElement("button"); wipeWorkBtn.style.cssText = "padding:5px 12px;border:1px solid var(--navy);border-radius:var(--rs);background:#fff;color:var(--navy);cursor:pointer;font-size:11px;font-weight:700"; wipeWorkBtn.textContent = "🗑 Wipe Work Only";
-  wipeWorkBtn.addEventListener("click", function(){ openWipeConfirm("work"); });
-
-  var wipeAllBtn = document.createElement("button"); wipeAllBtn.style.cssText = "padding:5px 12px;border:1px solid var(--rtxt);border-radius:var(--rs);background:var(--rbg);color:var(--rtxt);cursor:pointer;font-size:11px;font-weight:700"; wipeAllBtn.textContent = "🗑 Wipe Everything";
-  wipeAllBtn.addEventListener("click", function(){ openWipeConfirm("all"); });
-
-  mgmtRow.appendChild(exportPersonalBtn); mgmtRow.appendChild(wipePersonalBtn); mgmtRow.appendChild(wipeWorkBtn); mgmtRow.appendChild(wipeAllBtn);
-  dv.appendChild(mgmtRow);
-
   // Calendar grid
   var cal = document.createElement("div"); cal.style.cssText = "background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:20px";
 
@@ -4339,6 +4321,21 @@ function showAdmin() {
     });
     saveWebsites();
     toast(added + " site" + (added!==1?"s":"") + " imported" + (added < importData.length ? " (" + (importData.length-added) + " already existed)" : ""));
+  }));
+
+  // DIARY (export / wipe by category)
+  bd.appendChild(divider("Diary"));
+  bd.appendChild(adminSection("\uD83D\uDCC5", "Export personal entries", "Download a CSV of personal diary entries and birthdays \u2014 your own backup, kept separate from work data.", "Export Personal", "#9333ea", function(){
+    exportPersonalData();
+  }));
+  bd.appendChild(adminSection("\uD83E\uDDF9", "Wipe personal only", "Permanently delete personal-tagged diary entries and birthdays. Work entries are untouched. Export first if you want a copy.", "Wipe Personal", "#9333ea", function(){
+    openWipeConfirm("personal");
+  }));
+  bd.appendChild(adminSection("\uD83E\uDDF9", "Wipe work only", "Permanently delete work-tagged diary entries and birthdays. Personal entries are untouched.", "Wipe Work", "var(--navy)", function(){
+    openWipeConfirm("work");
+  }));
+  bd.appendChild(adminSection("\u26A0\uFE0F", "Wipe everything", "Permanently delete ALL diary entries and birthdays \u2014 work and personal alike. Cannot be undone.", "Wipe Everything", "#c0392b", function(){
+    openWipeConfirm("all");
   }));
 
   // BACKUP
