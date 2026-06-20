@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPCRM | Sinbad Trade Counter</title>
+<title>CRM</title>
 <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,AAABAAEAEBAAAAAAIAA8AgAAFgAAAIlQTkcNChoKAAAADUlIRFIAAAAQAAAAEAgGAAAAH/P/YQAAAgNJREFUeJx1k71rk1EUxn/nvjd9UxLU+FH8gFJtddBFhOqWEhX8GgSnTiLO6lBKaLtI/wFBBEGKIDrqKH5QrIOLLroUamLT6hZKtQ5J2rfJe4/Dm7Z5TfJsh3uf557nOeeK3sfINE4/cBVLlg0UEDpDSSI4FoFnkqMhAPqOh6S5hzavdadH8IAKH6lyQ/Qt10jzmhqK4rbITgWnUSGieKI7Qg5lL5Y1HliEC8g22QNQFYxRTE+TFAKNlk4MjhoOuGgRAkC2XlYFSSiVms/X0lEccGJ/mUO7/sadCQYIbKtjp4JY+Pl7H5dn8hRXD2K8EBHl+9gEg30ruLpgduyIbRV1KljfMVs4RaF0krn8ONmhIp+XBtmTrIGL8miFiRWiaCDkji9wbKDI6Iu7nH88ydKfPjLpKuqkbUBtAjSUoQMrlKbGeHnrEWeOLHNzZoKnX7JIr9JwXneB0BmkF159G2b0+R3wlNOHf4Eoa+upjvsRywBRCKE/s8p8uZ9LT8ZxoeX6uTluD39CN8AT1yawnYonCptwdmCZ+ck81YoPQCoVgCPahXiIalF8ouNmF6D1qNdUMgDAbUbhxSagKEKPxbCAweBoYCIhEQUFF0ozKI37V0J8EgT8EH2Dj+E9GUao/h9rByjQA9QoAyPRb5xlN5YplBx1FO0iIzgSCIZF1pmWKxT+AVnGw2x3JtctAAAAAElFTkSuQmCC">
 
 <style>
@@ -261,8 +261,8 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 
 <div id="gateOverlay" style="position:fixed;inset:0;background:#002680;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px">
   <div style="background:#fff;border-radius:12px;padding:32px 36px;max-width:360px;width:100%;text-align:center;border-top:4px solid #C0392B">
-    <div style="width:64px;height:40px;background:#FFB900;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;margin:0 auto 14px;letter-spacing:1px;color:#002680">SPCRM</div>
-    <h2 style="font-size:16px;font-weight:700;color:#1a2233;margin-bottom:3px">Sinbad Trade Counter | PCRM</h2>
+    <div style="width:64px;height:40px;background:#FFB900;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;margin:0 auto 14px;letter-spacing:1px;color:#002680">CRM</div>
+    <h2 style="font-size:16px;font-weight:700;color:#1a2233;margin-bottom:3px">CRM</h2>
     <p style="font-size:11px;color:#6b7a95;margin-bottom:20px">Client CRM &mdash; Private access only</p>
     <div style="position:relative;margin-bottom:6px">
     <input id="gateInput" type="password" placeholder="Enter password" autocomplete="current-password" autocorrect="off" autocapitalize="none" spellcheck="false" style="width:100%;padding:11px 44px 11px 14px;border:1px solid #d8dde6;border-radius:6px;font-size:16px;font-family:inherit;outline:none;text-align:center">
@@ -270,15 +270,15 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   </div>
     <div id="gateError" style="font-size:11px;color:#C0392B;margin-bottom:7px;display:none">Incorrect password &mdash; try again</div>
     <button onclick="checkPassword()" style="width:100%;padding:9px;background:#FFB900;border:none;border-radius:6px;color:#1a1a1a;font-size:13px;font-weight:700;cursor:pointer">Enter CRM</button>
-    <p style="font-size:9px;color:#aab;margin-top:14px">SPCRM &mdash; Sinbad&#39;s Personal Trade Counter CRM</p>
+    <p style="font-size:9px;color:#aab;margin-top:14px">Personal CRM</p>
   </div>
 </div>
 
 <header class="hdr">
   <div class="hdr-top">
     <div style="display:flex;flex-direction:row;align-items:center;gap:10px;flex-shrink:0">
-      <div class="sq-logo">SPCRM</div>
-      <h1>SINBAD <span>TRADE COUNTER</span> <span style="color:rgba(255,255,255,.4)">|</span> PCRM</h1>
+      <div class="sq-logo">CRM</div>
+      <h1>CRM</h1>
     </div>
     <div class="hdr-stats">
       <div class="hs" onclick="showDash()" style="cursor:pointer">Clients: <b id="sTot">0</b></div>
@@ -673,7 +673,7 @@ function saveDocs() {
 // ── PASSWORD ──────────────────────────────────────────────────────
 document.getElementById("gateInput").addEventListener("keydown",function(e){if(e.key==="Enter")checkPassword();});
 function logOut() {
-  if(confirm("Log out of SPCRM?")) {
+  if(confirm("Log out of CRM?")) {
     try { sessionStorage.removeItem("sftc_auth"); } catch(e) {}
     document.getElementById("gateOverlay").style.display = "flex";
     document.getElementById("gateInput").value = "";
@@ -873,7 +873,7 @@ function renderDash(){
   openQ.sort(function(a,b){return b.val-a.val;});
   var dv=document.getElementById("dashView");dv.innerHTML="";
   var t=document.createElement("div");t.style.cssText="font-size:16px;font-weight:700;margin-bottom:16px";
-  t.textContent="Good day, Sinbad \uD83D\uDC4B Here\u2019s your morning briefing";dv.appendChild(t);
+  t.textContent="Here\u2019s your daily briefing";dv.appendChild(t);
   var kg=document.createElement("div");kg.className="kpi-grid";
   var selfGen=clients.filter(function(c){return c.source==="New - Sinbad's Old Customer"||c.source==="New - Walk In"||c.source==="New - Referral"||c.source==="Existing Customer (Dormant 12m+)";}).length;
   [{l:"Total clients",v:clients.length,c:"kv-blue",s:"in your black book"},{l:"Active",v:clients.filter(function(c){return c.status==="Active";}).length,c:"kv-green",s:"clients"},{l:"Overdue follow-ups",v:overdue.length,c:overdue.length>0?"kv-red":"kv-green",s:"need chasing"},{l:"Open quote value",v:"\u00a3"+qTotal.toLocaleString("en-GB"),c:"kv-amber",s:"quote + confirmed"}].forEach(function(k){
@@ -1420,7 +1420,7 @@ function showForm(id){
 
   var g1=mkSec("Identity");
   mkF(g1,"Binder ref",mkI("e_binder",c?c.binder:nextId(),""));
-  mkF(g1,"Account manager",mkI("e_mgr",c?c.manager:"Sinbad",""));
+  mkF(g1,"Account manager",mkI("e_mgr",c?(c.manager||"FSG"):"",""));
   mkF(g1,"Account name *",mkI("e_name",c?c.name:"","Company or client name"),true);
   mkF(g1,"Contact name",mkI("e_contact",c?c.contact:"","Primary contact person"),true);
   var srcSel=document.createElement("select");srcSel.id="e_source";srcSel.style.cssText="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;color:var(--text);outline:none";
@@ -4083,7 +4083,7 @@ function showMonthlyReport() {
   rptHdr.style.cssText = "background:var(--navy);padding:16px 20px;border-radius:var(--r) var(--r) 0 0;display:flex;align-items:center;justify-content:space-between";
   var rptLeft = document.createElement("div");
   var rptTitle = document.createElement("div");rptTitle.style.cssText="font-size:15px;font-weight:700;color:#fff";rptTitle.textContent="📊 Reports Hub";
-  var rptSub = document.createElement("div");rptSub.style.cssText="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px";rptSub.textContent="Sinbad Trade Counter | PCRM · "+new Date().toLocaleDateString("en-GB");
+  var rptSub = document.createElement("div");rptSub.style.cssText="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px";rptSub.textContent="CRM · "+new Date().toLocaleDateString("en-GB");
   rptLeft.appendChild(rptTitle);rptLeft.appendChild(rptSub);
   var closeX = document.createElement("button");closeX.style.cssText="background:rgba(255,255,255,.1);border:none;border-radius:4px;width:28px;height:28px;color:#fff;font-size:18px;cursor:pointer";closeX.textContent="×";
   closeX.addEventListener("click",function(){document.body.removeChild(overlay);});
@@ -4355,7 +4355,7 @@ function showAdmin() {
     var blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
-    a.href = url; a.download = "SPCRM-backup-"+new Date().toISOString().split("T")[0]+".json";
+    a.href = url; a.download = "CRM-backup-"+new Date().toISOString().split("T")[0]+".json";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast("\u2713 Backup downloaded!");
