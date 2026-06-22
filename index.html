@@ -2835,9 +2835,10 @@ function renderDiaryView() {
       var evtEl = document.createElement("div");
       var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
       var col = e.category==="personal" ? "#9333ea" : (typeColors[e.type] || "#305CDE");
-      evtEl.style.cssText = "font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;background:"+col;
+      evtEl.style.cssText = "font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;background:"+col+";cursor:pointer";
       var timeStr = e.allDay ? "" : String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0")+" ";
       evtEl.textContent = timeStr + e.title; cell.appendChild(evtEl);
+      evtEl.addEventListener("click", (function(eid){ return function(ev2){ ev2.stopPropagation(); editDiaryEvent(eid); }; })(e.id));
     });
     if (dayEvts.length > 3) {
       var more = document.createElement("div"); more.style.cssText = "font-size:9px;color:var(--muted)"; more.textContent = "+" + (dayEvts.length-3) + " more"; cell.appendChild(more);
@@ -2875,7 +2876,8 @@ function renderDiaryView() {
       var diffCls = diff < 0 ? "background:var(--rbg);color:var(--rtxt)" : diff <= 1 ? "background:var(--abg);color:var(--atxt)" : "background:var(--lbg);color:var(--ltxt)";
       var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
       var col = e.category==="personal" ? "#9333ea" : (typeColors[e.type] || "#305CDE");
-      var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:7px;border-left:4px solid "+col;
+      var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:7px;border-left:4px solid "+col+";cursor:pointer";
+      row.addEventListener("click", (function(eid){ return function(){ editDiaryEvent(eid); }; })(e.id));
       var dot = document.createElement("div"); dot.style.cssText = "width:10px;height:10px;border-radius:50%;background:"+col+";flex-shrink:0";
       var info = document.createElement("div"); info.style.flex = "1";
       var etitle = document.createElement("div"); etitle.style.cssText = "font-weight:700;font-size:12px"; etitle.textContent = e.title;
@@ -2886,7 +2888,7 @@ function renderDiaryView() {
       if (e.notes) { var en = document.createElement("div"); en.style.cssText = "font-size:11px;color:var(--muted);margin-top:3px"; en.textContent = e.notes; info.appendChild(en); }
       var badge = document.createElement("span"); badge.style.cssText = "font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0;"+diffCls; badge.textContent = diffStr;
       var doneBtn = document.createElement("button"); doneBtn.style.cssText = "padding:4px 10px;background:var(--gbg);border:1px solid var(--gtxt);border-radius:20px;font-size:10px;color:var(--gtxt);cursor:pointer;font-weight:700;flex-shrink:0"; doneBtn.textContent = "✓ Done";
-      doneBtn.addEventListener("click", (function(eid){ return function(){ var ev=diaryEvents.find(function(x){return x.id===eid;}); if(ev){ev.completed=true;saveDiary();renderDiaryView();renderDash();toast("Event marked done ✓");} }; })(e.id));
+      doneBtn.addEventListener("click", (function(eid){ return function(ev3){ ev3.stopPropagation(); var ev=diaryEvents.find(function(x){return x.id===eid;}); if(ev){ev.completed=true;saveDiary();renderDiaryView();renderDash();toast("Event marked done ✓");} }; })(e.id));
       row.appendChild(dot); row.appendChild(info); row.appendChild(badge); row.appendChild(doneBtn);
       dv.appendChild(row);
     });
