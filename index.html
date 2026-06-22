@@ -482,6 +482,12 @@ async function loadFromSupabase() {
     });
     if (needsIdFix) { saveWebsites(); }
     if (docs2 && docs2.length > 0) docs = docs2;
+    // One-time fix: backfill missing ids on older doc records (same legacy bug as websites)
+    var needsDocIdFix = false;
+    docs.forEach(function(doc, idx){
+      if (!doc.id) { doc.id = "DOC-" + Date.now() + "-" + idx; needsDocIdFix = true; }
+    });
+    if (needsDocIdFix) { saveDocs(); }
 
     sbReady = true;
     console.log("Supabase ready! Clients:", clients.length);
@@ -3861,7 +3867,7 @@ function showAddDoc(editIdx) {
     var url3=document.getElementById("d_url").value.trim();
     if(!name2||!url3){toast("Please add a title and link");return;}
     var data={name:name2,url:url3,category:document.getElementById("d_cat").value,supplier:document.getElementById("d_sup").value,description:document.getElementById("d_desc").value.trim()};
-    if(d&&editIdx!==undefined){docs[editIdx]=data;}else{docs.push(data);}
+    if(d&&editIdx!==undefined){data.id=d.id||("DOC-"+Date.now());docs[editIdx]=data;}else{data.id="DOC-"+Date.now()+"-"+Math.floor(Math.random()*10000);docs.push(data);}
     saveDocs();document.body.removeChild(overlay);renderDocsView();
     toast((d?"Document updated":"Document added")+"\u2713");
   });
