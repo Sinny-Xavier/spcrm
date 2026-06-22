@@ -302,7 +302,6 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
     <button class="nav-btn" onclick="showMonthlyReport()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128202; Report</button>
     <button class="nav-btn" onclick="showWebsites()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#127760; Websites</button>
     <button class="nav-btn" onclick="showDocs()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128196; Docs</button>
-      <button class="nav-btn" onclick="showBirthdays()">&#127874; Birthdays</button>
     <button class="nav-btn" onclick="showNotesSearch()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128269; Search Notes</button>
     </div>
     <button class="nav-btn" onclick="showAdmin()" style="background:rgba(255,185,0,.25);border-color:rgba(255,185,0,.5);margin-left:8px">&#9881;&#65039; Admin</button>
@@ -1015,7 +1014,7 @@ function renderDash(){
     bdHdr.appendChild(bdTitle); bdHdr.appendChild(bdBadge); bdPanel.appendChild(bdHdr);
     upcomingBdays.forEach(function(b){
       var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer";
-      row.addEventListener("click", function(){ showBirthdays(); });
+      row.addEventListener("click", function(){ showDiary(); });
       var av = document.createElement("div"); av.style.cssText = "width:28px;height:28px;border-radius:50%;background:#e8a020;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0"; av.textContent = ini(b.name);
       var info = document.createElement("div"); info.style.flex = "1";
       var nm = document.createElement("div"); nm.style.cssText = "font-weight:700;font-size:12px"; nm.textContent = b.name;
@@ -2967,8 +2966,26 @@ function openDiaryDay(day) {
 
   // Event type
   var typeSel2 = document.createElement("select"); typeSel2.id = "ev_type"; typeSel2.style.cssText = "width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
-  ["Meeting","Site Visit","Call","Rep Visit","Delivery","Family Event","Holiday","Other"].forEach(function(t){ var o=document.createElement("option"); o.value=t; o.textContent=t; typeSel2.appendChild(o); });
+  ["Meeting","Site Visit","Call","Rep Visit","Delivery","Family Event","Holiday","Birthday","Other"].forEach(function(t){ var o=document.createElement("option"); o.value=t; o.textContent=t; typeSel2.appendChild(o); });
   bd.appendChild(mkFd("Event type", typeSel2));
+
+  // Birthday note (only shown when type = Birthday) \u2014 redirects to the dedicated birthday form
+  var bdayNoteWrap = document.createElement("div"); bdayNoteWrap.style.display = "none"; bdayNoteWrap.style.cssText = "display:none;font-size:11px;color:var(--muted);background:var(--alt);padding:10px;border-radius:var(--rs)";
+  bdayNoteWrap.textContent = "Birthdays use their own quick form so they repeat every year automatically. Opening it now\u2026";
+  bd.appendChild(bdayNoteWrap);
+
+  typeSel2.addEventListener("change", function(){
+    if (typeSel2.value === "Birthday") {
+      bdayNoteWrap.style.display = "block";
+      setTimeout(function(){
+        document.body.removeChild(overlay);
+        showBdayForm();
+      }, 350);
+      return;
+    } else {
+      bdayNoteWrap.style.display = "none";
+    }
+  });
 
   // Holiday end date (only shown when type = Holiday)
   var holEndWrap = document.createElement("div"); holEndWrap.style.display = "none";
