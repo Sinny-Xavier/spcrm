@@ -1936,7 +1936,7 @@ function renderSalesView(){
   var dListTitle=document.createElement("div");dListTitle.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px";dListTitle.textContent="Best days";
   dListWrap.appendChild(dListTitle);
   var rankedDays=dailyData.days.map(function(v,i){return{day:i+1,value:v};}).filter(function(d){return d.value>0;}).sort(function(a,b){return b.value-a.value;});
-  if(!rankedDays.length){var noD=document.createElement("div");noD.style.cssText="font-size:11px;color:var(--muted);padding:8px 0";noD.textContent="No paid sales this month yet";dListWrap.appendChild(noD);}
+  if(!rankedDays.length){var noD=document.createElement("div");noD.style.cssText="font-size:11px;color:var(--muted);padding:8px 0";noD.textContent="No collected sales this month yet";dListWrap.appendChild(noD);}
   else{rankedDays.forEach(function(d){
     var row=document.createElement("div");row.style.cssText="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px";
     var dLbl=document.createElement("span");dLbl.style.cssText="color:var(--muted)";dLbl.textContent=d.day+" "+monthNames[currentSalesMonth].slice(0,3);
@@ -2559,7 +2559,7 @@ function showSaleForm(clientId, clientName) {
 
   var note = document.createElement("div");
   note.style.cssText = "font-size:11px;color:var(--muted);background:var(--gbg);border-radius:var(--rs);padding:8px 10px;border:1px solid #b8e0a0";
-  note.textContent = "Add each product as a separate sale line. All go straight to Paid in your sales charts.";
+  note.textContent = "Add each product as a separate sale line. Goods taken there and then go straight to Collected in your sales figures.";
   bd.appendChild(note);
 
   function mkF2(lbl, inp2) {
@@ -2655,7 +2655,9 @@ function showSaleForm(clientId, clientName) {
         value: val,
         products: prod + (det ? " (" + det + ")" : ""),
         category: prod,
-        status: "Paid"
+        status: "Collected",
+        paidDate: fd(date),
+        collectedDate: fd(date)
       }
     });
     c.lastContact = fd(date);
