@@ -1029,13 +1029,24 @@ function renderDash(){
   }
 
   // Rep visits overdue on dashboard
+  function repEffectiveContactDate(r) {
+    var d1 = null, d2 = null;
+    if (r.lastInteractionDate) { // DD/MM/YYYY
+      var p = r.lastInteractionDate.split("/");
+      if (p.length === 3) { var dd = new Date(p[2]+"-"+p[1]+"-"+p[0]); if(!isNaN(dd.getTime())) d1 = dd; }
+    }
+    if (r.lastContact) { // YYYY-MM-DD
+      var dd2 = new Date(r.lastContact); if(!isNaN(dd2.getTime())) d2 = dd2;
+    }
+    if (d1 && d2) return d1 > d2 ? d1 : d2;
+    return d1 || d2 || null;
+  }
   var repVisitsDue = reps.filter(function(r){
-    if(!r.lastContact) return false;
-    var s=r.lastContact;
-    var dt=new Date(s);if(isNaN(dt.getTime()))return false;
-    return(new Date()-dt)/86400000>60;
+    var dt = repEffectiveContactDate(r);
+    if (!dt) return false;
+    return (new Date()-dt)/86400000>60;
   }).sort(function(a,b){
-    return new Date(a.lastContact)-new Date(b.lastContact);
+    return repEffectiveContactDate(a)-repEffectiveContactDate(b);
   }).slice(0,4);
 
   if(repVisitsDue.length){
@@ -1051,9 +1062,11 @@ function renderDash(){
       var av=document.createElement("div");av.style.cssText="width:28px;height:28px;border-radius:50%;background:#9b59b6;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0";av.textContent=ini(r.name);
       var info=document.createElement("div");info.style.flex="1";
       var nm=document.createElement("div");nm.style.cssText="font-weight:700;font-size:12px";nm.textContent=r.name;
-      var sub=document.createElement("div");sub.style.cssText="font-size:10px;color:var(--muted)";sub.textContent=(r.manufacturer||"")+(r.lastContact?" \u00b7 Last: "+r.lastContact:"");
+      var effDate = repEffectiveContactDate(r);
+      var lastLabel = r.lastInteractionDate || r.lastContact || "";
+      var sub=document.createElement("div");sub.style.cssText="font-size:10px;color:var(--muted)";sub.textContent=(r.manufacturer||"")+(lastLabel?" \u00b7 Last: "+lastLabel:"");
       info.appendChild(nm);info.appendChild(sub);
-      var dt=new Date(r.lastContact);var days=Math.round((new Date()-dt)/86400000);
+      var days=Math.round((new Date()-effDate)/86400000);
       var badge=document.createElement("span");badge.style.cssText="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--rbg);color:var(--rtxt);flex-shrink:0";badge.textContent=days+"d ago";
       row.appendChild(av);row.appendChild(info);row.appendChild(badge);rvPanel.appendChild(row);
     });
@@ -4262,7 +4275,14 @@ function showMonthlyReport() {
       else{
         var today=new Date();today.setHours(0,0,0,0);
         var repData=reps.map(function(r){
-          var daysSince=9999;if(r.lastContact){var d=new Date(r.lastContact.indexOf("/")>-1?(function(){var p=r.lastContact.split("/");return p[2]+"-"+p[1]+"-"+p[0];})():r.lastContact);if(!isNaN(d.getTime()))daysSince=Math.round((today-d)/86400000);}
+          var effectiveContact = r.lastInteractionDate || r.lastContact;
+          // If both exist, use whichever is more recent
+          if (r.lastInteractionDate && r.lastContact) {
+            var p1=r.lastInteractionDate.indexOf("/")>-1?(function(){var p=r.lastInteractionDate.split("/");return new Date(p[2]+"-"+p[1]+"-"+p[0]);})():new Date(r.lastInteractionDate);
+            var p2=r.lastContact.indexOf("/")>-1?(function(){var p=r.lastContact.split("/");return new Date(p[2]+"-"+p[1]+"-"+p[0]);})():new Date(r.lastContact);
+            effectiveContact = p1>p2 ? r.lastInteractionDate : r.lastContact;
+          }
+          var daysSince=9999;if(effectiveContact){var d=new Date(effectiveContact.indexOf("/")>-1?(function(){var p=effectiveContact.split("/");return p[2]+"-"+p[1]+"-"+p[0];})():effectiveContact);if(!isNaN(d.getTime()))daysSince=Math.round((today-d)/86400000);}
           var sampleCount=samples?samples.filter(function(s){return s.repId===r.id;}).length:0;
           return {name:r.name,manufacturer:r.manufacturer||"Other",daysSince:daysSince,nextVisit:r.nextVisit||"",sampleCount:sampleCount,log:(r.log||[]).length};
         });
