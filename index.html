@@ -2921,7 +2921,19 @@ function openDiaryDay(day) {
       var dot2 = document.createElement("div"); dot2.style.cssText = "width:8px;height:8px;border-radius:50%;background:"+(e.category==="personal"?"#9333ea":(typeColors[e.type]||"#305CDE"))+";flex-shrink:0";
       var et = document.createElement("div"); et.style.flex="1"; et.style.fontSize="12px"; et.style.fontWeight="700"; et.textContent = (e.allDay?"All day":String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"))+" "+e.title+(e.withName?" with "+e.withName:"");
       var db2 = document.createElement("button"); db2.style.cssText = "padding:3px 7px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);font-size:10px;color:var(--rtxt);cursor:pointer"; db2.textContent = "Delete";
-      db2.addEventListener("click", (function(eid){ return function(){ diaryEvents=diaryEvents.filter(function(x){return x.id!==eid;});saveDiary();document.body.removeChild(overlay);renderDiaryView(); }; })(e.id));
+      db2.addEventListener("click", (function(eid, bdLinkId){ return async function(){
+        diaryEvents=diaryEvents.filter(function(x){return x.id!==eid;});
+        await sbDelete("diary_events", eid);
+        if (bdLinkId) {
+          birthdays = birthdays.filter(function(x){ return x.id!==bdLinkId; });
+          await sbDelete("birthdays", bdLinkId);
+          saveBirthdays();
+        }
+        saveDiary();
+        document.body.removeChild(overlay);
+        renderDiaryView();
+        toast("Deleted \u2713");
+      }; })(e.id, e.bdId));
       er.appendChild(dot2); er.appendChild(et); er.appendChild(db2); bd.appendChild(er);
     });
     var divider = document.createElement("div"); divider.style.cssText = "border-top:1px solid var(--border);margin:4px 0"; bd.appendChild(divider);
@@ -3232,7 +3244,22 @@ function editDiaryEvent(eid) {
   box.appendChild(bd);
   var foot=document.createElement("div");foot.style.cssText="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:7px";
   var delB3=document.createElement("button");delB3.style.cssText="padding:7px 12px;background:none;border:1px solid var(--rtxt);border-radius:var(--rs);color:var(--rtxt);font-size:12px;cursor:pointer";delB3.textContent="Delete event";
-  delB3.addEventListener("click",function(){if(confirm("Delete this event?")){diaryEvents=diaryEvents.filter(function(x){return x.id!==eid;});saveDiary();document.body.removeChild(overlay);renderDash();renderDiaryView&&renderDiaryView();toast("Deleted");}});
+  delB3.addEventListener("click",async function(){
+    if(confirm("Delete this event?")){
+      diaryEvents=diaryEvents.filter(function(x){return x.id!==eid;});
+      await sbDelete("diary_events", eid);
+      if (ev.bdId) {
+        birthdays = birthdays.filter(function(x){ return x.id!==ev.bdId; });
+        await sbDelete("birthdays", ev.bdId);
+        saveBirthdays();
+      }
+      saveDiary();
+      document.body.removeChild(overlay);
+      renderDash();
+      renderDiaryView&&renderDiaryView();
+      toast("Deleted \u2713");
+    }
+  });
   var rightBtns=document.createElement("div");rightBtns.style.cssText="display:flex;gap:7px";
   var cancelB4=document.createElement("button");cancelB4.style.cssText="padding:7px 12px;background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer";cancelB4.textContent="Cancel";cancelB4.addEventListener("click",function(){document.body.removeChild(overlay);});
   var saveB4=document.createElement("button");saveB4.style.cssText="padding:7px 16px;background:#e8a020;border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer";saveB4.textContent="Save changes";
