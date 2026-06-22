@@ -1181,6 +1181,7 @@ function renderDet(){
       function qf2(lbl2,val2,wide2){var f=document.createElement("div");if(wide2)f.style.gridColumn="1/-1";var fl=document.createElement("div");fl.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";fl.textContent=lbl2;var fv=document.createElement("div");fv.style.cssText="font-size:11px;color:var(--text)"+(wide2?";font-weight:700":"");fv.textContent=val2||"\u2014";f.appendChild(fl);f.appendChild(fv);return f;}
       qg.appendChild(qf2("Ref",l.quote.ref));qg.appendChild(qf2("Value",money(l.quote.value)));qg.appendChild(qf2("Product",l.quote.products,true));qbox.appendChild(qg);
       if(l.quote.lostReason){var lrDiv=document.createElement("div");lrDiv.style.cssText="font-size:11px;color:var(--rtxt);background:var(--rbg);border-radius:var(--rs);padding:6px 9px;margin-top:7px";lrDiv.innerHTML="<strong>Lost reason:</strong> "+l.quote.lostReason;qbox.appendChild(lrDiv);}
+      if(l.quote.paidDate){var pdDiv=document.createElement("div");pdDiv.style.cssText="font-size:11px;color:#1a5c1a;background:#d0f0d0;border-radius:var(--rs);padding:6px 9px;margin-top:7px";pdDiv.innerHTML="<strong>Paid:</strong> "+l.quote.paidDate;qbox.appendChild(pdDiv);}
       var qsr=document.createElement("div");qsr.style.cssText="display:flex;align-items:center;gap:8px;padding-top:7px;border-top:1px solid #b8caf5";
       var qsl=document.createElement("div");qsl.style.cssText="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px";qsl.textContent="Update status:";
       var qsel=document.createElement("select");qsel.style.cssText="padding:4px 9px;border:1px solid var(--border);border-radius:20px;font-size:10px;font-weight:700;background:#fff;cursor:pointer;outline:none;flex:1";
@@ -1397,6 +1398,13 @@ function updateQStatus(id,idx,status){
     box.appendChild(title);box.appendChild(sel);box.appendChild(notes);box.appendChild(btns);
     overlay.appendChild(box);document.body.appendChild(overlay);
     return;
+  }
+  if(status==="Paid"&&c.log[idx].quote.status!=="Paid"){
+    var today10=new Date();
+    var defaultPaid2=String(today10.getDate()).padStart(2,"0")+"/"+String(today10.getMonth()+1).padStart(2,"0")+"/"+today10.getFullYear();
+    var enteredDate2=prompt("Date paid (DD/MM/YYYY):",defaultPaid2);
+    if(enteredDate2===null){if(id===activeId)renderDet();return;}
+    c.log[idx].quote.paidDate=enteredDate2.trim()||defaultPaid2;
   }
   c.log[idx].quote.status=status;saveC();toast("Quote updated");
   if(id===activeId)renderDet();
