@@ -2920,6 +2920,8 @@ function openDiaryDay(day) {
       var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
       var dot2 = document.createElement("div"); dot2.style.cssText = "width:8px;height:8px;border-radius:50%;background:"+(e.category==="personal"?"#9333ea":(typeColors[e.type]||"#305CDE"))+";flex-shrink:0";
       var et = document.createElement("div"); et.style.flex="1"; et.style.fontSize="12px"; et.style.fontWeight="700"; et.textContent = (e.allDay?"All day":String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"))+" "+e.title+(e.withName?" with "+e.withName:"");
+      var eb2 = document.createElement("button"); eb2.style.cssText = "padding:3px 7px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);font-size:10px;color:var(--navy);cursor:pointer"; eb2.textContent = "Edit";
+      eb2.addEventListener("click", (function(eid){ return function(){ document.body.removeChild(overlay); editDiaryEvent(eid); }; })(e.id));
       var db2 = document.createElement("button"); db2.style.cssText = "padding:3px 7px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);font-size:10px;color:var(--rtxt);cursor:pointer"; db2.textContent = "Delete";
       db2.addEventListener("click", (function(eid, bdLinkId){ return async function(){
         diaryEvents=diaryEvents.filter(function(x){return x.id!==eid;});
@@ -2934,7 +2936,7 @@ function openDiaryDay(day) {
         renderDiaryView();
         toast("Deleted \u2713");
       }; })(e.id, e.bdId));
-      er.appendChild(dot2); er.appendChild(et); er.appendChild(db2); bd.appendChild(er);
+      er.appendChild(dot2); er.appendChild(et); er.appendChild(eb2); er.appendChild(db2); bd.appendChild(er);
     });
     var divider = document.createElement("div"); divider.style.cssText = "border-top:1px solid var(--border);margin:4px 0"; bd.appendChild(divider);
   }
