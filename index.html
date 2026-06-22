@@ -976,7 +976,7 @@ function renderDash(){
     var dpTitle = document.createElement("div"); dpTitle.style.cssText = "font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; dpTitle.textContent = "Diary — Today";
     var dpBadge = document.createElement("span"); dpBadge.style.cssText = "background:#e8a020;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px"; dpBadge.textContent = allDiaryEvts.length+" event"+(allDiaryEvts.length!==1?"s":"");
     dpHdr.appendChild(dpTitle); dpHdr.appendChild(dpBadge); diaryPanel.appendChild(dpHdr);
-    var typeColors2 = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
+    var typeColors2 = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
     allDiaryEvts.forEach(function(e){
       var er = document.createElement("div"); er.style.cssText = "display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--alt);border-radius:var(--rs);margin-bottom:5px;cursor:pointer";
       er.addEventListener("click", function(){ showDiary(); });
@@ -1267,7 +1267,7 @@ function renderDet(){
   if(cDE.length||cDEpast.length){
     var dSec=document.createElement("div");dSec.className="sec full";
     var dTag=document.createElement("span");dTag.className="stag";dTag.style.cssText="display:inline-block;font-size:9px;font-weight:700;padding:2px 9px;border-radius:20px;margin-bottom:11px;letter-spacing:.5px;text-transform:uppercase;background:#fff3e0;color:#854f0b";dTag.textContent="Diary events";dSec.appendChild(dTag);
-    var tC3={"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
+    var tC3={"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
     cDE.forEach(function(e){
       var er=document.createElement("div");er.style.cssText="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff8f0;border:1px solid #ffd699;border-radius:var(--rs);margin-bottom:6px;cursor:pointer";
       er.addEventListener("click",function(){showDiary();});
@@ -2129,10 +2129,10 @@ function renderBirthdaysView(){
   var title=document.createElement("div");title.className="page-title";title.textContent="Key Contact Birthdays";
   var addBtn=document.createElement("button");addBtn.style.cssText="padding:7px 16px;background:var(--red);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer";addBtn.textContent="+ Add birthday";addBtn.addEventListener("click",showBdayForm);
   hdr.appendChild(title);hdr.appendChild(addBtn);sv.appendChild(hdr);
-  var upcoming=birthdays.filter(function(b){var d=daysUntilBday(b.date);return d>=0&&d<=30;}).sort(function(a,b){return daysUntilBday(a.date)-daysUntilBday(b.date);});
+  var upcoming=birthdays.filter(function(b){var d=daysUntilBday(b.date);return d>=0&&d<=14;}).sort(function(a,b){return daysUntilBday(a.date)-daysUntilBday(b.date);});
   if(upcoming.length){
     var upCard=document.createElement("div");upCard.style.cssText="background:#fff8e0;border:1px solid #f0c060;border-radius:var(--r);padding:13px 15px;margin-bottom:14px";
-    var ut=document.createElement("div");ut.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--atxt);margin-bottom:9px";ut.textContent="Coming up in the next 30 days";upCard.appendChild(ut);
+    var ut=document.createElement("div");ut.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--atxt);margin-bottom:9px";ut.textContent="Coming up in the next 14 days";upCard.appendChild(ut);
     upcoming.forEach(function(b){
       var row=document.createElement("div");row.style.cssText="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0e0a0";
       var left=document.createElement("div");var nm=document.createElement("div");nm.style.cssText="font-weight:700;font-size:12px";nm.textContent=b.name;var co=document.createElement("div");co.style.cssText="font-size:10px;color:var(--atxt)";co.textContent=(b.company||"")+(b.type?" ["+b.type+"]":"");left.appendChild(nm);left.appendChild(co);
@@ -2834,7 +2834,7 @@ function renderDiaryView() {
     var dayEvts = eventsForDay(diaryYear, diaryMonth, day);
     dayEvts.slice(0, 3).forEach(function(e) {
       var evtEl = document.createElement("div");
-      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
+      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
       var col = e.category==="personal" ? "#9333ea" : (typeColors[e.type] || "#305CDE");
       evtEl.style.cssText = "font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;background:"+col;
       var timeStr = e.allDay ? "" : String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0")+" ";
@@ -2854,27 +2854,27 @@ function renderDiaryView() {
   }
   cal.appendChild(grid); dv.appendChild(cal);
 
-  // Upcoming events list
+  // Upcoming events list (next 14 days only, keeps this section manageable)
   var upcoming = diaryEvents.filter(function(e){
     if (e.completed) return false;
     var evtDate = new Date(e.year, e.month, e.day);
     var diff = Math.ceil((evtDate - new Date()) / 86400000);
-    return diff >= -1;
+    return diff >= -1 && diff <= 14;
   }).sort(function(a,b){
     var da = new Date(a.year,a.month,a.day)*1000000 + (a.allDay?0:a.hour*60+a.minute);
     var db = new Date(b.year,b.month,b.day)*1000000 + (b.allDay?0:b.hour*60+b.minute);
     return da-db;
-  }).slice(0,10);
+  });
 
   if (upcoming.length) {
-    var upTitle = document.createElement("div"); upTitle.style.cssText = "font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)"; upTitle.textContent = "Upcoming events";
+    var upTitle = document.createElement("div"); upTitle.style.cssText = "font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)"; upTitle.textContent = "Upcoming events (next 14 days)";
     dv.appendChild(upTitle);
     upcoming.forEach(function(e) {
       var evtDate = new Date(e.year, e.month, e.day);
       var diff = Math.ceil((evtDate - new Date()) / 86400000);
       var diffStr = diff < 0 ? Math.abs(diff)+"d ago" : diff === 0 ? "Today" : diff === 1 ? "Tomorrow" : diff+"d";
       var diffCls = diff < 0 ? "background:var(--rbg);color:var(--rtxt)" : diff <= 1 ? "background:var(--abg);color:var(--atxt)" : "background:var(--lbg);color:var(--ltxt)";
-      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
+      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
       var col = e.category==="personal" ? "#9333ea" : (typeColors[e.type] || "#305CDE");
       var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:7px;border-left:4px solid "+col;
       var dot = document.createElement("div"); dot.style.cssText = "width:10px;height:10px;border-radius:50%;background:"+col+";flex-shrink:0";
@@ -2918,7 +2918,7 @@ function openDiaryDay(day) {
     bd.appendChild(existTitle);
     dayEvts.forEach(function(e) {
       var er = document.createElement("div"); er.style.cssText = "display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--alt);border-radius:var(--rs);margin-bottom:4px";
-      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Other":"#7f8c8d"};
+      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
       var dot2 = document.createElement("div"); dot2.style.cssText = "width:8px;height:8px;border-radius:50%;background:"+(e.category==="personal"?"#9333ea":(typeColors[e.type]||"#305CDE"))+";flex-shrink:0";
       var et = document.createElement("div"); et.style.flex="1"; et.style.fontSize="12px"; et.style.fontWeight="700"; et.textContent = (e.allDay?"All day":String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"))+" "+e.title+(e.withName?" with "+e.withName:"");
       var db2 = document.createElement("button"); db2.style.cssText = "padding:3px 7px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);font-size:10px;color:var(--rtxt);cursor:pointer"; db2.textContent = "Delete";
@@ -2967,8 +2967,24 @@ function openDiaryDay(day) {
 
   // Event type
   var typeSel2 = document.createElement("select"); typeSel2.id = "ev_type"; typeSel2.style.cssText = "width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
-  ["Meeting","Site Visit","Call","Rep Visit","Delivery","Family Event","Other"].forEach(function(t){ var o=document.createElement("option"); o.value=t; o.textContent=t; typeSel2.appendChild(o); });
+  ["Meeting","Site Visit","Call","Rep Visit","Delivery","Family Event","Holiday","Other"].forEach(function(t){ var o=document.createElement("option"); o.value=t; o.textContent=t; typeSel2.appendChild(o); });
   bd.appendChild(mkFd("Event type", typeSel2));
+
+  // Holiday end date (only shown when type = Holiday)
+  var holEndWrap = document.createElement("div"); holEndWrap.style.display = "none";
+  var holEndLbl = document.createElement("label"); holEndLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; holEndLbl.textContent = "Last day of holiday";
+  var holEndInp = document.createElement("input"); holEndInp.type = "date"; holEndInp.id = "ev_hol_end";
+  var startDateStr = diaryYear+"-"+String(diaryMonth+1).padStart(2,"0")+"-"+String(day).padStart(2,"0");
+  holEndInp.value = startDateStr; holEndInp.min = startDateStr;
+  holEndInp.style.cssText = "width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+  holEndWrap.appendChild(holEndLbl); holEndWrap.appendChild(holEndInp);
+  bd.appendChild(holEndWrap);
+
+  typeSel2.addEventListener("change", function(){
+    var isHoliday = typeSel2.value === "Holiday";
+    holEndWrap.style.display = isHoliday ? "block" : "none";
+    if (isHoliday) { setCategory("personal"); }
+  });
 
   // Title
   var titleInp = document.createElement("input"); titleInp.id = "ev_title"; titleInp.placeholder = "What's happening..."; titleInp.style.cssText = "width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
@@ -3050,11 +3066,39 @@ function openDiaryDay(day) {
     if (currentWithType === "family") { withName = document.getElementById("ev_with_family").value.trim(); }
     else if (currentWithType !== "none" && document.getElementById("ev_with").value) { withName = document.getElementById("ev_with").value; }
     var isAllDay = document.getElementById("ev_allday").checked;
+    var evType = document.getElementById("ev_type").value;
+
+    if (evType === "Holiday") {
+      var endDateVal = document.getElementById("ev_hol_end").value; // "YYYY-MM-DD"
+      var endParts = endDateVal.split("-").map(Number);
+      var startDateObj = new Date(diaryYear, diaryMonth, day);
+      var endDateObj = new Date(endParts[0], endParts[1]-1, endParts[2]);
+      if (endDateObj < startDateObj) { toast("Last day can't be before the first day"); return; }
+      var dayCount = 0;
+      var cursor = new Date(startDateObj);
+      while (cursor <= endDateObj) {
+        diaryEvents.push({
+          id: "EV-"+Date.now()+"-"+dayCount,
+          year: cursor.getFullYear(), month: cursor.getMonth(), day: cursor.getDate(),
+          hour: null, minute: null, allDay: true,
+          type: "Holiday", title: evTitle,
+          notes: document.getElementById("ev_notes").value.trim(),
+          withName: "", withType: "none", completed: false, category: "personal"
+        });
+        cursor.setDate(cursor.getDate()+1); dayCount++;
+      }
+      saveDiary();
+      document.body.removeChild(overlay);
+      renderDiaryView();
+      toast("Holiday added \u2713 " + dayCount + " day" + (dayCount!==1?"s":""));
+      return;
+    }
+
     var newEvt={id:"EV-"+Date.now(),year:diaryYear,month:diaryMonth,day:day,
       hour:isAllDay?null:parseInt(document.getElementById("ev_hour").value),
       minute:isAllDay?null:parseInt(document.getElementById("ev_min").value),
       allDay:isAllDay,
-      type:document.getElementById("ev_type").value,
+      type:evType,
       title:evTitle,
       notes:document.getElementById("ev_notes").value.trim(),
       withName:withName,withType:currentWithType,completed:false,category:currentCategory};
