@@ -3670,7 +3670,7 @@ function renderWebsitesView() {
         var delBtn2 = document.createElement("button");
         delBtn2.style.cssText = "padding:6px 10px;background:none;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;cursor:pointer;color:var(--rtxt)";
         delBtn2.textContent = "\u00d7";
-        delBtn2.addEventListener("click", (function(idx2){ return function(){ if(confirm("Remove this website?")){websites.splice(idx2,1);saveWebsites();renderWebsitesView();toast("Removed");} }; })(realIdx));
+        delBtn2.addEventListener("click", (function(idx2){ return async function(){ if(confirm("Remove this website?")){ var siteToDelete=websites[idx2]; websites.splice(idx2,1); if(siteToDelete&&siteToDelete.id){ await sbDelete("websites", siteToDelete.id); } saveWebsites(); renderWebsitesView(); toast("Removed"); } }; })(realIdx));
         btns.appendChild(openBtn); btns.appendChild(editBtn2); btns.appendChild(delBtn2);
         card.appendChild(btns); grid.appendChild(card);
       });
@@ -4103,7 +4103,7 @@ function renderDocsView() {
         var delBtn3 = document.createElement("button");
         delBtn3.style.cssText = "padding:6px 10px;background:none;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;cursor:pointer;color:var(--rtxt)";
         delBtn3.textContent = "\u00d7";
-        delBtn3.addEventListener("click", (function(idx2){ return function(){ if(confirm("Remove this document?")){docs.splice(idx2,1);saveDocs();renderDocsView();toast("Removed");} }; })(realIdx));
+        delBtn3.addEventListener("click", (function(idx2){ return async function(){ if(confirm("Remove this document?")){ var docToDelete=docs[idx2]; docs.splice(idx2,1); if(docToDelete&&docToDelete.id){ await sbDelete("docs", docToDelete.id); } saveDocs(); renderDocsView(); toast("Removed"); } }; })(realIdx));
         btns.appendChild(openBtn); btns.appendChild(editBtn3); btns.appendChild(delBtn3);
         card.appendChild(btns); grid.appendChild(card);
       });
