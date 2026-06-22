@@ -482,12 +482,30 @@ async function loadFromSupabase() {
     });
     if (needsIdFix) { saveWebsites(); }
     if (docs2 && docs2.length > 0) docs = docs2;
-    // One-time fix: backfill missing ids on older doc records (same legacy bug as websites)
-    var needsDocIdFix = false;
-    docs.forEach(function(doc, idx){
-      if (!doc.id) { doc.id = "DOC-" + Date.now() + "-" + idx; needsDocIdFix = true; }
+    // One-time fix: collapse duplicate/id-less doc records (legacy bug created a fresh duplicate on every load)
+    var seenDocKeys = {};
+    var cleanDocs = [];
+    var foundDuplicatesOrMissingIds = false;
+    docs.forEach(function(doc){
+      var key = (doc.name||"") + "|" + (doc.url||"");
+      if (!doc.id) foundDuplicatesOrMissingIds = true;
+      if (seenDocKeys[key]) { foundDuplicatesOrMissingIds = true; return; } // skip duplicate
+      seenDocKeys[key] = true;
+      cleanDocs.push(doc);
     });
-    if (needsDocIdFix) { saveDocs(); }
+    cleanDocs.forEach(function(doc, idx){
+      if (!doc.id) doc.id = "DOC-" + Date.now() + "-" + idx;
+    });
+    if (foundDuplicatesOrMissingIds) {
+      docs = cleanDocs;
+      // Clear the table fully first since old id-less rows can't be targeted individually, then push the clean set
+      var oldDocRows = await fetch(SB_URL+"/rest/v1/docs?id=not.is.null", {
+        method: "DELETE",
+        headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}
+      }).catch(function(){});
+      await sbSaveAll("docs", docs, "id");
+      try { localStorage.setItem(DOCS_STORE, JSON.stringify(docs)); } catch(e) {}
+    }
 
     sbReady = true;
     console.log("Supabase ready! Clients:", clients.length);
