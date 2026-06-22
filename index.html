@@ -1195,7 +1195,7 @@ function renderDet(){
   var sourceHtml = c.source ? "<span style=\'font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;"+(sourceColors[c.source]||"background:var(--alt);color:var(--muted)")+"\'>"+c.source+"</span>" : "&mdash;";
   grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",val:c.binder},{label:"Manager",val:c.manager},{label:"Account name",val:c.name,wide:true},{label:"Contact name",val:c.contact,wide:true},{label:"Customer source",html:sourceHtml}]));
   grid.appendChild(addSec("","t-ct","Contact",[{label:"Telephone",val:c.tel},{label:"Mobile",val:c.mobile},{label:"Area",val:c.address}]));
-  grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",val:c.product,wide:true},{label:"Est. annual spend",val:c.spend},{label:"Priority",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Paid"){t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Paid")t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",val:c.wontBuy,wide:true}]));
+  grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",val:c.product,wide:true},{label:"Est. annual spend",val:c.spend},{label:"Priority",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected")t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",val:c.wontBuy,wide:true}]));
   grid.appendChild(addSec("","t-ch","Competitor notes",[{label:"Who else they buy from",val:c.competitorNotes,wide:true}]));
   grid.appendChild(addSec("","t-tr","Tracking",[{label:"Status",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",val:c.interactionType},{label:"Last contacted",val:c.lastContact},{label:"Follow-up date",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Account opened",val:c.dateOpened||"—"},{label:"Key dates",val:c.keyDates,wide:true}]));
   var notesSec=document.createElement("div");notesSec.className="sec full";
@@ -1236,10 +1236,11 @@ function renderDet(){
       qg.appendChild(qf2("Ref",l.quote.ref));qg.appendChild(qf2("Value",money(l.quote.value)));qg.appendChild(qf2("Product",l.quote.products,true));qbox.appendChild(qg);
       if(l.quote.lostReason){var lrDiv=document.createElement("div");lrDiv.style.cssText="font-size:11px;color:var(--rtxt);background:var(--rbg);border-radius:var(--rs);padding:6px 9px;margin-top:7px";lrDiv.innerHTML="<strong>Lost reason:</strong> "+l.quote.lostReason;qbox.appendChild(lrDiv);}
       if(l.quote.paidDate){var pdDiv=document.createElement("div");pdDiv.style.cssText="font-size:11px;color:#1a5c1a;background:#d0f0d0;border-radius:var(--rs);padding:6px 9px;margin-top:7px";pdDiv.innerHTML="<strong>Paid:</strong> "+l.quote.paidDate;qbox.appendChild(pdDiv);}
+      if(l.quote.collectedDate){var cdDiv=document.createElement("div");cdDiv.style.cssText="font-size:11px;color:#0a4a7a;background:#d0e8f5;border-radius:var(--rs);padding:6px 9px;margin-top:7px";cdDiv.innerHTML="<strong>Collected:</strong> "+l.quote.collectedDate;qbox.appendChild(cdDiv);}
       var qsr=document.createElement("div");qsr.style.cssText="display:flex;align-items:center;gap:8px;padding-top:7px;border-top:1px solid #b8caf5";
       var qsl=document.createElement("div");qsl.style.cssText="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px";qsl.textContent="Update status:";
       var qsel=document.createElement("select");qsel.style.cssText="padding:4px 9px;border:1px solid var(--border);border-radius:20px;font-size:10px;font-weight:700;background:#fff;cursor:pointer;outline:none;flex:1";
-      ["Quote","Confirmed","Invoiced","Paid","Lost","Expired"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(l.quote.status===s2)opt.selected=true;qsel.appendChild(opt);});
+      ["Quote","Confirmed","Invoiced","Paid","Collected","Lost","Expired"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(l.quote.status===s2)opt.selected=true;qsel.appendChild(opt);});
       qsel.addEventListener("change",(function(i){return function(e){updateQStatus(c.id,i,e.target.value);};})(idx));
       qsr.appendChild(qsl);qsr.appendChild(qsel);qbox.appendChild(qsr);entry.appendChild(qbox);
     }
@@ -1247,7 +1248,7 @@ function renderDet(){
   });
   if(!(c.log||[]).length){var nl=document.createElement("p");nl.style.cssText="font-size:11px;color:var(--muted);margin-bottom:7px";nl.textContent="No interactions logged yet.";logSec.appendChild(nl);}grid.appendChild(logSec);
   var prodMap={},qtrMap={Q1:0,Q2:0,Q3:0,Q4:0};
-  (c.log||[]).forEach(function(l){if(l.quote&&(l.quote.status==="Confirmed"||l.quote.status==="Invoiced"||l.quote.status==="Paid")){var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);var prod=l.quote.category||l.quote.products||"Other";prodMap[prod]=(prodMap[prod]||0)+v;if(l.date){var dp=l.date.split("/");if(dp.length===3){var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrMap[q]=(qtrMap[q]||0)+v;}}}}); 
+  (c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);var prod=l.quote.category||l.quote.products||"Other";prodMap[prod]=(prodMap[prod]||0)+v;var useDate=l.quote.collectedDate||l.date;if(useDate){var dp=useDate.split("/");if(dp.length===3){var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrMap[q]=(qtrMap[q]||0)+v;}}}}); 
   var hasProd=Object.keys(prodMap).length>0,hasQtr=Object.values(qtrMap).some(function(v){return v>0;});
   if(hasProd||hasQtr){
     var cs=document.createElement("div");cs.className="sec full";var ct=document.createElement("span");ct.className="stag t-ch";ct.textContent="Sales intelligence";cs.appendChild(ct);
@@ -1459,6 +1460,13 @@ function updateQStatus(id,idx,status){
     var enteredDate2=prompt("Date paid (DD/MM/YYYY):",defaultPaid2);
     if(enteredDate2===null){if(id===activeId)renderDet();return;}
     c.log[idx].quote.paidDate=enteredDate2.trim()||defaultPaid2;
+  }
+  if(status==="Collected"&&c.log[idx].quote.status!=="Collected"){
+    var today11=new Date();
+    var defaultCollected=String(today11.getDate()).padStart(2,"0")+"/"+String(today11.getMonth()+1).padStart(2,"0")+"/"+today11.getFullYear();
+    var enteredCollected=prompt("Date collected (DD/MM/YYYY):",defaultCollected);
+    if(enteredCollected===null){if(id===activeId)renderDet();return;}
+    c.log[idx].quote.collectedDate=enteredCollected.trim()||defaultCollected;
   }
   c.log[idx].quote.status=status;saveC();toast("Quote updated");
   if(id===activeId)renderDet();
@@ -1863,8 +1871,8 @@ function getDailySalesData(year, month){ // month is 0-indexed (0=Jan)
   var days = []; for (var d=1; d<=daysInMonth; d++) days.push(0);
   var monthTotal = 0;
   clients.forEach(function(c){(c.log||[]).forEach(function(l){
-    if(!l.quote||l.quote.status!=="Paid")return;
-    var useDate = l.quote.paidDate || l.date;
+    if(!l.quote||l.quote.status!=="Collected")return;
+    var useDate = l.quote.collectedDate || l.date;
     if(!useDate)return;
     var dp=useDate.split("/");if(dp.length!==3)return;
     var d=parseInt(dp[0]),m=parseInt(dp[1])-1,y=parseInt(dp[2]);
@@ -1878,8 +1886,8 @@ function getSalesData(year){
   var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},qtrProd={Q1:{},Q2:{},Q3:{},Q4:{}},yearTotal=0;
   PRODUCTS.forEach(function(p){prodTotals[p]=0;});
   clients.forEach(function(c){(c.log||[]).forEach(function(l){
-    if(!l.quote||l.quote.status!=="Paid")return;
-    var useDate = l.quote.paidDate || l.date;
+    if(!l.quote||l.quote.status!=="Collected")return;
+    var useDate = l.quote.collectedDate || l.date;
     if(!useDate)return;
     var dp=useDate.split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;
     var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";
@@ -3394,7 +3402,7 @@ function renderQuotesView() {
   });
 
   // Sort by status priority then value
-  var statusOrder = {"Quote":0,"Confirmed":1,"Invoiced":2,"Paid":3,"Lost":4,"Expired":5};
+  var statusOrder = {"Quote":0,"Confirmed":1,"Invoiced":2,"Paid":3,"Collected":4,"Lost":5,"Expired":6};
   allQuotes.sort(function(a,b){
     var so = (statusOrder[a.log.quote.status]||0) - (statusOrder[b.log.quote.status]||0);
     return so !== 0 ? so : b.val - a.val;
@@ -3408,7 +3416,7 @@ function renderQuotesView() {
   // Filter buttons
   var filters = document.createElement("div"); filters.style.cssText = "display:flex;gap:5px;flex-wrap:wrap";
   var activeFilter2 = "Quote";
-  ["All","Quote","Confirmed","Invoiced","Paid","Lost","Expired"].forEach(function(f) {
+  ["All","Quote","Confirmed","Invoiced","Paid","Collected","Lost","Expired"].forEach(function(f) {
     var btn = document.createElement("button");
     btn.style.cssText = "padding:4px 12px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;"+(f===activeFilter2?"background:var(--navy);color:#fff;border-color:var(--navy)":"background:var(--surface);color:var(--muted)");
     btn.textContent = f;
@@ -3422,12 +3430,13 @@ function renderQuotesView() {
   hdr.appendChild(title); hdr.appendChild(filters); qv.appendChild(hdr);
 
   // KPI row
-  var openVal=0, confirmedVal=0, invoicedVal=0, paidVal=0;
+  var openVal=0, confirmedVal=0, invoicedVal=0, paidVal=0, collectedVal=0;
   allQuotes.forEach(function(q){
     if(q.log.quote.status==="Quote")openVal+=q.val;
     else if(q.log.quote.status==="Confirmed")confirmedVal+=q.val;
     else if(q.log.quote.status==="Invoiced")invoicedVal+=q.val;
     else if(q.log.quote.status==="Paid")paidVal+=q.val;
+    else if(q.log.quote.status==="Collected")collectedVal+=q.val;
   });
   var lostVal=0,expiredVal=0;
   allQuotes.forEach(function(q){
@@ -3439,7 +3448,7 @@ function renderQuotesView() {
   [
     {l:"Quoted",v:openVal,c:"kv-amber",s:allQuotes.filter(function(q){return q.log.quote.status==="Quote";}).length+" quotes"},
     {l:"Confirmed",v:confirmedVal,c:"kv-green",s:allQuotes.filter(function(q){return q.log.quote.status==="Confirmed";}).length+" quotes"},
-    {l:"Paid",v:paidVal,c:"kv-green",s:allQuotes.filter(function(q){return q.log.quote.status==="Paid";}).length+" this period"}
+    {l:"Paid (awaiting collection)",v:paidVal,c:"kv-green",s:allQuotes.filter(function(q){return q.log.quote.status==="Paid";}).length+" quotes"}
   ].forEach(function(k){
     var card=document.createElement("div");card.style.cssText="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px";
     var lbl=document.createElement("div");lbl.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px";lbl.textContent=k.l;
@@ -3449,9 +3458,10 @@ function renderQuotesView() {
   });
   qv.appendChild(kpiRow);
   var kpiRow2 = document.createElement("div");
-  kpiRow2.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px";
+  kpiRow2.style.cssText = "display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px";
   [
     {l:"Invoiced",v:invoicedVal,c:"kv-blue",s:allQuotes.filter(function(q){return q.log.quote.status==="Invoiced";}).length+" quotes"},
+    {l:"Collected",v:collectedVal,c:"kv-blue",s:allQuotes.filter(function(q){return q.log.quote.status==="Collected";}).length+" this period"},
     {l:"Lost",v:lostVal,c:"kv-red",s:allQuotes.filter(function(q){return q.log.quote.status==="Lost";}).length+" quotes"},
     {l:"Expired",v:expiredVal,c:"kv-amber",s:allQuotes.filter(function(q){return q.log.quote.status==="Expired";}).length+" quotes"}
   ].forEach(function(k){
@@ -3472,7 +3482,7 @@ function renderQuotesView() {
     if (!filtered.length) {
       var em=document.createElement("div");em.className="empty-state";em.innerHTML="<div>&#128178;</div><div class='es-title'>No "+activeFilter2.toLowerCase()+" quotes</div>";listWrap.appendChild(em);return;
     }
-    var statusCols={"Quote":"background:var(--abg);color:var(--atxt)","Confirmed":"background:var(--gbg);color:var(--gtxt)","Invoiced":"background:var(--lbg);color:var(--ltxt)","Paid":"background:#d0f0d0;color:#1a5c1a","Lost":"background:var(--rbg);color:var(--rtxt)","Expired":"background:var(--grbg);color:var(--grtxt)"};
+    var statusCols={"Quote":"background:var(--abg);color:var(--atxt)","Confirmed":"background:var(--gbg);color:var(--gtxt)","Invoiced":"background:var(--lbg);color:var(--ltxt)","Paid":"background:#d0f0d0;color:#1a5c1a","Collected":"background:#d0e8f5;color:#0a4a7a","Lost":"background:var(--rbg);color:var(--rtxt)","Expired":"background:var(--grbg);color:var(--grtxt)"};
     filtered.forEach(function(q) {
       var card=document.createElement("div");card.style.cssText="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;cursor:pointer";
       card.addEventListener("click",(function(cid){return function(){openC(cid);};})(q.client.id));
@@ -3482,7 +3492,7 @@ function renderQuotesView() {
       var avCircle=document.createElement("div");avCircle.style.cssText="width:28px;height:28px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0";avCircle.textContent=ini(q.client.name);
       var cname=document.createElement("div");cname.style.cssText="font-weight:700;font-size:13px";cname.textContent=q.client.name;
       av.appendChild(avCircle);av.appendChild(cname);
-      var prod=document.createElement("div");prod.style.cssText="font-size:11px;color:var(--muted);margin-left:36px";prod.textContent=(q.log.quote.products||"")+(q.log.date?" · Quoted "+q.log.date:"")+(q.log.quote.paidDate?" · Paid "+q.log.quote.paidDate:"");
+      var prod=document.createElement("div");prod.style.cssText="font-size:11px;color:var(--muted);margin-left:36px";prod.textContent=(q.log.quote.products||"")+(q.log.date?" · Quoted "+q.log.date:"")+(q.log.quote.paidDate?" · Paid "+q.log.quote.paidDate:"")+(q.log.quote.collectedDate?" · Collected "+q.log.quote.collectedDate:"");
       left.appendChild(av);left.appendChild(prod);
       // Middle - value and days open
       var mid=document.createElement("div");mid.style.cssText="text-align:right;min-width:100px";
@@ -3501,7 +3511,7 @@ function renderQuotesView() {
       expRow.appendChild(expLbl);expRow.appendChild(expInp);
       // Status update
       var statSel=document.createElement("select");statSel.style.cssText="padding:3px 7px;border:1px solid var(--border);border-radius:var(--rs);font-size:10px;background:#fff;cursor:pointer;outline:none";
-      ["Quote","Confirmed","Invoiced","Paid"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(q.log.quote.status===s2)opt.selected=true;statSel.appendChild(opt);});
+      ["Quote","Confirmed","Invoiced","Paid","Collected"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(q.log.quote.status===s2)opt.selected=true;statSel.appendChild(opt);});
       statSel.addEventListener("click",function(e){e.stopPropagation();});
       statSel.addEventListener("change",(function(client3,li3){return function(e3){
         e3.stopPropagation();
@@ -3512,6 +3522,13 @@ function renderQuotesView() {
           var enteredDate = prompt("Date paid (DD/MM/YYYY):", defaultPaid);
           if (enteredDate === null) { renderQuotesView(); return; } // cancelled, revert dropdown
           client3.log[li3].quote.paidDate = enteredDate.trim() || defaultPaid;
+        }
+        if (newStatus === "Collected" && client3.log[li3].quote.status !== "Collected") {
+          var today12 = new Date();
+          var defaultCollected2 = String(today12.getDate()).padStart(2,"0")+"/"+String(today12.getMonth()+1).padStart(2,"0")+"/"+today12.getFullYear();
+          var enteredCollected2 = prompt("Date collected (DD/MM/YYYY):", defaultCollected2);
+          if (enteredCollected2 === null) { renderQuotesView(); return; }
+          client3.log[li3].quote.collectedDate = enteredCollected2.trim() || defaultCollected2;
         }
         client3.log[li3].quote.status = newStatus;
         saveC();
@@ -3982,7 +3999,7 @@ function calcAutoPriority(c) {
   // Total paid sales (up to 40 points)
   var totalSales = 0;
   (c.log||[]).forEach(function(l){
-    if(l.quote&&l.quote.status==="Paid")
+    if(l.quote&&l.quote.status==="Collected")
       totalSales += (parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
   });
   if(totalSales >= 10000) score += 40;
@@ -4281,10 +4298,10 @@ function showMonthlyReport() {
         if(l.date){var dp=l.date.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr)monthInteractions++;}
         if(l.quote){
           if((l.quote.status==="Quote"||l.quote.status==="Confirmed")){openQuotes++;openQuoteVal+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);}
-          if(l.quote.status==="Paid"){var useDate2=l.quote.paidDate||l.date;if(useDate2){var dp=useDate2.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr){var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);monthSales+=v;monthSalesCount++;var cat=l.quote.category||"Other";productMap[cat]=(productMap[cat]||0)+v;}}}
+          if(l.quote.status==="Collected"){var useDate2=l.quote.collectedDate||l.date;if(useDate2){var dp=useDate2.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr){var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);monthSales+=v;monthSalesCount++;var cat=l.quote.category||"Other";productMap[cat]=(productMap[cat]||0)+v;}}}
         }
       });});
-      var topClients=[];clients.forEach(function(c){var sp=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Paid"){var useDate3=l.quote.paidDate||l.date;if(useDate3){var dp=useDate3.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr)sp+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);}}});if(sp>0)topClients.push({name:c.name,spend:sp});});
+      var topClients=[];clients.forEach(function(c){var sp=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){var useDate3=l.quote.collectedDate||l.date;if(useDate3){var dp=useDate3.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr)sp+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);}}});if(sp>0)topClients.push({name:c.name,spend:sp});});
       topClients.sort(function(a,b){return b.spend-a.spend;}).splice(5);
 
       var hdr=document.createElement("div");hdr.style.cssText="font-size:13px;font-weight:700;margin-bottom:14px";hdr.textContent=mnames[mn]+" "+yr+" Snapshot";body.appendChild(hdr);
@@ -4387,7 +4404,7 @@ function showMonthlyReport() {
         if(l.quote){
           var cat=l.quote.category||l.quote.products||"Other";if(!cat)cat="Other";
           var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
-          if(l.quote.status==="Paid"){catRev[cat]=(catRev[cat]||0)+v;catCount[cat]=(catCount[cat]||0)+1;}
+          if(l.quote.status==="Collected"){catRev[cat]=(catRev[cat]||0)+v;catCount[cat]=(catCount[cat]||0)+1;}
           if(l.quote.status==="Quote"||l.quote.status==="Confirmed"){catPipeline[cat]=(catPipeline[cat]||0)+v;}
         }
       });});
