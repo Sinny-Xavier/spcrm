@@ -297,6 +297,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
       <button class="nav-btn" onclick="showSales()">&#128200; Sales</button>
       <button class="nav-btn" onclick="showSamples()">&#128230; Samples</button>
       <button class="nav-btn" onclick="showComplaints()">&#128221; Complaints</button>
+      <button class="nav-btn" onclick="showEnquiries()" style="background:rgba(155,89,182,.2);border-color:rgba(155,89,182,.4)">&#128172; Enquiries</button>
     <button class="nav-btn" onclick="showQuotes()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128178; Quotes</button>
       <button class="nav-btn" onclick="showDiary()" style="background:rgba(255,153,0,.25);border-color:rgba(255,153,0,.5)">&#128197; Diary</button>
     <button class="nav-btn" onclick="showMonthlyReport()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128202; Report</button>
@@ -345,6 +346,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
     <div id="quotesView" class="page"></div>
     <div id="websitesView" class="page"></div>
     <div id="docsView" class="page"></div>
+    <div id="enquiriesView" class="page"></div>
     <div id="notesSearchView" class="page"></div>
   </main>
 </div>
@@ -447,10 +449,10 @@ var sbReady = false;
 
 async function loadFromSupabase() {
   try {
-    var [c, r, s, b, comp, d, w, docs2] = await Promise.all([
+    var [c, r, s, b, comp, d, w, docs2, enq] = await Promise.all([
       sbGet("clients"), sbGet("reps"), sbGet("samples"),
       sbGet("birthdays"), sbGet("complaints"), sbGet("diary_events"),
-      sbGet("websites"), sbGet("docs")
+      sbGet("websites"), sbGet("docs"), sbGet("enquiries")
     ]);
 
     // CLIENTS: Supabase is master. If empty, push local up.
@@ -474,6 +476,7 @@ async function loadFromSupabase() {
     if (b && b.length > 0) birthdays = b;
     if (comp && comp.length > 0) complaints = comp;
     if (d && d.length > 0) diaryEvents = d;
+    if (enq && enq.length > 0) enquiries = enq;
     if (w && w.length > 0) websites = w;
     // One-time fix: collapse duplicate/id-less website records (same legacy bug as docs - created a fresh duplicate on every load)
     var seenWebKeys = {};
@@ -824,7 +827,7 @@ function updateStats(){
 
 // ── VIEW MANAGER ──────────────────────────────────────────────────
 function showView(v){
-  ["dashView","detView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView"].forEach(function(id){
+  ["dashView","detView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView"].forEach(function(id){
     var el=document.getElementById(id);
     el.style.display=(id===v+"View"||(v==="det"&&id==="detView")||(v==="form"&&id==="formView"))?"block":"none";
   });
@@ -3749,6 +3752,175 @@ function showDocs() {
   activeId = null; renderList(); showView("docs"); renderDocsView();
 }
 
+// ── ENQUIRIES (things asked for that we don't stock) ──────────────
+var ENQ_STORE = "spcrm_enquiries_v1";
+var enquiries = [];
+
+function loadEnquiries() {
+  try { var r = localStorage.getItem(ENQ_STORE); if (r) return JSON.parse(r); } catch(e) {}
+  return [];
+}
+function saveEnquiries() {
+  try { localStorage.setItem(ENQ_STORE, JSON.stringify(enquiries)); } catch(e) {}
+  sbSaveAll("enquiries", enquiries, "id");
+}
+
+function showEnquiries() {
+  activeId = null; renderList(); showView("enquiries"); renderEnquiriesView();
+}
+
+function normaliseEnqText(s) {
+  return (s||"").toLowerCase().trim().replace(/[^a-z0-9 ]/g,"").replace(/\s+/g," ");
+}
+
+function renderEnquiriesView() {
+  var ev = document.getElementById("enquiriesView");
+  ev.innerHTML = "";
+
+  var hdr = document.createElement("div"); hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px";
+  var title = document.createElement("h2"); title.style.cssText = "font-size:18px;font-weight:700"; title.textContent = "Enquiries";
+  var addBtn = document.createElement("button"); addBtn.style.cssText = "padding:8px 16px;background:#9b59b6;border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer"; addBtn.textContent = "+ Log enquiry";
+  addBtn.addEventListener("click", showEnquiryForm);
+  hdr.appendChild(title); hdr.appendChild(addBtn); ev.appendChild(hdr);
+
+  var sub = document.createElement("div"); sub.style.cssText = "font-size:12px;color:var(--muted);margin-bottom:16px"; sub.textContent = "Things people have asked for that we don't currently stock.";
+  ev.appendChild(sub);
+
+  if (!enquiries.length) {
+    var empty = document.createElement("div"); empty.style.cssText = "text-align:center;padding:40px 20px;color:var(--muted);font-size:13px"; empty.textContent = "No enquiries logged yet.";
+    ev.appendChild(empty);
+    return;
+  }
+
+  // Group by normalised "what they want" to spot repeats
+  var groups = {};
+  enquiries.forEach(function(en){
+    var key = normaliseEnqText(en.want);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(en);
+  });
+
+  // Repeated requests panel (2+ people asking for the same thing)
+  var repeatedKeys = Object.keys(groups).filter(function(k){ return groups[k].length >= 2; });
+  if (repeatedKeys.length) {
+    var repPanel = document.createElement("div");
+    repPanel.style.cssText = "background:#fff4e0;border:1px solid #f0c060;border-radius:var(--r);padding:14px 16px;margin-bottom:18px";
+    var repTitle = document.createElement("div"); repTitle.style.cssText = "font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8a5a00;margin-bottom:9px"; repTitle.textContent = "\u26A0 Multiple people have asked for this";
+    repPanel.appendChild(repTitle);
+    repeatedKeys.sort(function(a,b){ return groups[b].length - groups[a].length; }).forEach(function(k){
+      var grp = groups[k];
+      var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.06)";
+      var left = document.createElement("div");
+      var want = document.createElement("div"); want.style.cssText = "font-weight:700;font-size:13px"; want.textContent = grp[0].want;
+      var names = document.createElement("div"); names.style.cssText = "font-size:11px;color:#8a5a00;margin-top:2px"; names.textContent = grp.map(function(g){ return g.name; }).join(", ");
+      left.appendChild(want); left.appendChild(names);
+      var badge = document.createElement("span"); badge.style.cssText = "background:#e8a020;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;flex-shrink:0"; badge.textContent = grp.length + " people";
+      row.appendChild(left); row.appendChild(badge);
+      repPanel.appendChild(row);
+    });
+    ev.appendChild(repPanel);
+  }
+
+  // Full list, newest first
+  var listTitle = document.createElement("div"); listTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:8px"; listTitle.textContent = "All enquiries";
+  ev.appendChild(listTitle);
+
+  var catColors = {"Tool":"#305CDE","Underlay":"#2ecc71","Other":"#7f8c8d"};
+  enquiries.slice().reverse().forEach(function(en){
+    var card = document.createElement("div"); card.style.cssText = "background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px";
+    var left = document.createElement("div"); left.style.flex = "1";
+    var topRow = document.createElement("div"); topRow.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:4px";
+    var catBadge = document.createElement("span"); catBadge.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:20px;background:"+(catColors[en.category]||"#7f8c8d")+";color:#fff"; catBadge.textContent = en.category||"Other";
+    var isRepeat = groups[normaliseEnqText(en.want)].length >= 2;
+    topRow.appendChild(catBadge);
+    if (isRepeat) {
+      var repBadge = document.createElement("span"); repBadge.style.cssText = "font-size:9px;font-weight:700;color:#8a5a00;background:#fff4e0;padding:2px 8px;border-radius:20px;border:1px solid #f0c060"; repBadge.textContent = "\u26A0 also asked by others";
+      topRow.appendChild(repBadge);
+    }
+    left.appendChild(topRow);
+    var want = document.createElement("div"); want.style.cssText = "font-weight:700;font-size:14px;margin-bottom:2px"; want.textContent = en.want;
+    left.appendChild(want);
+    var meta = document.createElement("div"); meta.style.cssText = "font-size:11px;color:var(--muted)"; meta.textContent = en.name + (en.contact?" \u00b7 "+en.contact:"") + " \u00b7 "+en.date;
+    left.appendChild(meta);
+    if (en.notes) {
+      var notes = document.createElement("div"); notes.style.cssText = "font-size:11px;color:var(--text);margin-top:5px;font-style:italic"; notes.textContent = en.notes;
+      left.appendChild(notes);
+    }
+    var delBtn = document.createElement("button"); delBtn.style.cssText = "padding:4px 9px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);color:var(--rtxt);font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0"; delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", (function(id){ return function(){
+      if(confirm("Delete this enquiry?")){
+        enquiries = enquiries.filter(function(x){ return x.id!==id; });
+        sbDelete("enquiries", id);
+        saveEnquiries();
+        renderEnquiriesView();
+        toast("Deleted \u2713");
+      }
+    };})(en.id));
+    card.appendChild(left); card.appendChild(delBtn);
+    ev.appendChild(card);
+  });
+}
+
+function showEnquiryForm() {
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:420px;max-height:90vh;overflow-y:auto";
+
+  var bh = document.createElement("div"); bh.style.cssText = "background:#9b59b6;padding:14px 18px";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:15px;font-weight:700;color:#fff"; bht.textContent = "\uD83D\uDCAC Log an enquiry";
+  bh.appendChild(bht); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:18px;display:flex;flex-direction:column;gap:12px";
+
+  function mkFd(lbl, inp) { var w=document.createElement("div"); var l=document.createElement("label"); l.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; l.textContent=lbl; w.appendChild(l); w.appendChild(inp); return w; }
+
+  var nameInp = document.createElement("input"); nameInp.id="enq_name"; nameInp.placeholder="Who asked"; nameInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  bd.appendChild(mkFd("Name *", nameInp));
+
+  var contactInp = document.createElement("input"); contactInp.id="enq_contact"; contactInp.placeholder="Phone / email (optional)"; contactInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  bd.appendChild(mkFd("Contact", contactInp));
+
+  var catSel = document.createElement("select"); catSel.id="enq_cat"; catSel.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  ["Tool","Underlay","Other"].forEach(function(c){ var o=document.createElement("option"); o.value=c; o.textContent=c; catSel.appendChild(o); });
+  bd.appendChild(mkFd("Category", catSel));
+
+  var wantInp = document.createElement("input"); wantInp.id="enq_want"; wantInp.placeholder="e.g. 12mm rubber crumb underlay"; wantInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  bd.appendChild(mkFd("What they want *", wantInp));
+
+  var notesInp = document.createElement("textarea"); notesInp.id="enq_notes"; notesInp.placeholder="Any extra detail..."; notesInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none;min-height:60px;resize:vertical";
+  bd.appendChild(mkFd("Notes", notesInp));
+
+  box.appendChild(bd);
+
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px";
+  var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:8px 14px;background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
+  cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  var saveB = document.createElement("button"); saveB.style.cssText = "padding:8px 18px;background:#9b59b6;border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; saveB.textContent = "Save enquiry";
+  saveB.addEventListener("click", function(){
+    var name = nameInp.value.trim();
+    var want = wantInp.value.trim();
+    if (!name || !want) { toast("Please enter a name and what they want"); return; }
+    var today = new Date();
+    enquiries.push({
+      id: "ENQ-"+Date.now(),
+      name: name,
+      contact: contactInp.value.trim(),
+      category: catSel.value,
+      want: want,
+      notes: notesInp.value.trim(),
+      date: String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+today.getFullYear()
+    });
+    saveEnquiries();
+    document.body.removeChild(overlay);
+    renderEnquiriesView();
+    toast("Enquiry logged \u2713");
+  });
+  foot.appendChild(cancelB); foot.appendChild(saveB);
+  box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
+  setTimeout(function(){ nameInp.focus(); }, 100);
+}
+
 function renderDocsView() {
   var dv2 = document.getElementById("docsView");
   dv2.innerHTML = "";
@@ -4854,7 +5026,7 @@ openC = function(id) {
 };
 
 // Close sidebar when nav buttons clicked on mobile
-var navFns = ["showReps","showSales","showSamples","showBirthdays","showComplaints","showDiary","showQuotes","showDash"];
+var navFns = ["showReps","showSales","showSamples","showBirthdays","showComplaints","showDiary","showQuotes","showDash","showEnquiries"];
 navFns.forEach(function(fn) {
   var orig = window[fn];
   window[fn] = function() { closeMobSidebar(); orig(); };
@@ -4867,6 +5039,7 @@ function init(){
   websites=loadWebsites();
   archivedClients=loadArchive();
   docs=loadDocs();
+  enquiries=loadEnquiries();
   diaryEvents=loadDiary();
   activeFilter="All";activeId=null;editId=null;showLF=false;pendingDel=null;
   updateStats();renderList();showDash();
