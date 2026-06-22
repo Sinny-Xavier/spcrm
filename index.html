@@ -1801,8 +1801,10 @@ function getDailySalesData(year, month){ // month is 0-indexed (0=Jan)
   var days = []; for (var d=1; d<=daysInMonth; d++) days.push(0);
   var monthTotal = 0;
   clients.forEach(function(c){(c.log||[]).forEach(function(l){
-    if(!l.quote||l.quote.status!=="Paid"||!l.date)return;
-    var dp=l.date.split("/");if(dp.length!==3)return;
+    if(!l.quote||l.quote.status!=="Paid")return;
+    var useDate = l.quote.paidDate || l.date;
+    if(!useDate)return;
+    var dp=useDate.split("/");if(dp.length!==3)return;
     var d=parseInt(dp[0]),m=parseInt(dp[1])-1,y=parseInt(dp[2]);
     if(y!==year||m!==month)return;
     var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
@@ -1814,8 +1816,10 @@ function getSalesData(year){
   var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},qtrProd={Q1:{},Q2:{},Q3:{},Q4:{}},yearTotal=0;
   PRODUCTS.forEach(function(p){prodTotals[p]=0;});
   clients.forEach(function(c){(c.log||[]).forEach(function(l){
-    if(!l.quote||l.quote.status!=="Paid"||!l.date)return;
-    var dp=l.date.split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;
+    if(!l.quote||l.quote.status!=="Paid")return;
+    var useDate = l.quote.paidDate || l.date;
+    if(!useDate)return;
+    var dp=useDate.split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;
     var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";
     var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
     var cat=l.quote.category||l.quote.products||"Other";
@@ -3416,7 +3420,7 @@ function renderQuotesView() {
       var avCircle=document.createElement("div");avCircle.style.cssText="width:28px;height:28px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0";avCircle.textContent=ini(q.client.name);
       var cname=document.createElement("div");cname.style.cssText="font-weight:700;font-size:13px";cname.textContent=q.client.name;
       av.appendChild(avCircle);av.appendChild(cname);
-      var prod=document.createElement("div");prod.style.cssText="font-size:11px;color:var(--muted);margin-left:36px";prod.textContent=(q.log.quote.products||"")+(q.log.date?" · "+q.log.date:"");
+      var prod=document.createElement("div");prod.style.cssText="font-size:11px;color:var(--muted);margin-left:36px";prod.textContent=(q.log.quote.products||"")+(q.log.date?" · Quoted "+q.log.date:"")+(q.log.quote.paidDate?" · Paid "+q.log.quote.paidDate:"");
       left.appendChild(av);left.appendChild(prod);
       // Middle - value and days open
       var mid=document.createElement("div");mid.style.cssText="text-align:right;min-width:100px";
@@ -3437,7 +3441,21 @@ function renderQuotesView() {
       var statSel=document.createElement("select");statSel.style.cssText="padding:3px 7px;border:1px solid var(--border);border-radius:var(--rs);font-size:10px;background:#fff;cursor:pointer;outline:none";
       ["Quote","Confirmed","Invoiced","Paid"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(q.log.quote.status===s2)opt.selected=true;statSel.appendChild(opt);});
       statSel.addEventListener("click",function(e){e.stopPropagation();});
-      statSel.addEventListener("change",(function(client3,li3){return function(e3){e3.stopPropagation();client3.log[li3].quote.status=this.value;saveC();renderQuotesView();toast("Quote updated ✓");};})(q.client,q.logIdx));
+      statSel.addEventListener("change",(function(client3,li3){return function(e3){
+        e3.stopPropagation();
+        var newStatus = this.value;
+        if (newStatus === "Paid" && client3.log[li3].quote.status !== "Paid") {
+          var today9 = new Date();
+          var defaultPaid = String(today9.getDate()).padStart(2,"0")+"/"+String(today9.getMonth()+1).padStart(2,"0")+"/"+today9.getFullYear();
+          var enteredDate = prompt("Date paid (DD/MM/YYYY):", defaultPaid);
+          if (enteredDate === null) { renderQuotesView(); return; } // cancelled, revert dropdown
+          client3.log[li3].quote.paidDate = enteredDate.trim() || defaultPaid;
+        }
+        client3.log[li3].quote.status = newStatus;
+        saveC();
+        renderQuotesView();
+        toast("Quote updated \u2713");
+      };})(q.client,q.logIdx));
       right.appendChild(pill);right.appendChild(expRow);right.appendChild(statSel);
       card.appendChild(left);card.appendChild(mid);card.appendChild(right);listWrap.appendChild(card);
     });
@@ -4201,10 +4219,10 @@ function showMonthlyReport() {
         if(l.date){var dp=l.date.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr)monthInteractions++;}
         if(l.quote){
           if((l.quote.status==="Quote"||l.quote.status==="Confirmed")){openQuotes++;openQuoteVal+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);}
-          if(l.quote.status==="Paid"&&l.date){var dp=l.date.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr){var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);monthSales+=v;monthSalesCount++;var cat=l.quote.category||"Other";productMap[cat]=(productMap[cat]||0)+v;}}
+          if(l.quote.status==="Paid"){var useDate2=l.quote.paidDate||l.date;if(useDate2){var dp=useDate2.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr){var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);monthSales+=v;monthSalesCount++;var cat=l.quote.category||"Other";productMap[cat]=(productMap[cat]||0)+v;}}}
         }
       });});
-      var topClients=[];clients.forEach(function(c){var sp=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Paid"&&l.date){var dp=l.date.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr)sp+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);}});if(sp>0)topClients.push({name:c.name,spend:sp});});
+      var topClients=[];clients.forEach(function(c){var sp=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Paid"){var useDate3=l.quote.paidDate||l.date;if(useDate3){var dp=useDate3.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr)sp+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);}}});if(sp>0)topClients.push({name:c.name,spend:sp});});
       topClients.sort(function(a,b){return b.spend-a.spend;}).splice(5);
 
       var hdr=document.createElement("div");hdr.style.cssText="font-size:13px;font-weight:700;margin-bottom:14px";hdr.textContent=mnames[mn]+" "+yr+" Snapshot";body.appendChild(hdr);
