@@ -3773,6 +3773,8 @@ function normaliseEnqText(s) {
   return (s||"").toLowerCase().trim().replace(/[^a-z0-9 ]/g,"").replace(/\s+/g," ");
 }
 
+var enqFilter = "Active";
+
 function renderEnquiriesView() {
   var ev = document.getElementById("enquiriesView");
   ev.innerHTML = "";
@@ -3783,8 +3785,20 @@ function renderEnquiriesView() {
   addBtn.addEventListener("click", showEnquiryForm);
   hdr.appendChild(title); hdr.appendChild(addBtn); ev.appendChild(hdr);
 
-  var sub = document.createElement("div"); sub.style.cssText = "font-size:12px;color:var(--muted);margin-bottom:16px"; sub.textContent = "Things people have asked for that we don't currently stock.";
+  var sub = document.createElement("div"); sub.style.cssText = "font-size:12px;color:var(--muted);margin-bottom:14px"; sub.textContent = "Things people have asked for that we don't currently stock.";
   ev.appendChild(sub);
+
+  // Filter tabs
+  var filterRow = document.createElement("div"); filterRow.style.cssText = "display:flex;gap:6px;margin-bottom:16px";
+  ["Active","Resolved","All"].forEach(function(f){
+    var btn = document.createElement("button");
+    var count = f==="All" ? enquiries.length : enquiries.filter(function(en){ return (en.status||"Active")===f; }).length;
+    btn.textContent = f + " (" + count + ")";
+    btn.style.cssText = "padding:5px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid "+(enqFilter===f?"#9b59b6":"var(--border)")+";background:"+(enqFilter===f?"#9b59b6":"var(--surface)")+";color:"+(enqFilter===f?"#fff":"var(--muted)");
+    btn.addEventListener("click", function(){ enqFilter = f; renderEnquiriesView(); });
+    filterRow.appendChild(btn);
+  });
+  ev.appendChild(filterRow);
 
   if (!enquiries.length) {
     var empty = document.createElement("div"); empty.style.cssText = "text-align:center;padding:40px 20px;color:var(--muted);font-size:13px"; empty.textContent = "No enquiries logged yet.";
@@ -3792,17 +3806,18 @@ function renderEnquiriesView() {
     return;
   }
 
-  // Group by normalised "what they want" to spot repeats
+  // Group ACTIVE-ONLY enquiries by normalised "what they want" to spot live repeats
+  // (resolved ones shouldn't keep flagging as "multiple people asked" once sorted)
   var groups = {};
-  enquiries.forEach(function(en){
+  enquiries.filter(function(en){ return (en.status||"Active")==="Active"; }).forEach(function(en){
     var key = normaliseEnqText(en.want);
     if (!groups[key]) groups[key] = [];
     groups[key].push(en);
   });
 
-  // Repeated requests panel (2+ people asking for the same thing)
+  // Repeated requests panel (2+ people asking for the same thing, still active)
   var repeatedKeys = Object.keys(groups).filter(function(k){ return groups[k].length >= 2; });
-  if (repeatedKeys.length) {
+  if (repeatedKeys.length && (enqFilter==="Active"||enqFilter==="All")) {
     var repPanel = document.createElement("div");
     repPanel.style.cssText = "background:#fff4e0;border:1px solid #f0c060;border-radius:var(--r);padding:14px 16px;margin-bottom:18px";
     var repTitle = document.createElement("div"); repTitle.style.cssText = "font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8a5a00;margin-bottom:9px"; repTitle.textContent = "\u26A0 Multiple people have asked for this";
@@ -3821,21 +3836,38 @@ function renderEnquiriesView() {
     ev.appendChild(repPanel);
   }
 
-  // Full list, newest first
-  var listTitle = document.createElement("div"); listTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:8px"; listTitle.textContent = "All enquiries";
+  // Full list, newest first, filtered by tab
+  var visibleEnquiries = enquiries.filter(function(en){
+    if (enqFilter === "All") return true;
+    return (en.status||"Active") === enqFilter;
+  });
+
+  var listTitle = document.createElement("div"); listTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:8px"; listTitle.textContent = enqFilter + " enquiries";
   ev.appendChild(listTitle);
 
+  if (!visibleEnquiries.length) {
+    var emptyF = document.createElement("div"); emptyF.style.cssText = "text-align:center;padding:24px 20px;color:var(--muted);font-size:12px"; emptyF.textContent = "Nothing here.";
+    ev.appendChild(emptyF);
+    return;
+  }
+
   var catColors = {"Tool":"#305CDE","Underlay":"#2ecc71","Other":"#7f8c8d"};
-  enquiries.slice().reverse().forEach(function(en){
-    var card = document.createElement("div"); card.style.cssText = "background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px";
+  visibleEnquiries.slice().reverse().forEach(function(en){
+    var isResolved = (en.status||"Active")==="Resolved";
+    var card = document.createElement("div"); card.style.cssText = "background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px"+(isResolved?";opacity:.65":"");
     var left = document.createElement("div"); left.style.flex = "1";
-    var topRow = document.createElement("div"); topRow.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:4px";
+    var topRow = document.createElement("div"); topRow.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap";
     var catBadge = document.createElement("span"); catBadge.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:20px;background:"+(catColors[en.category]||"#7f8c8d")+";color:#fff"; catBadge.textContent = en.category||"Other";
-    var isRepeat = groups[normaliseEnqText(en.want)].length >= 2;
     topRow.appendChild(catBadge);
-    if (isRepeat) {
-      var repBadge = document.createElement("span"); repBadge.style.cssText = "font-size:9px;font-weight:700;color:#8a5a00;background:#fff4e0;padding:2px 8px;border-radius:20px;border:1px solid #f0c060"; repBadge.textContent = "\u26A0 also asked by others";
-      topRow.appendChild(repBadge);
+    if (isResolved) {
+      var resBadge = document.createElement("span"); resBadge.style.cssText = "font-size:9px;font-weight:700;color:#1a5c1a;background:#d0f0d0;padding:2px 8px;border-radius:20px"; resBadge.textContent = "\u2713 Resolved";
+      topRow.appendChild(resBadge);
+    } else {
+      var isRepeat = groups[normaliseEnqText(en.want)] && groups[normaliseEnqText(en.want)].length >= 2;
+      if (isRepeat) {
+        var repBadge = document.createElement("span"); repBadge.style.cssText = "font-size:9px;font-weight:700;color:#8a5a00;background:#fff4e0;padding:2px 8px;border-radius:20px;border:1px solid #f0c060"; repBadge.textContent = "\u26A0 also asked by others";
+        topRow.appendChild(repBadge);
+      }
     }
     left.appendChild(topRow);
     var want = document.createElement("div"); want.style.cssText = "font-weight:700;font-size:14px;margin-bottom:2px"; want.textContent = en.want;
@@ -3846,7 +3878,35 @@ function renderEnquiriesView() {
       var notes = document.createElement("div"); notes.style.cssText = "font-size:11px;color:var(--text);margin-top:5px;font-style:italic"; notes.textContent = en.notes;
       left.appendChild(notes);
     }
-    var delBtn = document.createElement("button"); delBtn.style.cssText = "padding:4px 9px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);color:var(--rtxt);font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0"; delBtn.textContent = "Delete";
+    if (isResolved && en.resolvedDate) {
+      var resolvedMeta = document.createElement("div"); resolvedMeta.style.cssText = "font-size:10px;color:#1a5c1a;margin-top:4px"; resolvedMeta.textContent = "Resolved "+en.resolvedDate;
+      left.appendChild(resolvedMeta);
+    }
+
+    var btnCol = document.createElement("div"); btnCol.style.cssText = "display:flex;flex-direction:column;gap:5px;flex-shrink:0";
+    if (!isResolved) {
+      var resolveBtn = document.createElement("button"); resolveBtn.style.cssText = "padding:4px 9px;background:#d0f0d0;border:1px solid #1a5c1a;border-radius:var(--rs);color:#1a5c1a;font-size:10px;font-weight:700;cursor:pointer"; resolveBtn.textContent = "\u2713 Resolved";
+      resolveBtn.addEventListener("click", (function(id){ return function(){
+        var en2 = enquiries.find(function(x){ return x.id===id; });
+        if (en2) {
+          var today = new Date();
+          en2.status = "Resolved";
+          en2.resolvedDate = String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+today.getFullYear();
+          saveEnquiries();
+          renderEnquiriesView();
+          toast("Marked resolved \u2713");
+        }
+      };})(en.id));
+      btnCol.appendChild(resolveBtn);
+    } else {
+      var reopenBtn = document.createElement("button"); reopenBtn.style.cssText = "padding:4px 9px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:10px;font-weight:700;cursor:pointer"; reopenBtn.textContent = "Reopen";
+      reopenBtn.addEventListener("click", (function(id){ return function(){
+        var en2 = enquiries.find(function(x){ return x.id===id; });
+        if (en2) { en2.status = "Active"; delete en2.resolvedDate; saveEnquiries(); renderEnquiriesView(); toast("Reopened"); }
+      };})(en.id));
+      btnCol.appendChild(reopenBtn);
+    }
+    var delBtn = document.createElement("button"); delBtn.style.cssText = "padding:4px 9px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);color:var(--rtxt);font-size:10px;font-weight:700;cursor:pointer"; delBtn.textContent = "Delete";
     delBtn.addEventListener("click", (function(id){ return function(){
       if(confirm("Delete this enquiry?")){
         enquiries = enquiries.filter(function(x){ return x.id!==id; });
@@ -3856,7 +3916,9 @@ function renderEnquiriesView() {
         toast("Deleted \u2713");
       }
     };})(en.id));
-    card.appendChild(left); card.appendChild(delBtn);
+    btnCol.appendChild(delBtn);
+
+    card.appendChild(left); card.appendChild(btnCol);
     ev.appendChild(card);
   });
 }
@@ -3904,6 +3966,7 @@ function showEnquiryForm() {
     var today = new Date();
     enquiries.push({
       id: "ENQ-"+Date.now(),
+      status: "Active",
       name: name,
       contact: contactInp.value.trim(),
       category: catSel.value,
@@ -4436,7 +4499,7 @@ function showMonthlyReport() {
   rptHdr.appendChild(rptLeft);rptHdr.appendChild(closeX);box.appendChild(rptHdr);
 
   // Tabs
-  var tabs = ["📅 Monthly","💸 Lost Quotes","👥 Rep Activity","📈 Acquisition","🛒 Product Mix"];
+  var tabs = ["📅 Monthly","💸 Lost Quotes","👥 Rep Activity","📈 Acquisition","🛒 Product Mix","💬 Enquiries"];
   var tabBar = document.createElement("div");tabBar.style.cssText="display:flex;gap:0;border-bottom:2px solid var(--border);background:var(--alt);overflow-x:auto";
   var body = document.createElement("div");body.style.cssText="padding:20px";
 
@@ -4599,6 +4662,59 @@ function showMonthlyReport() {
       });}
       body.appendChild(ss);
       if(Object.keys(catPipeline).length){var ps=rptSection("Pipeline by Product");Object.keys(catPipeline).sort(function(a,b){return catPipeline[b]-catPipeline[a];}).forEach(function(c,i){ps.appendChild(rptRow(i+1,c,"£"+catPipeline[c].toLocaleString("en-GB"),"var(--atxt)"));});body.appendChild(ps);}
+    } else if(idx===5) {
+      // ── ENQUIRIES ──
+      var hdr5=document.createElement("div");hdr5.style.cssText="font-size:13px;font-weight:700;margin-bottom:4px";hdr5.textContent="Enquiries Report";body.appendChild(hdr5);
+      var sub5=document.createElement("div");sub5.style.cssText="font-size:11px;color:var(--muted);margin-bottom:16px";sub5.textContent="Things customers have asked for that we don't currently stock.";body.appendChild(sub5);
+
+      var monthEnq = enquiries.filter(function(en){
+        var dp = (en.date||"").split("/");
+        if(dp.length!==3) return false;
+        return parseInt(dp[1])-1===mn && parseInt(dp[2])===yr;
+      });
+      var activeMonthEnq = monthEnq.filter(function(en){ return (en.status||"Active")==="Active"; });
+      var resolvedMonthEnq = monthEnq.filter(function(en){ return en.status==="Resolved"; });
+
+      var es1=rptSection("This Month");
+      es1.appendChild(rptRow(1,"Total enquiries logged",String(monthEnq.length),"var(--navy)"));
+      es1.appendChild(rptRow(2,"Still active / unstocked",String(activeMonthEnq.length),"var(--atxt)"));
+      es1.appendChild(rptRow(3,"Resolved / now stocked",String(resolvedMonthEnq.length),"var(--gtxt)"));
+      body.appendChild(es1);
+
+      // Top requested items - ALL TIME active enquiries grouped, not just this month,
+      // since a repeat pattern is more meaningful over a longer window
+      var allActiveGroups = {};
+      enquiries.filter(function(en){ return (en.status||"Active")==="Active"; }).forEach(function(en){
+        var key = normaliseEnqText(en.want);
+        if(!allActiveGroups[key]) allActiveGroups[key] = {want:en.want, names:[], count:0};
+        allActiveGroups[key].count++;
+        allActiveGroups[key].names.push(en.name);
+      });
+      var topRequested = Object.values(allActiveGroups).filter(function(g){return g.count>=2;}).sort(function(a,b){return b.count-a.count;});
+
+      var es2=rptSection("Top Requested Items (currently unstocked, all time)");
+      if(!topRequested.length){
+        var ee=document.createElement("div");ee.style.cssText="text-align:center;padding:20px;color:var(--muted);font-size:12px";ee.textContent="No repeated requests yet";es2.appendChild(ee);
+      } else {
+        topRequested.forEach(function(g,i){
+          es2.appendChild(rptRow(i+1, g.want+" ("+g.names.join(", ")+")", g.count+" people", "#9b59b6"));
+        });
+      }
+      body.appendChild(es2);
+
+      // Breakdown by category, active only
+      var catBreakdown = {};
+      enquiries.filter(function(en){ return (en.status||"Active")==="Active"; }).forEach(function(en){
+        var cat = en.category||"Other";
+        catBreakdown[cat] = (catBreakdown[cat]||0)+1;
+      });
+      if(Object.keys(catBreakdown).length){
+        var es3=rptSection("Active Enquiries by Category");
+        Object.keys(catBreakdown).sort(function(a,b){return catBreakdown[b]-catBreakdown[a];}).forEach(function(c,i){
+          es3.appendChild(rptRow(i+1,c,catBreakdown[c]+" enquiries","var(--navy)"));
+        });
+        body.appendChild(es3);
+      }
     }
   }
 
