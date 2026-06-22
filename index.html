@@ -475,12 +475,29 @@ async function loadFromSupabase() {
     if (comp && comp.length > 0) complaints = comp;
     if (d && d.length > 0) diaryEvents = d;
     if (w && w.length > 0) websites = w;
-    // One-time fix: backfill missing ids on older website records (legacy bug had no id field)
-    var needsIdFix = false;
-    websites.forEach(function(site, idx){
-      if (!site.id) { site.id = "WEB-" + Date.now() + "-" + idx; needsIdFix = true; }
+    // One-time fix: collapse duplicate/id-less website records (same legacy bug as docs - created a fresh duplicate on every load)
+    var seenWebKeys = {};
+    var cleanWebsites = [];
+    var foundWebDuplicatesOrMissingIds = false;
+    websites.forEach(function(site){
+      var key = (site.name||"") + "|" + (site.url||"");
+      if (!site.id) foundWebDuplicatesOrMissingIds = true;
+      if (seenWebKeys[key]) { foundWebDuplicatesOrMissingIds = true; return; } // skip duplicate
+      seenWebKeys[key] = true;
+      cleanWebsites.push(site);
     });
-    if (needsIdFix) { saveWebsites(); }
+    cleanWebsites.forEach(function(site, idx){
+      if (!site.id) site.id = "WEB-" + Date.now() + "-" + idx;
+    });
+    if (foundWebDuplicatesOrMissingIds) {
+      websites = cleanWebsites;
+      var oldWebRows = await fetch(SB_URL+"/rest/v1/websites?or=(id.not.is.null,id.is.null)", {
+        method: "DELETE",
+        headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}
+      }).catch(function(){});
+      await sbSaveAll("websites", websites, "id");
+      try { localStorage.setItem(WEB_STORE, JSON.stringify(websites)); } catch(e) {}
+    }
     if (docs2 && docs2.length > 0) docs = docs2;
     // One-time fix: collapse duplicate/id-less doc records (legacy bug created a fresh duplicate on every load)
     var seenDocKeys = {};
@@ -499,7 +516,7 @@ async function loadFromSupabase() {
     if (foundDuplicatesOrMissingIds) {
       docs = cleanDocs;
       // Clear the table fully first since old id-less rows can't be targeted individually, then push the clean set
-      var oldDocRows = await fetch(SB_URL+"/rest/v1/docs?id=not.is.null", {
+      var oldDocRows = await fetch(SB_URL+"/rest/v1/docs?or=(id.not.is.null,id.is.null)", {
         method: "DELETE",
         headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}
       }).catch(function(){});
