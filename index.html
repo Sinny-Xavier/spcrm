@@ -949,7 +949,17 @@ function renderDash(){
   }
   dg.appendChild(mkCard("Follow-ups due",fuList,"All clear \u2713",function(c){
     var d=du(c.followup);var lbl=d<0?Math.abs(d)+"d overdue":"Today";
-    return clickEl("fu-item",c.id,ini(c.name),c.name,c.contact||"",lbl,d<0?"fdue":"famb");
+    var el=clickEl("fu-item",c.id,ini(c.name),c.name,c.contact||"",lbl,d<0?"fdue":"famb");
+    var clearBtn=document.createElement("button");
+    clearBtn.textContent="\u2713 Clear";
+    clearBtn.style.cssText="margin-left:8px;padding:3px 9px;background:#d0f0d0;border:1px solid #1a5c1a;border-radius:20px;color:#1a5c1a;font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0";
+    clearBtn.addEventListener("click",(function(cid){return function(ev){
+      ev.stopPropagation();
+      var cl=clients.find(function(x){return x.id===cid;});
+      if(cl){ cl.followup=""; saveC(); renderDash(); toast("Follow-up cleared \u2713"); }
+    };})(c.id));
+    el.appendChild(clearBtn);
+    return el;
   }));
   var oqCard = mkCard("Open quotes",openQ.slice(0,4),"No open quotes yet",function(q){
     var el=clickEl("fu-item",q.client.id,ini(q.client.name),q.client.name,(q.log.quote.products||""),money(q.val),"q-"+(q.log.quote.status||"quote").toLowerCase().replace(" ","-"));
