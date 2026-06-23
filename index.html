@@ -447,6 +447,59 @@ async function sbSaveAll(table, items, idField) {
 
 var sbReady = false;
 
+async function ensureBirthdayReminders() {
+  // For every birthday, make sure there's a diary entry for its NEXT upcoming occurrence.
+  // If the only existing entry is for a date that's already passed, create a fresh one.
+  var today = new Date();
+  var createdAny = false;
+
+  birthdays.forEach(function(b){
+    if (!b.date) return;
+    var dp = b.date.split("-");
+    if (dp.length !== 3) return;
+    var bdMonth = parseInt(dp[1]) - 1;
+    var bdDay = parseInt(dp[2]);
+
+    var nextYear = today.getFullYear();
+    var nextOccurrence = new Date(nextYear, bdMonth, bdDay);
+    // Use start-of-day comparison so "today" still counts as upcoming, not passed
+    var todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (nextOccurrence < todayStart) { nextYear++; nextOccurrence = new Date(nextYear, bdMonth, bdDay); }
+
+    // Does a diary entry already exist for this exact upcoming occurrence?
+    var hasUpcoming = diaryEvents.some(function(e){
+      return e.bdId === b.id && e.year === nextYear && e.month === bdMonth && e.day === bdDay;
+    });
+
+    if (!hasUpcoming) {
+      diaryEvents.push({
+        id: "EV-BD-" + Date.now() + "-" + Math.floor(Math.random()*10000),
+        bdId: b.id,
+        year: nextYear,
+        month: bdMonth,
+        day: bdDay,
+        hour: 9,
+        minute: 0,
+        allDay: false,
+        type: "Birthday",
+        title: "\uD83C\uDF82 Birthday: " + (b.name || ""),
+        notes: b.company || "",
+        withName: b.linkedType !== "other" ? (b.name||"") : "",
+        withType: b.linkedType !== "other" ? (b.linkedType||"none") : "none",
+        completed: false,
+        isBirthday: true,
+        category: b.category || "personal"
+      });
+      createdAny = true;
+    }
+  });
+
+  if (createdAny) {
+    saveDiary();
+    console.log("Birthday reminders refreshed \u2713");
+  }
+}
+
 async function loadFromSupabase() {
   try {
     var [c, r, s, b, comp, d, w, docs2, enq] = await Promise.all([
@@ -530,6 +583,7 @@ async function loadFromSupabase() {
     sbReady = true;
     console.log("Supabase ready! Clients:", clients.length);
     try{document.getElementById("sbStatus").textContent="☁️";document.getElementById("sbStatus").title="Cloud synced";}catch(e){}
+    await ensureBirthdayReminders();
     updateStats(); renderList(); renderDash();
   } catch(e) {
     console.warn("Supabase load failed, using localStorage:", e);
