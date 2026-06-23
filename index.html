@@ -772,6 +772,7 @@ var PRODUCTS=["Carpet", "Carpet Adhesive", "Carpet Tiles", "Carpet Trims", "Carp
 var MANUFACTURERS=["Aegean Sea", "Altro", "Amtico", "Axminster", "Brintons", "Camaro", "Cormar", "F Ball", "Forbo", "Furlong", "Genesis", "Gerflor", "Gradus", "Heckmondwike", "Interface", "Kahrs", "Karndean", "Luvanto", "Mapei", "Moduleo", "Orion", "Polyflor", "QEP", "Quick-Step", "Shaw", "Spotnails", "Stairrods", "Tarkett", "Ted Todd", "Toolbank", "Trade Choice", "Uzin", "Victoria", "Woodpecker", "Other"]
 var clients,reps,samples,birthdays,complaints;
 var activeFilter="All",activeId=null,editId=null,showLF=false,pendingDel=null;
+var detLogTab="Interactions";
 var currentSalesYear=new Date().getFullYear();
 var currentSalesMonth=new Date().getMonth();
 
@@ -833,7 +834,7 @@ function showView(v){
   });
 }
 function showDash(){activeId=null;renderList();showView("dash");renderDash();}
-function openC(id){activeId=id;showLF=false;renderList();showView("det");renderDet();}
+function openC(id){activeId=id;showLF=false;detLogTab="Interactions";renderList();showView("det");renderDet();}
 function showReps(){activeId=null;renderList();showView("reps");renderRepsView();}
 function showSales(){activeId=null;renderList();showView("sales");renderSalesView();}
 function showSamples(){activeId=null;renderList();showView("samples");renderSamplesView();}
@@ -1217,6 +1218,20 @@ function renderDet(){
   grid.appendChild(notesSec);
   var logSec=document.createElement("div");logSec.className="sec full";
   var lt=document.createElement("span");lt.className="stag t-lg";lt.textContent="Interaction log";logSec.appendChild(lt);
+
+  var quoteCount=(c.log||[]).filter(function(l){return !!l.quote;}).length;
+  var interactionCount=(c.log||[]).filter(function(l){return !l.quote;}).length;
+  var tabRow=document.createElement("div");tabRow.style.cssText="display:flex;gap:6px;margin:10px 0 4px";
+  [["Interactions",interactionCount],["Quotes",quoteCount]].forEach(function(pair){
+    var tabName=pair[0],tabCount=pair[1];
+    var tb=document.createElement("button");
+    tb.textContent=tabName+" ("+tabCount+")";
+    tb.style.cssText="padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid "+(detLogTab===tabName?"var(--navy)":"var(--border)")+";background:"+(detLogTab===tabName?"var(--navy)":"var(--surface)")+";color:"+(detLogTab===tabName?"#fff":"var(--muted)");
+    tb.addEventListener("click",function(){detLogTab=tabName;renderDet();});
+    tabRow.appendChild(tb);
+  });
+  logSec.appendChild(tabRow);
+
   if(showLF){logSec.appendChild(buildLogForm(c.id));}
   else{
     var btnRow=document.createElement("div");btnRow.style.cssText="display:flex;gap:7px;margin-top:6px";
@@ -1227,6 +1242,9 @@ function renderDet(){
     btnRow.appendChild(alb);btnRow.appendChild(slb);logSec.appendChild(btnRow);
   }
   (c.log||[]).forEach(function(l,idx){
+    var isQuoteEntry = !!l.quote;
+    if(detLogTab==="Interactions" && isQuoteEntry) return;
+    if(detLogTab==="Quotes" && !isQuoteEntry) return;
     var entry=document.createElement("div");entry.className="log-entry";
     var meta=document.createElement("div");meta.className="log-meta";
     var ltype=document.createElement("span");ltype.className="ltype";ltype.textContent=l.type;
@@ -1272,7 +1290,8 @@ function renderDet(){
     }
     logSec.appendChild(entry);
   });
-  if(!(c.log||[]).length){var nl=document.createElement("p");nl.style.cssText="font-size:11px;color:var(--muted);margin-bottom:7px";nl.textContent="No interactions logged yet.";logSec.appendChild(nl);}grid.appendChild(logSec);
+  var visibleLogCount=(c.log||[]).filter(function(l){return detLogTab==="Quotes" ? !!l.quote : !l.quote;}).length;
+  if(!visibleLogCount){var nl=document.createElement("p");nl.style.cssText="font-size:11px;color:var(--muted);margin-bottom:7px";nl.textContent=detLogTab==="Quotes"?"No quotes logged yet.":"No interactions logged yet.";logSec.appendChild(nl);}grid.appendChild(logSec);
   var prodMap={},qtrMap={Q1:0,Q2:0,Q3:0,Q4:0};
   (c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);var prod=l.quote.category||l.quote.products||"Other";prodMap[prod]=(prodMap[prod]||0)+v;var useDate=l.quote.collectedDate||l.date;if(useDate){var dp=useDate.split("/");if(dp.length===3){var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrMap[q]=(qtrMap[q]||0)+v;}}}}); 
   var hasProd=Object.keys(prodMap).length>0,hasQtr=Object.values(qtrMap).some(function(v){return v>0;});
