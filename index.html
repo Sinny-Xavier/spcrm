@@ -1466,8 +1466,16 @@ function showQuoteEditForm(clientId, logIdx) {
   var qtyInp = document.createElement("input"); qtyInp.id="qe_qty"; qtyInp.value=qtyDetail; qtyInp.placeholder="e.g. 50m\u00b2"; qtyInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
   bd.appendChild(mkFd("Qty / detail", qtyInp));
 
-  var expInp2 = document.createElement("input"); expInp2.id="qe_expiry"; expInp2.type="date"; expInp2.value=q.expiry||""; expInp2.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
-  bd.appendChild(mkFd("Expiry date", expInp2));
+  var expInp2 = document.createElement("input"); expInp2.id="qe_expiry"; expInp2.type="date"; expInp2.value=q.expiry||""; expInp2.style.cssText="flex:1;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  var exp4wkBtn = document.createElement("button"); exp4wkBtn.type="button"; exp4wkBtn.textContent="+4 weeks"; exp4wkBtn.style.cssText="padding:7px 12px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap";
+  exp4wkBtn.addEventListener("click", function(){
+    var d = new Date();
+    d.setDate(d.getDate() + 28);
+    expInp2.value = d.toISOString().split("T")[0];
+  });
+  var expRow2 = document.createElement("div"); expRow2.style.cssText = "display:flex;gap:6px";
+  expRow2.appendChild(expInp2); expRow2.appendChild(exp4wkBtn);
+  bd.appendChild(mkFd("Expiry date", expRow2));
 
   box.appendChild(bd);
 
@@ -3613,7 +3621,17 @@ function renderQuotesView() {
       var expInp=document.createElement("input");expInp.type="date";expInp.value=q.log.quote.expiry||"";expInp.style.cssText="padding:2px 5px;border:1px solid var(--border);border-radius:var(--rs);font-size:10px;font-family:inherit;outline:none;color:var(--text)";
       expInp.addEventListener("click",function(e){e.stopPropagation();});
       expInp.addEventListener("change",(function(client2,li2){return function(e2){e2.stopPropagation();client2.log[li2].quote.expiry=this.value;saveC();toast("Expiry set ✓");};})(q.client,q.logIdx));
-      expRow.appendChild(expLbl);expRow.appendChild(expInp);
+      var exp4wkBtn2=document.createElement("button");exp4wkBtn2.type="button";exp4wkBtn2.textContent="+4wk";exp4wkBtn2.style.cssText="padding:2px 7px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:9px;font-weight:700;cursor:pointer";
+      exp4wkBtn2.addEventListener("click",(function(client4,li5,inpEl){return function(e5){
+        e5.stopPropagation();
+        var d=new Date(); d.setDate(d.getDate()+28);
+        var dateStr=d.toISOString().split("T")[0];
+        inpEl.value=dateStr;
+        client4.log[li5].quote.expiry=dateStr;
+        saveC();
+        toast("Expiry set \u2713");
+      };})(q.client,q.logIdx,expInp));
+      expRow.appendChild(expLbl);expRow.appendChild(expInp);expRow.appendChild(exp4wkBtn2);
       // Status update
       var statSel=document.createElement("select");statSel.style.cssText="padding:3px 7px;border:1px solid var(--border);border-radius:var(--rs);font-size:10px;background:#fff;cursor:pointer;outline:none";
       ["Quote","Confirmed","Invoiced","Paid","Collected"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(q.log.quote.status===s2)opt.selected=true;statSel.appendChild(opt);});
