@@ -1254,6 +1254,15 @@ function renderDet(){
       if(l.quote.lostReason){var lrDiv=document.createElement("div");lrDiv.style.cssText="font-size:11px;color:var(--rtxt);background:var(--rbg);border-radius:var(--rs);padding:6px 9px;margin-top:7px";lrDiv.innerHTML="<strong>Lost reason:</strong> "+l.quote.lostReason;qbox.appendChild(lrDiv);}
       if(l.quote.paidDate){var pdDiv=document.createElement("div");pdDiv.style.cssText="font-size:11px;color:#1a5c1a;background:#d0f0d0;border-radius:var(--rs);padding:6px 9px;margin-top:7px";pdDiv.innerHTML="<strong>Paid:</strong> "+l.quote.paidDate;qbox.appendChild(pdDiv);}
       if(l.quote.collectedDate){var cdDiv=document.createElement("div");cdDiv.style.cssText="font-size:11px;color:#0a4a7a;background:#d0e8f5;border-radius:var(--rs);padding:6px 9px;margin-top:7px";cdDiv.innerHTML="<strong>Collected:</strong> "+l.quote.collectedDate;qbox.appendChild(cdDiv);}
+      if(l.quote.expiry){
+        var expDateObj=new Date(l.quote.expiry);
+        var isExpired=!isNaN(expDateObj.getTime())&&new Date()>expDateObj;
+        var expDisplay=!isNaN(expDateObj.getTime())?String(expDateObj.getDate()).padStart(2,"0")+"/"+String(expDateObj.getMonth()+1).padStart(2,"0")+"/"+expDateObj.getFullYear():l.quote.expiry;
+        var exDiv=document.createElement("div");
+        exDiv.style.cssText="font-size:11px;border-radius:var(--rs);padding:6px 9px;margin-top:7px;"+(isExpired?"color:var(--rtxt);background:var(--rbg)":"color:#8a5a00;background:#fff4e0");
+        exDiv.innerHTML="<strong>Expires:</strong> "+expDisplay+(isExpired?" \u26A0 EXPIRED":"");
+        qbox.appendChild(exDiv);
+      }
       var qsr=document.createElement("div");qsr.style.cssText="display:flex;align-items:center;gap:8px;padding-top:7px;border-top:1px solid #b8caf5";
       var qsl=document.createElement("div");qsl.style.cssText="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px";qsl.textContent="Update status:";
       var qsel=document.createElement("select");qsel.style.cssText="padding:4px 9px;border:1px solid var(--border);border-radius:20px;font-size:10px;font-weight:700;background:#fff;cursor:pointer;outline:none;flex:1";
