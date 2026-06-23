@@ -472,17 +472,19 @@ async function ensureBirthdayReminders() {
     });
 
     if (!hasUpcoming) {
+      var isAnniv = b.eventKind === "anniversary";
+      var titleText2 = isAnniv ? "\uD83D\uDC8D " + (b.annivLabel||"Anniversary") + ": " + (b.name||"") : "\uD83C\uDF82 Birthday: " + (b.name||"");
       diaryEvents.push({
         id: "EV-BD-" + Date.now() + "-" + Math.floor(Math.random()*10000),
         bdId: b.id,
         year: nextYear,
         month: bdMonth,
         day: bdDay,
-        hour: 9,
-        minute: 0,
-        allDay: false,
-        type: "Birthday",
-        title: "\uD83C\uDF82 Birthday: " + (b.name || ""),
+        hour: null,
+        minute: null,
+        allDay: true,
+        type: isAnniv ? "Anniversary" : "Birthday",
+        title: titleText2,
         notes: b.company || "",
         withName: b.linkedType !== "other" ? (b.name||"") : "",
         withType: b.linkedType !== "other" ? (b.linkedType||"none") : "none",
@@ -1084,7 +1086,7 @@ function renderDash(){
     var dpTitle = document.createElement("div"); dpTitle.style.cssText = "font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; dpTitle.textContent = "Diary — Today";
     var dpBadge = document.createElement("span"); dpBadge.style.cssText = "background:#e8a020;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px"; dpBadge.textContent = allDiaryEvts.length+" event"+(allDiaryEvts.length!==1?"s":"");
     dpHdr.appendChild(dpTitle); dpHdr.appendChild(dpBadge); diaryPanel.appendChild(dpHdr);
-    var typeColors2 = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
+    var typeColors2 = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Anniversary":"#c0392b","Holiday":"#16a085","Other":"#7f8c8d"};
     allDiaryEvts.forEach(function(e){
       var er = document.createElement("div"); er.style.cssText = "display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--alt);border-radius:var(--rs);margin-bottom:5px;cursor:pointer";
       er.addEventListener("click", function(){ showDiary(); });
@@ -1421,7 +1423,7 @@ function renderDet(){
   if(cDE.length||cDEpast.length){
     var dSec=document.createElement("div");dSec.className="sec full";
     var dTag=document.createElement("span");dTag.className="stag";dTag.style.cssText="display:inline-block;font-size:9px;font-weight:700;padding:2px 9px;border-radius:20px;margin-bottom:11px;letter-spacing:.5px;text-transform:uppercase;background:#fff3e0;color:#854f0b";dTag.textContent="Diary events";dSec.appendChild(dTag);
-    var tC3={"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
+    var tC3={"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Anniversary":"#c0392b","Holiday":"#16a085","Other":"#7f8c8d"};
     cDE.forEach(function(e){
       var er=document.createElement("div");er.style.cssText="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff8f0;border:1px solid #ffd699;border-radius:var(--rs);margin-bottom:6px;cursor:pointer";
       er.addEventListener("click",function(){showDiary();});
@@ -2486,12 +2488,39 @@ function showBdayForm() {
   var box = document.createElement("div");
   box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:420px;border-top:3px solid #e8a020";
   var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy3);padding:13px 16px;display:flex;align-items:center;justify-content:space-between";
-  var bht = document.createElement("h2"); bht.style.cssText = "font-size:13px;font-weight:700;color:#fff"; bht.textContent = "Add birthday";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:13px;font-weight:700;color:#fff"; bht.textContent = "Add birthday / anniversary";
   var cx = document.createElement("button"); cx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:26px;height:26px;color:#fff;font-size:17px;cursor:pointer;line-height:1"; cx.textContent = "\u00d7";
   cx.addEventListener("click", function(){ document.body.removeChild(overlay); });
   bh.appendChild(bht); bh.appendChild(cx); box.appendChild(bh);
 
   var bd = document.createElement("div"); bd.style.cssText = "padding:16px;display:flex;flex-direction:column;gap:10px";
+
+  // Event kind toggle: Birthday or Anniversary
+  var kindLbl = document.createElement("label"); kindLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:5px"; kindLbl.textContent = "What is this?";
+  var kindToggle = document.createElement("div"); kindToggle.style.cssText = "display:flex;border:1px solid var(--border);border-radius:var(--rs);overflow:hidden";
+  var btnBday = document.createElement("button"); btnBday.type="button"; btnBday.style.cssText = "flex:1;padding:7px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:#e8a020;color:#fff"; btnBday.textContent = "\uD83C\uDF82 Birthday";
+  var btnAnniv = document.createElement("button"); btnAnniv.type="button"; btnAnniv.style.cssText = "flex:1;padding:7px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:var(--surface);color:var(--muted);border-left:1px solid var(--border)"; btnAnniv.textContent = "\uD83D\uDC8D Anniversary";
+  kindToggle.appendChild(btnBday); kindToggle.appendChild(btnAnniv);
+  var kindWrap = document.createElement("div"); kindWrap.appendChild(kindLbl); kindWrap.appendChild(kindToggle);
+  bd.appendChild(kindWrap);
+
+  var annivLabelWrap = document.createElement("div"); annivLabelWrap.style.display = "none";
+  var annivLabelLbl = document.createElement("label"); annivLabelLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:3px"; annivLabelLbl.textContent = "Anniversary type";
+  var annivLabelInp = document.createElement("input"); annivLabelInp.id = "anniv_label"; annivLabelInp.placeholder = "e.g. Wedding Anniversary, Work Anniversary"; annivLabelInp.style.cssText = "width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+  annivLabelWrap.appendChild(annivLabelLbl); annivLabelWrap.appendChild(annivLabelInp);
+  bd.appendChild(annivLabelWrap);
+
+  var currentKind = "birthday";
+  function setKind(k) {
+    currentKind = k;
+    btnBday.style.background = k==="birthday" ? "#e8a020" : "var(--surface)"; btnBday.style.color = k==="birthday" ? "#fff" : "var(--muted)";
+    btnAnniv.style.background = k==="anniversary" ? "#e8a020" : "var(--surface)"; btnAnniv.style.color = k==="anniversary" ? "#fff" : "var(--muted)";
+    annivLabelWrap.style.display = k==="anniversary" ? "block" : "none";
+    dateLbl.textContent = k==="anniversary" ? "Anniversary date" : "Birthday";
+    saveB.textContent = k==="anniversary" ? "Save anniversary" : "Save birthday";
+  }
+  btnBday.addEventListener("click", function(){ setKind("birthday"); });
+  btnAnniv.addEventListener("click", function(){ setKind("anniversary"); });
 
   // Type toggle
   var typeLbl = document.createElement("label"); typeLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:5px"; typeLbl.textContent = "Who is this for?";
@@ -2577,7 +2606,8 @@ function showBdayForm() {
     var name = currentType === "other" ? document.getElementById("bd_name").value.trim() : document.getElementById("bd_sel").value;
     if (!name) { toast("Please enter a name"); return; }
     var date = document.getElementById("bd_date").value;
-    if (!date) { toast("Please select a birthday date"); return; }
+    if (!date) { toast(currentKind==="anniversary"?"Please select an anniversary date":"Please select a birthday date"); return; }
+    var annivLabel = currentKind==="anniversary" ? (document.getElementById("anniv_label").value.trim() || "Anniversary") : "";
     var bdId = "BD-"+Date.now();
     birthdays.push({
       id: bdId,
@@ -2586,10 +2616,12 @@ function showBdayForm() {
       type: currentType==="client"?"Client":currentType==="rep"?"Rep/ASM":"Other",
       date: date,
       linkedType: currentType,
-      category: currentBdCategory
+      category: currentBdCategory,
+      eventKind: currentKind,
+      annivLabel: annivLabel
     });
     saveBirthdays();
-    // Auto-create diary event for this year's birthday
+    // Auto-create diary event for this year's occurrence
     if (date) {
       var dp = date.split("-");
       if (dp.length === 3) {
@@ -2597,22 +2629,24 @@ function showBdayForm() {
         var bdDay = parseInt(dp[2]);
         var today2 = new Date();
         var bdYear = today2.getFullYear();
-        // If birthday already passed this year use next year
+        // If date already passed this year use next year
         var bdThisYear = new Date(bdYear, bdMonth, bdDay);
         if (bdThisYear < today2) bdYear++;
-        // Check if diary event already exists for this birthday
+        // Check if diary event already exists for this occurrence
         var existing = diaryEvents.find(function(e){ return e.bdId===bdId; });
         if (!existing) {
+          var titleText = currentKind==="anniversary" ? "\uD83D\uDC8D "+annivLabel+": "+name : "\uD83C\uDF82 Birthday: "+name;
           diaryEvents.push({
             id: "EV-BD-"+Date.now(),
             bdId: bdId,
             year: bdYear,
             month: bdMonth,
             day: bdDay,
-            hour: 9,
-            minute: 0,
-            type: "Birthday",
-            title: "\uD83C\uDF82 Birthday: "+name,
+            hour: null,
+            minute: null,
+            allDay: true,
+            type: currentKind==="anniversary" ? "Anniversary" : "Birthday",
+            title: titleText,
             notes: (document.getElementById("bd_company").value.trim()||""),
             withName: currentType!=="other"?name:"",
             withType: currentType!=="other"?currentType:"none",
@@ -3098,7 +3132,7 @@ function renderDiaryView() {
     var dayEvts = eventsForDay(diaryYear, diaryMonth, day);
     dayEvts.slice(0, 3).forEach(function(e) {
       var evtEl = document.createElement("div");
-      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
+      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Anniversary":"#c0392b","Holiday":"#16a085","Other":"#7f8c8d"};
       var col = e.category==="personal" ? "#9333ea" : (typeColors[e.type] || "#305CDE");
       evtEl.style.cssText = "font-size:9px;padding:2px 4px;border-radius:3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff;background:"+col+";cursor:pointer";
       var timeStr = e.allDay ? "" : String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0")+" ";
@@ -3139,7 +3173,7 @@ function renderDiaryView() {
       var diff = Math.ceil((evtDate - new Date()) / 86400000);
       var diffStr = diff < 0 ? Math.abs(diff)+"d ago" : diff === 0 ? "Today" : diff === 1 ? "Tomorrow" : diff+"d";
       var diffCls = diff < 0 ? "background:var(--rbg);color:var(--rtxt)" : diff <= 1 ? "background:var(--abg);color:var(--atxt)" : "background:var(--lbg);color:var(--ltxt)";
-      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
+      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Anniversary":"#c0392b","Holiday":"#16a085","Other":"#7f8c8d"};
       var col = e.category==="personal" ? "#9333ea" : (typeColors[e.type] || "#305CDE");
       var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:7px;border-left:4px solid "+col+";cursor:pointer";
       row.addEventListener("click", (function(eid){ return function(){ editDiaryEvent(eid); }; })(e.id));
@@ -3184,7 +3218,7 @@ function openDiaryDay(day) {
     bd.appendChild(existTitle);
     dayEvts.forEach(function(e) {
       var er = document.createElement("div"); er.style.cssText = "display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--alt);border-radius:var(--rs);margin-bottom:4px";
-      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Holiday":"#16a085","Other":"#7f8c8d"};
+      var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Anniversary":"#c0392b","Holiday":"#16a085","Other":"#7f8c8d"};
       var dot2 = document.createElement("div"); dot2.style.cssText = "width:8px;height:8px;border-radius:50%;background:"+(e.category==="personal"?"#9333ea":(typeColors[e.type]||"#305CDE"))+";flex-shrink:0";
       var et = document.createElement("div"); et.style.flex="1"; et.style.fontSize="12px"; et.style.fontWeight="700"; et.textContent = (e.allDay?"All day":String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"))+" "+e.title+(e.withName?" with "+e.withName:"");
       var eb2 = document.createElement("button"); eb2.style.cssText = "padding:3px 7px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);font-size:10px;color:var(--navy);cursor:pointer"; eb2.textContent = "Edit";
