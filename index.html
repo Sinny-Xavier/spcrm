@@ -1242,8 +1242,12 @@ function renderDet(){
       var qbox=document.createElement("div");qbox.className="qbox";
       var qhdr=document.createElement("div");qhdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px";
       var qttl=document.createElement("div");qttl.style.cssText="font-size:11px;font-weight:700;color:var(--navy)";qttl.textContent="Quote details";
+      var qhdrRight=document.createElement("div");qhdrRight.style.cssText="display:flex;align-items:center;gap:8px";
       var qvb=document.createElement("div");qvb.style.cssText="font-size:17px;font-weight:700;color:var(--gtxt)";qvb.textContent=money(l.quote.value);
-      qhdr.appendChild(qttl);qhdr.appendChild(qvb);qbox.appendChild(qhdr);
+      var qEditBtn=document.createElement("button");qEditBtn.style.cssText="padding:3px 9px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:10px;font-weight:700;cursor:pointer";qEditBtn.textContent="\u270E Edit";
+      qEditBtn.addEventListener("click",(function(cid,i){return function(){showQuoteEditForm(cid,i);};})(c.id,idx));
+      qhdrRight.appendChild(qvb);qhdrRight.appendChild(qEditBtn);
+      qhdr.appendChild(qttl);qhdr.appendChild(qhdrRight);qbox.appendChild(qhdr);
       var qg=document.createElement("div");qg.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px";
       function qf2(lbl2,val2,wide2){var f=document.createElement("div");if(wide2)f.style.gridColumn="1/-1";var fl=document.createElement("div");fl.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";fl.textContent=lbl2;var fv=document.createElement("div");fv.style.cssText="font-size:11px;color:var(--text)"+(wide2?";font-weight:700":"");fv.textContent=val2||"\u2014";f.appendChild(fl);f.appendChild(fv);return f;}
       qg.appendChild(qf2("Ref",l.quote.ref));qg.appendChild(qf2("Value",money(l.quote.value)));qg.appendChild(qf2("Product",l.quote.products,true));qbox.appendChild(qg);
@@ -1409,6 +1413,84 @@ function buildLogForm(cid){
   var saveB=document.createElement("button");saveB.className="lf-save";saveB.textContent="Save";saveB.addEventListener("click",function(){saveLog(cid);});
   var cancelB=document.createElement("button");cancelB.className="lf-cancel";cancelB.textContent="Cancel";cancelB.addEventListener("click",function(){showLF=false;renderDet();});
   btns.appendChild(saveB);btns.appendChild(cancelB);form.appendChild(btns);return form;
+}
+
+function showQuoteEditForm(clientId, logIdx) {
+  var c = null; for (var i = 0; i < clients.length; i++) { if (clients[i].id === clientId) { c = clients[i]; break; } }
+  if (!c || !c.log[logIdx] || !c.log[logIdx].quote) return;
+  var q = c.log[logIdx].quote;
+
+  // Split the stored "category (qty)" string back apart for editing
+  var category = q.category || "";
+  var qtyDetail = "";
+  if (q.products && category) {
+    var match = q.products.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+    if (match) { qtyDetail = match[2]; }
+  }
+  var otherDetail = "";
+  if (category && category.indexOf("Other") === 0) {
+    var otherMatch = category.match(/^Other:\s*(.*)$/);
+    if (otherMatch) { otherDetail = otherMatch[1]; category = "Other"; }
+  }
+
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:440px;max-height:90vh;overflow-y:auto";
+
+  var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy);padding:14px 18px";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:15px;font-weight:700;color:#fff"; bht.textContent = "\u270E Edit quote";
+  bh.appendChild(bht); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:18px;display:flex;flex-direction:column;gap:12px";
+
+  function mkFd(lbl, inp) { var w=document.createElement("div"); var l=document.createElement("label"); l.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; l.textContent=lbl; w.appendChild(l); w.appendChild(inp); return w; }
+
+  var refInp = document.createElement("input"); refInp.id="qe_ref"; refInp.value=q.ref||""; refInp.placeholder="e.g. QT-001"; refInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  bd.appendChild(mkFd("Quote ref", refInp));
+
+  var valInp = document.createElement("input"); valInp.id="qe_val"; valInp.type="number"; valInp.value=q.value||""; valInp.placeholder="e.g. 2500"; valInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  bd.appendChild(mkFd("Value (\u00a3)", valInp));
+
+  var prodSel = document.createElement("select"); prodSel.id="qe_prod"; prodSel.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  var blankOpt = document.createElement("option"); blankOpt.value=""; blankOpt.textContent="-- Select product --"; prodSel.appendChild(blankOpt);
+  PRODUCTS.forEach(function(p){ var o=document.createElement("option"); o.value=p; o.textContent=p; if(p===category) o.selected=true; prodSel.appendChild(o); });
+  bd.appendChild(mkFd("Product category", prodSel));
+
+  var otherWrap = document.createElement("div"); otherWrap.style.display = category==="Other" ? "block" : "none";
+  var otherInp = document.createElement("input"); otherInp.id="qe_other"; otherInp.value=otherDetail; otherInp.placeholder="e.g. Stair rods, Door bars..."; otherInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  otherWrap.appendChild(mkFd("Specify product", otherInp));
+  bd.appendChild(otherWrap);
+  prodSel.addEventListener("change", function(){ otherWrap.style.display = this.value==="Other" ? "block" : "none"; });
+
+  var qtyInp = document.createElement("input"); qtyInp.id="qe_qty"; qtyInp.value=qtyDetail; qtyInp.placeholder="e.g. 50m\u00b2"; qtyInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  bd.appendChild(mkFd("Qty / detail", qtyInp));
+
+  box.appendChild(bd);
+
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px";
+  var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:8px 14px;background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
+  cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  var saveB = document.createElement("button"); saveB.style.cssText = "padding:8px 18px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; saveB.textContent = "Save changes";
+  saveB.addEventListener("click", function(){
+    var newVal = valInp.value.trim();
+    if (!newVal) { toast("Please enter a value"); return; }
+    var newCat = prodSel.value;
+    var newOther = otherInp.value.trim();
+    var finalCat = (newCat==="Other" && newOther) ? "Other: "+newOther : newCat;
+    var newQty = qtyInp.value.trim();
+    q.ref = refInp.value.trim();
+    q.value = newVal;
+    q.category = finalCat;
+    q.products = finalCat + (newQty ? " ("+newQty+")" : "");
+    saveC();
+    document.body.removeChild(overlay);
+    renderDet();
+    toast("Quote updated \u2713");
+  });
+  foot.appendChild(cancelB); foot.appendChild(saveB);
+  box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
+  setTimeout(function(){ refInp.focus(); }, 100);
 }
 
 function saveLog(id){
@@ -3516,7 +3598,11 @@ function renderQuotesView() {
       mid.appendChild(val2);mid.appendChild(days);
       // Right - status + expiry + update
       var right=document.createElement("div");right.style.cssText="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0";
+      var pillRow=document.createElement("div");pillRow.style.cssText="display:flex;align-items:center;gap:6px";
       var pill=document.createElement("span");pill.style.cssText="font-size:9px;font-weight:700;padding:2px 9px;border-radius:20px;"+(statusCols[q.log.quote.status]||"background:var(--lbg);color:var(--ltxt)");pill.textContent=q.log.quote.status;
+      var editBtn3=document.createElement("button");editBtn3.style.cssText="padding:2px 8px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:9px;font-weight:700;cursor:pointer";editBtn3.textContent="\u270E Edit";
+      editBtn3.addEventListener("click",(function(cid,li4){return function(e4){e4.stopPropagation();showQuoteEditForm(cid,li4);};})(q.client.id,q.logIdx));
+      pillRow.appendChild(pill);pillRow.appendChild(editBtn3);
       // Expiry
       var expRow=document.createElement("div");expRow.style.cssText="display:flex;align-items:center;gap:5px";
       var expLbl=document.createElement("span");expLbl.style.cssText="font-size:9px;color:var(--muted)";expLbl.textContent="Expires:";
@@ -3550,7 +3636,7 @@ function renderQuotesView() {
         renderQuotesView();
         toast("Quote updated \u2713");
       };})(q.client,q.logIdx));
-      right.appendChild(pill);right.appendChild(expRow);right.appendChild(statSel);
+      right.appendChild(pillRow);right.appendChild(expRow);right.appendChild(statSel);
       card.appendChild(left);card.appendChild(mid);card.appendChild(right);listWrap.appendChild(card);
     });
   }
