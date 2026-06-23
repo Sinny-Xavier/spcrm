@@ -1466,6 +1466,9 @@ function showQuoteEditForm(clientId, logIdx) {
   var qtyInp = document.createElement("input"); qtyInp.id="qe_qty"; qtyInp.value=qtyDetail; qtyInp.placeholder="e.g. 50m\u00b2"; qtyInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
   bd.appendChild(mkFd("Qty / detail", qtyInp));
 
+  var expInp2 = document.createElement("input"); expInp2.id="qe_expiry"; expInp2.type="date"; expInp2.value=q.expiry||""; expInp2.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  bd.appendChild(mkFd("Expiry date", expInp2));
+
   box.appendChild(bd);
 
   var foot = document.createElement("div"); foot.style.cssText = "padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px";
@@ -1483,6 +1486,7 @@ function showQuoteEditForm(clientId, logIdx) {
     q.value = newVal;
     q.category = finalCat;
     q.products = finalCat + (newQty ? " ("+newQty+")" : "");
+    q.expiry = expInp2.value;
     saveC();
     document.body.removeChild(overlay);
     renderDet();
