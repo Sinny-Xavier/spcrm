@@ -3103,6 +3103,39 @@ function showDiary() {
   activeId = null; renderList(); showView("diary"); renderDiaryView();
 }
 
+function eventsForDay(y, m, d) {
+  var stored = diaryEvents.filter(function(e){
+    return e.year===y && e.month===m && e.day===d && !e.completed && !e.isBirthday;
+  });
+  // Live-calculated birthdays/anniversaries: always show on their date, every year, until removed
+  var liveBdays = birthdays.filter(function(b){
+    if (!b.date) return false;
+    var dp = b.date.split("-");
+    if (dp.length !== 3) return false;
+    var bMonth = parseInt(dp[1]) - 1;
+    var bDay = parseInt(dp[2]);
+    return bMonth === m && bDay === d;
+  }).map(function(b){
+    var isAnniv = b.eventKind === "anniversary";
+    var titleText = isAnniv ? "\uD83D\uDC8D " + (b.annivLabel||"Anniversary") + ": " + (b.name||"") : "\uD83C\uDF82 Birthday: " + (b.name||"");
+    return {
+      id: "LIVE-"+b.id+"-"+y,
+      bdId: b.id,
+      year: y, month: m, day: d,
+      hour: null, minute: null, allDay: true,
+      type: isAnniv ? "Anniversary" : "Birthday",
+      title: titleText,
+      notes: b.company || "",
+      withName: b.linkedType !== "other" ? (b.name||"") : "",
+      withType: b.linkedType !== "other" ? (b.linkedType||"none") : "none",
+      completed: false,
+      isBirthday: true,
+      category: b.category || "personal"
+    };
+  });
+  return stored.concat(liveBdays).sort(function(a,b){ return (a.allDay?0:a.hour*60+a.minute) - (b.allDay?0:b.hour*60+b.minute); });
+}
+
 function renderDiaryView() {
   var dv = document.getElementById("diaryView");
   dv.innerHTML = "";
@@ -3160,40 +3193,6 @@ function renderDiaryView() {
   var startOffset = (firstDay === 0) ? 6 : firstDay - 1;
   var daysInMonth = new Date(diaryYear, diaryMonth + 1, 0).getDate();
   var daysInPrevMonth = new Date(diaryYear, diaryMonth, 0).getDate();
-
-  // Get events for this month
-  function eventsForDay(y, m, d) {
-    var stored = diaryEvents.filter(function(e){
-      return e.year===y && e.month===m && e.day===d && !e.completed && !e.isBirthday;
-    });
-    // Live-calculated birthdays/anniversaries: always show on their date, every year, until removed
-    var liveBdays = birthdays.filter(function(b){
-      if (!b.date) return false;
-      var dp = b.date.split("-");
-      if (dp.length !== 3) return false;
-      var bMonth = parseInt(dp[1]) - 1;
-      var bDay = parseInt(dp[2]);
-      return bMonth === m && bDay === d;
-    }).map(function(b){
-      var isAnniv = b.eventKind === "anniversary";
-      var titleText = isAnniv ? "\uD83D\uDC8D " + (b.annivLabel||"Anniversary") + ": " + (b.name||"") : "\uD83C\uDF82 Birthday: " + (b.name||"");
-      return {
-        id: "LIVE-"+b.id+"-"+y,
-        bdId: b.id,
-        year: y, month: m, day: d,
-        hour: null, minute: null, allDay: true,
-        type: isAnniv ? "Anniversary" : "Birthday",
-        title: titleText,
-        notes: b.company || "",
-        withName: b.linkedType !== "other" ? (b.name||"") : "",
-        withType: b.linkedType !== "other" ? (b.linkedType||"none") : "none",
-        completed: false,
-        isBirthday: true,
-        category: b.category || "personal"
-      };
-    });
-    return stored.concat(liveBdays).sort(function(a,b){ return (a.allDay?0:a.hour*60+a.minute) - (b.allDay?0:b.hour*60+b.minute); });
-  }
 
   // Prev month padding
   for (var i = 0; i < startOffset; i++) {
