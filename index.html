@@ -3163,9 +3163,36 @@ function renderDiaryView() {
 
   // Get events for this month
   function eventsForDay(y, m, d) {
-    return diaryEvents.filter(function(e){
-      return e.year===y && e.month===m && e.day===d && !e.completed;
-    }).sort(function(a,b){ return (a.allDay?0:a.hour*60+a.minute) - (b.allDay?0:b.hour*60+b.minute); });
+    var stored = diaryEvents.filter(function(e){
+      return e.year===y && e.month===m && e.day===d && !e.completed && !e.isBirthday;
+    });
+    // Live-calculated birthdays/anniversaries: always show on their date, every year, until removed
+    var liveBdays = birthdays.filter(function(b){
+      if (!b.date) return false;
+      var dp = b.date.split("-");
+      if (dp.length !== 3) return false;
+      var bMonth = parseInt(dp[1]) - 1;
+      var bDay = parseInt(dp[2]);
+      return bMonth === m && bDay === d;
+    }).map(function(b){
+      var isAnniv = b.eventKind === "anniversary";
+      var titleText = isAnniv ? "\uD83D\uDC8D " + (b.annivLabel||"Anniversary") + ": " + (b.name||"") : "\uD83C\uDF82 Birthday: " + (b.name||"");
+      return {
+        id: "LIVE-"+b.id+"-"+y,
+        bdId: b.id,
+        year: y, month: m, day: d,
+        hour: null, minute: null, allDay: true,
+        type: isAnniv ? "Anniversary" : "Birthday",
+        title: titleText,
+        notes: b.company || "",
+        withName: b.linkedType !== "other" ? (b.name||"") : "",
+        withType: b.linkedType !== "other" ? (b.linkedType||"none") : "none",
+        completed: false,
+        isBirthday: true,
+        category: b.category || "personal"
+      };
+    });
+    return stored.concat(liveBdays).sort(function(a,b){ return (a.allDay?0:a.hour*60+a.minute) - (b.allDay?0:b.hour*60+b.minute); });
   }
 
   // Prev month padding
@@ -3238,12 +3265,16 @@ function renderDiaryView() {
   cal.appendChild(grid); dv.appendChild(cal);
 
   // Upcoming events list (next 14 days only, keeps this section manageable)
-  var upcoming = diaryEvents.filter(function(e){
-    if (e.completed) return false;
-    var evtDate = new Date(e.year, e.month, e.day);
-    var diff = Math.ceil((evtDate - new Date()) / 86400000);
-    return diff >= -1 && diff <= 14;
-  }).sort(function(a,b){
+  // Build day-by-day so live-calculated birthdays/anniversaries are correctly included
+  // even when their next occurrence falls in a different year than any stored copy.
+  var upcoming = [];
+  var todayForUpcoming = new Date();
+  for (var dOffset = -1; dOffset <= 14; dOffset++) {
+    var checkDate = new Date(todayForUpcoming.getFullYear(), todayForUpcoming.getMonth(), todayForUpcoming.getDate() + dOffset);
+    var dayItems = eventsForDay(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate());
+    dayItems.forEach(function(e){ if (!e.completed) upcoming.push(e); });
+  }
+  upcoming.sort(function(a,b){
     var da = new Date(a.year,a.month,a.day)*1000000 + (a.allDay?0:a.hour*60+a.minute);
     var db = new Date(b.year,b.month,b.day)*1000000 + (b.allDay?0:b.hour*60+b.minute);
     return da-db;
@@ -3295,8 +3326,8 @@ function openDiaryDay(day) {
 
   var bd = document.createElement("div"); bd.style.cssText = "padding:16px;display:flex;flex-direction:column;gap:10px";
 
-  // Existing events for this day
-  var dayEvts = diaryEvents.filter(function(e){ return e.year===diaryYear&&e.month===diaryMonth&&e.day===day&&!e.completed; });
+  // Existing events for this day (includes live-generated birthdays/anniversaries)
+  var dayEvts = eventsForDay(diaryYear, diaryMonth, day);
   if (dayEvts.length) {
     var existTitle = document.createElement("div"); existTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:4px"; existTitle.textContent = "Events this day";
     bd.appendChild(existTitle);
@@ -3305,23 +3336,27 @@ function openDiaryDay(day) {
       var typeColors = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Anniversary":"#c0392b","Holiday":"#16a085","Other":"#7f8c8d"};
       var dot2 = document.createElement("div"); dot2.style.cssText = "width:8px;height:8px;border-radius:50%;background:"+(e.category==="personal"?"#9333ea":(typeColors[e.type]||"#305CDE"))+";flex-shrink:0";
       var et = document.createElement("div"); et.style.flex="1"; et.style.fontSize="12px"; et.style.fontWeight="700"; et.textContent = (e.allDay?"All day":String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"))+" "+e.title+(e.withName?" with "+e.withName:"");
-      var eb2 = document.createElement("button"); eb2.style.cssText = "padding:3px 7px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);font-size:10px;color:var(--navy);cursor:pointer"; eb2.textContent = "Edit";
+      var eb2 = document.createElement("button"); eb2.style.cssText = "padding:3px 7px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);font-size:10px;color:var(--navy);cursor:pointer"; eb2.textContent = e.isBirthday ? "Remove" : "Edit";
       eb2.addEventListener("click", (function(eid){ return function(){ document.body.removeChild(overlay); editDiaryEvent(eid); }; })(e.id));
-      var db2 = document.createElement("button"); db2.style.cssText = "padding:3px 7px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);font-size:10px;color:var(--rtxt);cursor:pointer"; db2.textContent = "Delete";
-      db2.addEventListener("click", (function(eid, bdLinkId){ return async function(){
-        diaryEvents=diaryEvents.filter(function(x){return x.id!==eid;});
-        await sbDelete("diary_events", eid);
-        if (bdLinkId) {
-          birthdays = birthdays.filter(function(x){ return x.id!==bdLinkId; });
-          await sbDelete("birthdays", bdLinkId);
-          saveBirthdays();
-        }
-        saveDiary();
-        document.body.removeChild(overlay);
-        renderDiaryView();
-        toast("Deleted \u2713");
-      }; })(e.id, e.bdId));
-      er.appendChild(dot2); er.appendChild(et); er.appendChild(eb2); er.appendChild(db2); bd.appendChild(er);
+      er.appendChild(dot2); er.appendChild(et); er.appendChild(eb2);
+      if (!e.isBirthday) {
+        var db2 = document.createElement("button"); db2.style.cssText = "padding:3px 7px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);font-size:10px;color:var(--rtxt);cursor:pointer"; db2.textContent = "Delete";
+        db2.addEventListener("click", (function(eid, bdLinkId){ return async function(){
+          diaryEvents=diaryEvents.filter(function(x){return x.id!==eid;});
+          await sbDelete("diary_events", eid);
+          if (bdLinkId) {
+            birthdays = birthdays.filter(function(x){ return x.id!==bdLinkId; });
+            await sbDelete("birthdays", bdLinkId);
+            saveBirthdays();
+          }
+          saveDiary();
+          document.body.removeChild(overlay);
+          renderDiaryView();
+          toast("Deleted \u2713");
+        }; })(e.id, e.bdId));
+        er.appendChild(db2);
+      }
+      bd.appendChild(er);
     });
     var divider = document.createElement("div"); divider.style.cssText = "border-top:1px solid var(--border);margin:4px 0"; bd.appendChild(divider);
   }
@@ -3603,6 +3638,25 @@ function markDiaryDone(eid) {
 }
 
 function editDiaryEvent(eid) {
+  // Live-generated birthday/anniversary chips have a synthetic id (LIVE-{bdId}-{year}) since
+  // they don't exist as real diaryEvents rows. Route these to a simple delete-the-record flow instead.
+  if (typeof eid === "string" && eid.indexOf("LIVE-") === 0) {
+    var bdRecordId = eid.replace(/^LIVE-/, "").replace(/-\d{4}$/, "");
+    var bdRecord = birthdays.find(function(b){ return b.id === bdRecordId; });
+    if (!bdRecord) return;
+    var isAnnivR = bdRecord.eventKind === "anniversary";
+    var label = isAnnivR ? (bdRecord.annivLabel||"Anniversary") + ": " + bdRecord.name : "Birthday: " + bdRecord.name;
+    if (confirm("Remove \"" + label + "\" completely? This deletes it from every year, not just this one.")) {
+      birthdays = birthdays.filter(function(b){ return b.id !== bdRecordId; });
+      saveBirthdays();
+      diaryEvents = diaryEvents.filter(function(e){ return e.bdId !== bdRecordId; });
+      saveDiary();
+      renderDiaryView();
+      renderDash();
+      toast("Removed \u2713");
+    }
+    return;
+  }
   var ev = diaryEvents.find(function(x){ return x.id===eid; });
   if (!ev) return;
   var monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
