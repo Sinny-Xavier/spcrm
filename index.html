@@ -1235,6 +1235,7 @@ function renderDash(){
     return d1 || d2 || null;
   }
   var repVisitsDue = reps.filter(function(r){
+    if (r.excludeFromTracking) return false;
     var dt = repEffectiveContactDate(r);
     if (!dt) return false;
     return (new Date()-dt)/86400000>60;
@@ -2131,6 +2132,14 @@ function showRepForm(id){
   var lw=document.createElement("div");var ll=document.createElement("label");ll.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";ll.textContent="Last visited";var li2=document.createElement("input");li2.type="date";li2.id="r_last";li2.value=r?r.lastContact:"";li2.style.cssText="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";lw.appendChild(ll);lw.appendChild(li2);
   var nxw=document.createElement("div");var nxl=document.createElement("label");nxl.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";nxl.textContent="Next visit / follow-up";var nxi=document.createElement("input");nxi.type="date";nxi.id="r_next";nxi.value=r?r.nextVisit:"";nxi.style.cssText="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";nxw.appendChild(nxl);nxw.appendChild(nxi);
   row3.appendChild(lw);row3.appendChild(nxw);bd.appendChild(row3);
+
+  var trackWrap = document.createElement("div"); trackWrap.style.cssText = "background:var(--alt);border-radius:var(--rs);padding:9px 11px;display:flex;align-items:center;gap:9px";
+  var trackChk = document.createElement("input"); trackChk.type = "checkbox"; trackChk.id = "r_excluded"; trackChk.checked = r ? !!r.excludeFromTracking : false; trackChk.style.cssText = "width:15px;height:15px;cursor:pointer;flex-shrink:0";
+  var trackLbl = document.createElement("label"); trackLbl.style.cssText = "font-size:11px;color:var(--text);cursor:pointer"; trackLbl.htmlFor = "r_excluded";
+  trackLbl.innerHTML = "<strong>Not my area / contact only</strong> \u2014 don't flag this rep as overdue for a visit (e.g. a number you have but they're not your ASM, or a one-off you don't currently use)";
+  trackWrap.appendChild(trackChk); trackWrap.appendChild(trackLbl);
+  bd.appendChild(trackWrap);
+
   box.appendChild(bd);
   var foot=document.createElement("div");foot.style.cssText="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
   var cancelB=document.createElement("button");cancelB.style.cssText="padding:6px 12px;background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer";cancelB.textContent="Cancel";cancelB.addEventListener("click",function(){document.body.removeChild(overlay);});
@@ -2141,7 +2150,7 @@ function showRepForm(id){
     var existingLog=existingRep?existingRep.log||[]:[];
     var lastIntDate=existingRep?existingRep.lastInteractionDate||"":"";
     var lastIntType=existingRep?existingRep.lastInteractionType||"":"";
-    var data={id:id||("REP-"+Date.now()),name:name,manufacturer:document.getElementById("r_mfr").value,company:document.getElementById("r_company").value.trim(),tel:document.getElementById("r_tel").value.trim(),mobile:document.getElementById("r_mob").value.trim(),email:document.getElementById("r_email").value.trim(),website:document.getElementById("r_web").value.trim(),notes:document.getElementById("r_notes").value.trim(),lastContact:document.getElementById("r_last").value,nextVisit:document.getElementById("r_next").value,log:existingLog,lastInteractionDate:lastIntDate,lastInteractionType:lastIntType};
+    var data={id:id||("REP-"+Date.now()),name:name,manufacturer:document.getElementById("r_mfr").value,company:document.getElementById("r_company").value.trim(),tel:document.getElementById("r_tel").value.trim(),mobile:document.getElementById("r_mob").value.trim(),email:document.getElementById("r_email").value.trim(),website:document.getElementById("r_web").value.trim(),notes:document.getElementById("r_notes").value.trim(),lastContact:document.getElementById("r_last").value,nextVisit:document.getElementById("r_next").value,log:existingLog,lastInteractionDate:lastIntDate,lastInteractionType:lastIntType,excludeFromTracking:document.getElementById("r_excluded").checked};
     if(id){var idx=reps.findIndex(function(x){return x.id===id;});if(idx>=0)reps[idx]=data;else reps.push(data);}else reps.push(data);
     saveReps();document.body.removeChild(overlay);renderRepsView();toast((id?"Rep updated":"Rep added")+" \u2713");
   });
@@ -5273,7 +5282,7 @@ function showMonthlyReport() {
       if(!reps||!reps.length){var e=document.createElement("div");e.style.cssText="text-align:center;padding:20px;color:var(--muted)";e.textContent="No reps added yet";ss.appendChild(e);}
       else{
         var today=new Date();today.setHours(0,0,0,0);
-        var repData=reps.map(function(r){
+        var repData=reps.filter(function(r){ return !r.excludeFromTracking; }).map(function(r){
           var effectiveContact = r.lastInteractionDate || r.lastContact;
           // If both exist, use whichever is more recent
           if (r.lastInteractionDate && r.lastContact) {
