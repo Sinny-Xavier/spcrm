@@ -958,7 +958,7 @@ function renderList(){
   var fl=clients.filter(function(c){
     var mq=!q||[c.name,c.binder,c.tel,c.mobile,c.contact].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
     return mq&&(activeFilter==="All"||c.status===activeFilter);
-  });
+  }).sort(function(a,b){ return (a.name||"").localeCompare(b.name||"", undefined, {sensitivity:"base"}); });
   var el=document.getElementById("clist");
   if(!fl.length){
     var archivedMatch=q?archivedClients.filter(function(c){return[c.name,c.binder,c.tel,c.mobile,c.contact].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});}):[];
