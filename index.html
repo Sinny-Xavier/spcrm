@@ -649,6 +649,50 @@ function csvEscape(val) {
   return s;
 }
 
+function csvDownload(rows, filenamePrefix) {
+  var csv = rows.map(function(r){ return r.map(csvEscape).join(","); }).join("\n");
+  var blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  var today = new Date();
+  var fname = filenamePrefix + "-" + today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0") + "-" + String(today.getDate()).padStart(2,"0") + ".csv";
+  a.href = url; a.download = fname;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportWebsitesCSV() {
+  if (!websites.length) { toast("No websites to export"); return; }
+  var rows = [["Name","URL","Category","Description"]];
+  websites.forEach(function(w){
+    rows.push([w.name||"", w.url||"", w.category||"", w.description||""]);
+  });
+  csvDownload(rows, "websites-export");
+  toast("Exported " + websites.length + " websites \u2713");
+}
+
+function exportClientsCSV() {
+  if (!clients.length) { toast("No clients to export"); return; }
+  var rows = [["Name","Phone"]];
+  clients.forEach(function(c){
+    var phone = c.mobile || c.tel || "";
+    rows.push([c.name||"", phone]);
+  });
+  csvDownload(rows, "clients-export");
+  toast("Exported " + clients.length + " clients \u2713");
+}
+
+function exportRepsCSV() {
+  if (!reps.length) { toast("No reps to export"); return; }
+  var rows = [["Name","Phone","Email"]];
+  reps.forEach(function(r){
+    var phone = r.mobile || r.tel || "";
+    rows.push([r.name||"", phone, r.email||""]);
+  });
+  csvDownload(rows, "reps-export");
+  toast("Exported " + reps.length + " reps \u2713");
+}
+
 function exportPersonalData() {
   var monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   var personalEvts = getPersonalDiaryEvents();
@@ -5544,6 +5588,15 @@ function showAdmin() {
     });
     saveWebsites();
     toast(added + " site" + (added!==1?"s":"") + " imported" + (added < importData.length ? " (" + (importData.length-added) + " already existed)" : ""));
+  }));
+  bd.appendChild(adminSection("\uD83D\uDCE5", "Export all websites", "Download every saved trade website as a CSV \u2014 name, URL, category, description.", "Export Websites", "var(--navy)", function(){
+    exportWebsitesCSV();
+  }));
+  bd.appendChild(adminSection("\uD83D\uDCE5", "Export all clients", "Download a simple CSV of every client \u2014 name and phone number only.", "Export Clients", "var(--navy)", function(){
+    exportClientsCSV();
+  }));
+  bd.appendChild(adminSection("\uD83D\uDCE5", "Export all reps/ASMs", "Download a simple CSV of every rep \u2014 name, phone number and email.", "Export Reps", "var(--navy)", function(){
+    exportRepsCSV();
   }));
 
   // DIARY (export / wipe by category)
