@@ -1965,7 +1965,17 @@ function showForm(id){
         var clName = (cl.name||"").toLowerCase();
         if (!clName) return false;
         if (clName === typedLower) return true;
-        // Fuzzy: small edit distance relative to name length catches typos like Alpha/Aplha
+        if (clName.indexOf(typedLower) === 0) return true; // typed text is the start of an existing name
+        // Compare against the start of the existing name too, so a short typed snippet
+        // (e.g. "alph") still catches a typo against the equivalent prefix of "aplha flooring"
+        var prefixLen = Math.min(clName.length, typedLower.length);
+        var clPrefix = clName.slice(0, prefixLen);
+        var prefixDist = levenshtein(clPrefix, typedLower);
+        // A single transposed pair of letters (e.g. "alph" vs "aplh") costs 2 edits even on
+        // very short strings, so allow up to 2 edits flat on anything 4+ characters long.
+        if (prefixLen >= 4 && prefixDist <= 2) return true;
+        if (prefixLen > 0 && (prefixDist / prefixLen) <= 0.3 && prefixDist <= 2) return true;
+        // Fuzzy: small edit distance relative to full name length catches typos like Alpha/Aplha
         var dist = levenshtein(clName, typedLower);
         var maxLen = Math.max(clName.length, typedLower.length);
         return maxLen > 0 && (dist / maxLen) <= 0.25 && dist <= 3;
