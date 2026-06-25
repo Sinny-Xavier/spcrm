@@ -1012,6 +1012,9 @@ var TOOL_CATEGORIES=[
   {name:"PPE", note:""},
   {name:"Misc tools", note:"Screwdrivers, Scrapers, Tack Lifters, Hammers"}
 ];
+var LVT_MANUFACTURERS=["Nordikka", "AW Invictus", "Polyflor", "Karndean", "Amtico", "Quickstep", "Moduleo"];
+var LAMINATE_MANUFACTURERS=["Egger", "Classen", "Quick Step", "Life"];
+var CONTRACT_VINYL_MANUFACTURERS=["Polyflor", "Altro", "Gerflor", "Forbo", "Tarkett"];
 var MANUFACTURERS=["Aegean Sea", "Altro", "Amtico", "A.W - Invictus", "Axminster", "Brintons", "Camaro", "Carpenters", "Cormar", "F Ball", "Forbo", "Furlong", "Genesis", "Gerflor", "Gradus", "Heckmondwike", "Interface", "Kahrs", "Karndean", "Kelmore", "Kerakoll UK", "Likewise", "Luvanto", "Mapei", "Mercado", "Moduleo", "Orion", "Polyflor", "QEP", "Quantum", "Quick-Step", "Roberts - QEP", "R.S.Batemans", "Shaw", "Spotnails", "Stairrods", "Tarkett", "Ted Todd", "Toolbank", "Trade Choice", "Uzin", "Victoria", "Woodpecker", "Other"]
 var clients,reps,samples,birthdays,complaints;
 var activeFilter="All",activeId=null,editId=null,showLF=false,pendingDel=null;
@@ -3214,9 +3217,30 @@ function showSaleForm(clientId, clientName) {
   toolWrap.appendChild(mkF2("Tool category *", toolSel));
   bd.appendChild(toolWrap);
 
+  // Generic helper to build a manufacturer dropdown wrap
+  function buildMfrWrap(wrapId, selId, label, list) {
+    var w = document.createElement("div");
+    w.id = wrapId;
+    w.style.display = "none";
+    var sel = document.createElement("select");
+    sel.id = selId;
+    sel.style.cssText = "width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+    var blank = document.createElement("option"); blank.value = ""; blank.textContent = "-- Select manufacturer --"; sel.appendChild(blank);
+    list.forEach(function(m) { var opt = document.createElement("option"); opt.value = m; opt.textContent = m; sel.appendChild(opt); });
+    w.appendChild(mkF2(label, sel));
+    bd.appendChild(w);
+    return w;
+  }
+  var lvtWrap = buildMfrWrap("sl_lvt_wrap", "sl_lvtmfr", "LVT manufacturer *", LVT_MANUFACTURERS);
+  var lamWrap = buildMfrWrap("sl_lam_wrap", "sl_lammfr", "Laminate manufacturer *", LAMINATE_MANUFACTURERS);
+  var cvWrap = buildMfrWrap("sl_cv_wrap", "sl_cvmfr", "Contract Vinyl manufacturer *", CONTRACT_VINYL_MANUFACTURERS);
+
   prodSel.addEventListener("change", function(){
     otherWrap.style.display = this.value === "Other" ? "" : "none";
     toolWrap.style.display = this.value === "Tools" ? "" : "none";
+    lvtWrap.style.display = this.value === "LVT" ? "" : "none";
+    lamWrap.style.display = this.value === "Laminate" ? "" : "none";
+    cvWrap.style.display = this.value === "Contract Vinyl" ? "" : "none";
   });
 
   // Sale amount
@@ -3267,6 +3291,21 @@ function showSaleForm(clientId, clientName) {
       if (!toolCat) { toast("Please select a tool category"); return; }
       prod = "Tools: " + toolCat;
     }
+    var lvtMfr = (document.getElementById("sl_lvtmfr")||{}).value || "";
+    if (prod === "LVT") {
+      if (!lvtMfr) { toast("Please select a manufacturer"); return; }
+      prod = "LVT: " + lvtMfr;
+    }
+    var lamMfr = (document.getElementById("sl_lammfr")||{}).value || "";
+    if (prod === "Laminate") {
+      if (!lamMfr) { toast("Please select a manufacturer"); return; }
+      prod = "Laminate: " + lamMfr;
+    }
+    var cvMfr = (document.getElementById("sl_cvmfr")||{}).value || "";
+    if (prod === "Contract Vinyl") {
+      if (!cvMfr) { toast("Please select a manufacturer"); return; }
+      prod = "Contract Vinyl: " + cvMfr;
+    }
     var val = document.getElementById("sl_val").value;
     var det = document.getElementById("sl_det").value.trim();
     var date = document.getElementById("sl_date").value;
@@ -3309,6 +3348,12 @@ function showSaleForm(clientId, clientName) {
       var otherWrapEl=document.getElementById("sl_other_wrap");if(otherWrapEl)otherWrapEl.style.display="none";
       var toolSelEl=document.getElementById("sl_toolcat");if(toolSelEl)toolSelEl.value="";
       var toolWrapEl=document.getElementById("sl_tool_wrap");if(toolWrapEl)toolWrapEl.style.display="none";
+      var lvtSelEl=document.getElementById("sl_lvtmfr");if(lvtSelEl)lvtSelEl.value="";
+      var lvtWrapEl=document.getElementById("sl_lvt_wrap");if(lvtWrapEl)lvtWrapEl.style.display="none";
+      var lamSelEl=document.getElementById("sl_lammfr");if(lamSelEl)lamSelEl.value="";
+      var lamWrapEl=document.getElementById("sl_lam_wrap");if(lamWrapEl)lamWrapEl.style.display="none";
+      var cvSelEl=document.getElementById("sl_cvmfr");if(cvSelEl)cvSelEl.value="";
+      var cvWrapEl=document.getElementById("sl_cv_wrap");if(cvWrapEl)cvWrapEl.style.display="none";
     } else {
       document.body.removeChild(overlay);
       renderDet();
