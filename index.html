@@ -1365,7 +1365,11 @@ function renderDet(){
     if(l.quote){
       var qbox=document.createElement("div");qbox.className="qbox";
       var qhdr=document.createElement("div");qhdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px";
-      var qttl=document.createElement("div");qttl.style.cssText="font-size:11px;font-weight:700;color:var(--navy)";qttl.textContent="Quote details";
+      var qttl=document.createElement("div");qttl.style.cssText="font-size:11px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:7px";qttl.textContent="Quote details";
+      if((l.quote.ref||"").indexOf("SALE-")===0){
+        var saleTag2=document.createElement("span");saleTag2.style.cssText="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 7px;border-radius:20px;background:#1a5c1a;color:#fff";saleTag2.textContent="\uD83D\uDED2 Counter Sale";
+        qttl.appendChild(saleTag2);
+      }
       var qhdrRight=document.createElement("div");qhdrRight.style.cssText="display:flex;align-items:center;gap:8px";
       var qvb=document.createElement("div");qvb.style.cssText="font-size:17px;font-weight:700;color:var(--gtxt)";qvb.textContent=money(l.quote.value);
       var qEditBtn=document.createElement("button");qEditBtn.style.cssText="padding:3px 9px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:10px;font-weight:700;cursor:pointer";qEditBtn.textContent="\u270E Edit";
@@ -3922,6 +3926,11 @@ function renderQuotesView() {
       var avCircle=document.createElement("div");avCircle.style.cssText="width:28px;height:28px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0";avCircle.textContent=ini(q.client.name);
       var cname=document.createElement("div");cname.style.cssText="font-weight:700;font-size:13px";cname.textContent=q.client.name;
       av.appendChild(avCircle);av.appendChild(cname);
+      var isCounterSale = (q.log.quote.ref||"").indexOf("SALE-")===0;
+      if (isCounterSale) {
+        var saleTag=document.createElement("span");saleTag.style.cssText="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 7px;border-radius:20px;background:#1a5c1a;color:#fff";saleTag.textContent="\uD83D\uDED2 Counter Sale";
+        av.appendChild(saleTag);
+      }
       var prod=document.createElement("div");prod.style.cssText="font-size:11px;color:var(--muted);margin-left:36px";prod.textContent=(q.log.quote.products||"")+(q.log.date?" · Quoted "+q.log.date:"")+(q.log.quote.paidDate?" · Paid "+q.log.quote.paidDate:"")+(q.log.quote.collectedDate?" · Collected "+q.log.quote.collectedDate:"");
       left.appendChild(av);left.appendChild(prod);
       // Middle - value and days open
