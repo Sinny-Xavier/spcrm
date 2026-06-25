@@ -694,7 +694,6 @@ function exportRepsCSV() {
 }
 
 function exportPersonalData() {
-  var monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   var personalEvts = getPersonalDiaryEvents();
   var personalBdays = getPersonalBirthdays();
 
@@ -703,26 +702,104 @@ function exportPersonalData() {
     return;
   }
 
-  var rows = [["Record Type","Title / Name","Date","Time","Notes / Company","With"]];
+  // RecordType distinguishes Event vs Birthday vs Anniversary so re-import is unambiguous.
+  // DateRaw is the actual stored format the app uses internally (YYYY-MM-DD for birthdays/
+  // anniversaries, Y-M-D numeric fields for diary events) so nothing gets lost on the way out.
+  var rows = [["RecordType","Title","Name","AnnivLabel","DateRaw","Year","Month","Day","AllDay","Hour","Minute","EventType","Notes","WithName","WithType"]];
   personalEvts.forEach(function(e){
-    var dateStr = monthNames[e.month] + " " + e.day + ", " + e.year;
-    var timeStr = e.allDay ? "All day" : (String(e.hour).padStart(2,"0")+":"+String(e.minute).padStart(2,"0"));
-    rows.push(["Diary Event", e.title, dateStr, timeStr, e.notes||"", e.withName||""]);
+    rows.push(["Event", e.title||"", "", "", "", e.year, e.month, e.day, e.allDay?"Yes":"No", e.allDay?"":e.hour, e.allDay?"":e.minute, e.type||"", e.notes||"", e.withName||"", e.withType||""]);
   });
   personalBdays.forEach(function(b){
-    rows.push(["Birthday", b.name, b.date||"", "", b.company||"", ""]);
+    var kind = b.eventKind==="anniversary" ? "Anniversary" : "Birthday";
+    rows.push([kind, "", b.name||"", b.annivLabel||"", b.date||"", "", "", "", "", "", "", "", b.company||"", "", b.linkedType||""]);
   });
 
-  var csv = rows.map(function(r){ return r.map(csvEscape).join(","); }).join("\n");
-  var blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement("a");
-  var today = new Date();
-  var fname = "personal-data-export-" + today.getFullYear() + "-" + String(today.getMonth()+1).padStart(2,"0") + "-" + String(today.getDate()).padStart(2,"0") + ".csv";
-  a.href = url; a.download = fname;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  toast("Exported " + personalEvts.length + " events + " + personalBdays.length + " birthdays \u2713");
+  csvDownload(rows, "personal-data-export");
+  toast("Exported " + personalEvts.length + " events + " + personalBdays.length + " birthdays/anniversaries \u2713");
+}
+
+function importPersonalDataFile(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var text = e.target.result;
+      var lines = text.split(/\r?\n/).filter(function(l){ return l.trim().length > 0; });
+      if (lines.length < 2) { toast("File looks empty"); return; }
+
+      function parseCsvLine(line) {
+        var result = []; var cur = ""; var inQuotes = false;
+        for (var i = 0; i < line.length; i++) {
+          var ch = line[i];
+          if (inQuotes) {
+            if (ch === '"') {
+              if (line[i+1] === '"') { cur += '"'; i++; } else { inQuotes = false; }
+            } else { cur += ch; }
+          } else {
+            if (ch === '"') inQuotes = true;
+            else if (ch === ',') { result.push(cur); cur = ""; }
+            else cur += ch;
+          }
+        }
+        result.push(cur);
+        return result;
+      }
+
+      var header = parseCsvLine(lines[0]);
+      var expectedHeader = "RecordType";
+      if (header[0] !== expectedHeader) {
+        toast("This doesn't look like a SPCRM personal data export file");
+        return;
+      }
+
+      var eventsAdded = 0, bdaysAdded = 0;
+      for (var i = 1; i < lines.length; i++) {
+        var f = parseCsvLine(lines[i]);
+        var recordType = f[0];
+        if (recordType === "Event") {
+          diaryEvents.push({
+            id: "EV-IMPORT-" + Date.now() + "-" + i,
+            title: f[1] || "",
+            year: parseInt(f[5]) || new Date().getFullYear(),
+            month: parseInt(f[6]) || 0,
+            day: parseInt(f[7]) || 1,
+            allDay: f[8] === "Yes",
+            hour: f[8] === "Yes" ? null : (parseInt(f[9]) || 0),
+            minute: f[8] === "Yes" ? null : (parseInt(f[10]) || 0),
+            type: f[11] || "Other",
+            notes: f[12] || "",
+            withName: f[13] || "",
+            withType: f[14] || "none",
+            completed: false,
+            category: "personal"
+          });
+          eventsAdded++;
+        } else if (recordType === "Birthday" || recordType === "Anniversary") {
+          var bdId = "BD-IMPORT-" + Date.now() + "-" + i;
+          birthdays.push({
+            id: bdId,
+            name: f[2] || "",
+            company: f[12] || "",
+            type: "Other",
+            date: f[4] || "",
+            linkedType: f[14] || "other",
+            category: "personal",
+            eventKind: recordType === "Anniversary" ? "anniversary" : "birthday",
+            annivLabel: f[3] || ""
+          });
+          bdaysAdded++;
+        }
+      }
+
+      saveDiary();
+      saveBirthdays();
+      renderDiaryView && renderDiaryView();
+      renderDash();
+      toast("Imported \u2713 " + eventsAdded + " events, " + bdaysAdded + " birthdays/anniversaries");
+    } catch(err) {
+      toast("Couldn't read that file \u2014 make sure it's a SPCRM personal export CSV");
+    }
+  };
+  reader.readAsText(file);
 }
 
 function openWipeConfirm(scope) {
@@ -1820,6 +1897,10 @@ function showForm(id){
   mkF(g1,"Binder ref",mkI("e_binder",c?c.binder:nextId(),""));
   mkF(g1,"Account manager",mkI("e_mgr",c?(c.manager||"FSG"):"",""));
   mkF(g1,"Account name *",mkI("e_name",c?c.name:"","Company or client name"),true);
+  var dupWarnWrap = document.createElement("div"); dupWarnWrap.className = "ff s2"; dupWarnWrap.style.display = "none";
+  var dupWarnBox = document.createElement("div"); dupWarnBox.style.cssText = "background:#fff4e0;border:1px solid #f0c060;border-radius:var(--rs);padding:9px 11px;font-size:11px;color:#8a5a00";
+  dupWarnWrap.appendChild(dupWarnBox);
+  g1.appendChild(dupWarnWrap);
   mkF(g1,"Contact name",mkI("e_contact",c?c.contact:"","Primary contact person"),true);
   var srcSel=document.createElement("select");srcSel.id="e_source";srcSel.style.cssText="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;color:var(--text);outline:none";
   ["","Existing Customer","Existing Customer (Dormant 12m+)","New - Sinbad's Old Customer","New - Walk In","New - Referral","Fitter"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2||"-- Select source --";if(c&&c.source===s2)opt.selected=true;srcSel.appendChild(opt);});
@@ -1860,6 +1941,43 @@ function showForm(id){
   var cancelB=document.createElement("button");cancelB.className="fcancel";cancelB.textContent="Cancel";cancelB.addEventListener("click",cancelForm);
   var saveB=document.createElement("button");saveB.className="fsave";saveB.textContent="Save client";saveB.addEventListener("click",submitForm);
   foot.appendChild(cancelB);foot.appendChild(saveB);fv.appendChild(foot);
+
+  // Live duplicate-name check, catches exact matches and close misspellings
+  function levenshtein(a, b) {
+    var m = a.length, n = b.length;
+    var dp = []; for (var x = 0; x <= m; x++) { dp.push([x]); }
+    for (var y = 0; y <= n; y++) { dp[0][y] = y; }
+    for (var i2 = 1; i2 <= m; i2++) {
+      for (var j2 = 1; j2 <= n; j2++) {
+        dp[i2][j2] = a[i2-1] === b[j2-1] ? dp[i2-1][j2-1] : 1 + Math.min(dp[i2-1][j2], dp[i2][j2-1], dp[i2-1][j2-1]);
+      }
+    }
+    return dp[m][n];
+  }
+  var nameInpEl = document.getElementById("e_name");
+  if (nameInpEl) {
+    nameInpEl.addEventListener("input", function(){
+      var typed = nameInpEl.value.trim();
+      if (typed.length < 3) { dupWarnWrap.style.display = "none"; return; }
+      var typedLower = typed.toLowerCase();
+      var matches = clients.filter(function(cl){
+        if (id && cl.id === id) return false; // skip self when editing
+        var clName = (cl.name||"").toLowerCase();
+        if (!clName) return false;
+        if (clName === typedLower) return true;
+        // Fuzzy: small edit distance relative to name length catches typos like Alpha/Aplha
+        var dist = levenshtein(clName, typedLower);
+        var maxLen = Math.max(clName.length, typedLower.length);
+        return maxLen > 0 && (dist / maxLen) <= 0.25 && dist <= 3;
+      });
+      if (matches.length) {
+        dupWarnBox.innerHTML = "\u26A0\uFE0F Possible duplicate \u2014 you already have: <strong>" + matches.map(function(m){ return m.name; }).join(", ") + "</strong>. Check before saving a new client.";
+        dupWarnWrap.style.display = "block";
+      } else {
+        dupWarnWrap.style.display = "none";
+      }
+    });
+  }
 }
 
 function cancelForm(){if(activeId){showView("det");renderDet();}else{showDash();}}
@@ -5613,6 +5731,14 @@ function showAdminPanel() {
   bd.appendChild(divider("Diary"));
   bd.appendChild(adminSection("\uD83D\uDCC5", "Export personal entries", "Download a CSV of personal diary entries and birthdays \u2014 your own backup, kept separate from work data.", "Export Personal", "#9333ea", function(){
     exportPersonalData();
+  }));
+  bd.appendChild(adminSection("\uD83D\uDCC2", "Import personal entries", "Bring back personal diary entries and birthdays/anniversaries from a previously exported CSV file.", "Choose file", "#9333ea", function(){
+    var inp = document.createElement("input"); inp.type = "file"; inp.accept = ".csv";
+    inp.addEventListener("change", function(){
+      if (!this.files || !this.files[0]) return;
+      importPersonalDataFile(this.files[0]);
+    });
+    inp.click();
   }));
   bd.appendChild(adminSection("\uD83E\uDDF9", "Wipe personal only", "Permanently delete personal-tagged diary entries and birthdays. Work entries are untouched. Export first if you want a copy.", "Wipe Personal", "#9333ea", function(){
     openWipeConfirm("personal");
