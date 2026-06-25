@@ -299,6 +299,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
       <button class="nav-btn" onclick="showSamples()">&#128230; Samples</button>
       <button class="nav-btn" onclick="showComplaints()">&#128221; Complaints</button>
       <button class="nav-btn" onclick="showEnquiries()" style="background:rgba(155,89,182,.2);border-color:rgba(155,89,182,.4)">&#128172; Enquiries</button>
+      <button class="nav-btn" onclick="showTasks()" style="background:rgba(52,152,219,.2);border-color:rgba(52,152,219,.4)">&#9989; To-Do</button>
     <button class="nav-btn" onclick="showQuotes()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128178; Quotes</button>
       <button class="nav-btn" onclick="showDiary()" style="background:rgba(255,153,0,.25);border-color:rgba(255,153,0,.5)">&#128197; Diary</button>
     <button class="nav-btn" onclick="showMonthlyReport()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128202; Report</button>
@@ -348,6 +349,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
     <div id="websitesView" class="page"></div>
     <div id="docsView" class="page"></div>
     <div id="enquiriesView" class="page"></div>
+    <div id="tasksView" class="page"></div>
     <div id="notesSearchView" class="page"></div>
   </main>
 </div>
@@ -505,10 +507,10 @@ async function ensureBirthdayReminders() {
 
 async function loadFromSupabase() {
   try {
-    var [c, r, s, b, comp, d, w, docs2, enq] = await Promise.all([
+    var [c, r, s, b, comp, d, w, docs2, enq, tsk] = await Promise.all([
       sbGet("clients"), sbGet("reps"), sbGet("samples"),
       sbGet("birthdays"), sbGet("complaints"), sbGet("diary_events"),
-      sbGet("websites"), sbGet("docs"), sbGet("enquiries")
+      sbGet("websites"), sbGet("docs"), sbGet("enquiries"), sbGet("tasks")
     ]);
 
     // CLIENTS: Supabase is master. If empty, push local up.
@@ -533,6 +535,7 @@ async function loadFromSupabase() {
     if (comp && comp.length > 0) complaints = comp;
     if (d && d.length > 0) diaryEvents = d;
     if (enq && enq.length > 0) enquiries = enq;
+    if (tsk && tsk.length > 0) tasks = tsk;
     if (w && w.length > 0) websites = w;
     // One-time fix: collapse duplicate/id-less website records (same legacy bug as docs - created a fresh duplicate on every load)
     var seenWebKeys = {};
@@ -935,7 +938,7 @@ function updateStats(){
 
 // ── VIEW MANAGER ──────────────────────────────────────────────────
 function showView(v){
-  ["dashView","detView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView"].forEach(function(id){
+  ["dashView","detView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView","tasksView"].forEach(function(id){
     var el=document.getElementById(id);
     el.style.display=(id===v+"View"||(v==="det"&&id==="detView")||(v==="form"&&id==="formView"))?"block":"none";
   });
@@ -1080,6 +1083,32 @@ function renderDash(){
     oqLnk.addEventListener("click",showQuotes);oqCard.appendChild(oqLnk);
   }
   dg.appendChild(oqCard);
+
+  var activeTasks = tasks.filter(function(t){ return !t.done; }).sort(function(a,b){ return (b.created||0)-(a.created||0); });
+  var todoCard = mkCard("To-Do",activeTasks.slice(0,4),"All clear \u2713",function(t){
+    var el=document.createElement("div");el.className="fu-item";el.style.cursor="pointer";
+    var av=document.createElement("div");av.className="fu-av";av.style.background=t.clientId?"var(--navy)":"#3498db";av.textContent=t.clientId?ini(t.clientName):"\uD83C\uDFEA";
+    var info=document.createElement("div");info.style.flex="1";
+    var nm=document.createElement("div");nm.className="fu-name";nm.textContent=t.text;
+    var sub=document.createElement("div");sub.className="fu-date";sub.textContent=t.clientId?t.clientName:"Shop task";
+    info.appendChild(nm);info.appendChild(sub);
+    var doneBtn2=document.createElement("button");doneBtn2.textContent="\u2713";doneBtn2.style.cssText="margin-left:8px;width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid #3498db;color:#3498db;font-size:12px;cursor:pointer;flex-shrink:0";
+    doneBtn2.addEventListener("click",function(ev){
+      ev.stopPropagation();
+      t.done=true; t.completedDate=fd2date();
+      saveTasks(); renderDash();
+      toast("Marked done \u2713");
+    });
+    el.appendChild(av);el.appendChild(info);el.appendChild(doneBtn2);
+    el.addEventListener("click",function(){ showTasks(); });
+    return el;
+  });
+  if (tasks.length>0) {
+    var tdLnk=document.createElement("div");tdLnk.style.cssText="font-size:11px;color:var(--navy);cursor:pointer;margin-top:8px;text-align:right;padding-top:7px;border-top:1px solid var(--border)";
+    tdLnk.textContent="View all tasks ("+activeTasks.length+") \u2192";
+    tdLnk.addEventListener("click",showTasks);todoCard.appendChild(tdLnk);
+  }
+  dg.appendChild(todoCard);
   dg.appendChild(mkCard("Top priority clients",top,"Set priority ratings to see them here",function(c){
     var el=document.createElement("div");el.className="top-item";
     var rk=document.createElement("div");rk.className="top-rank";rk.textContent=top.indexOf(c)+1;
@@ -4214,6 +4243,192 @@ function showDocs() {
   activeId = null; renderList(); showView("docs"); renderDocsView();
 }
 
+// ── TASKS / TO-DO ───────────────────────────────────────────────
+var TASKS_STORE = "spcrm_tasks_v1";
+var tasks = [];
+
+function loadTasks() {
+  try { var r = localStorage.getItem(TASKS_STORE); if (r) return JSON.parse(r); } catch(e) {}
+  return [];
+}
+function saveTasks() {
+  try { localStorage.setItem(TASKS_STORE, JSON.stringify(tasks)); } catch(e) {}
+  sbSaveAll("tasks", tasks, "id");
+}
+
+var taskFilter = "Active";
+
+function showTasks() {
+  activeId = null; renderList(); showView("tasks"); renderTasksView();
+}
+
+function renderTasksView() {
+  var tv = document.getElementById("tasksView");
+  tv.innerHTML = "";
+
+  var hdr = document.createElement("div"); hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px";
+  var title = document.createElement("h2"); title.style.cssText = "font-size:18px;font-weight:700"; title.textContent = "To-Do";
+  var addBtn = document.createElement("button"); addBtn.style.cssText = "padding:8px 16px;background:#3498db;border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer"; addBtn.textContent = "+ Add task";
+  addBtn.addEventListener("click", showTaskForm);
+  hdr.appendChild(title); hdr.appendChild(addBtn); tv.appendChild(hdr);
+
+  var sub = document.createElement("div"); sub.style.cssText = "font-size:12px;color:var(--muted);margin-bottom:14px"; sub.textContent = "Shop tasks and client-linked tasks in one place.";
+  tv.appendChild(sub);
+
+  var filterRow = document.createElement("div"); filterRow.style.cssText = "display:flex;gap:6px;margin-bottom:16px";
+  ["Active","Done","All"].forEach(function(f){
+    var btn = document.createElement("button");
+    var count = f==="All" ? tasks.length : tasks.filter(function(t){ return (t.done?"Done":"Active")===f; }).length;
+    btn.textContent = f + " (" + count + ")";
+    btn.style.cssText = "padding:5px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid "+(taskFilter===f?"#3498db":"var(--border)")+";background:"+(taskFilter===f?"#3498db":"var(--surface)")+";color:"+(taskFilter===f?"#fff":"var(--muted)");
+    btn.addEventListener("click", function(){ taskFilter = f; renderTasksView(); });
+    filterRow.appendChild(btn);
+  });
+  tv.appendChild(filterRow);
+
+  var visible = tasks.filter(function(t){
+    if (taskFilter === "All") return true;
+    return (t.done?"Done":"Active") === taskFilter;
+  });
+
+  if (!visible.length) {
+    var empty = document.createElement("div"); empty.style.cssText = "text-align:center;padding:40px 20px;color:var(--muted);font-size:13px"; empty.textContent = taskFilter==="Done" ? "Nothing completed yet." : "Nothing here.";
+    tv.appendChild(empty);
+    return;
+  }
+
+  visible.slice().sort(function(a,b){
+    if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+    return (b.created||0) - (a.created||0);
+  }).forEach(function(t){
+    var card = document.createElement("div"); card.style.cssText = "background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px"+(t.done?";opacity:.6":"");
+    var chk = document.createElement("button"); chk.style.cssText = "width:22px;height:22px;border-radius:50%;border:2px solid "+(t.done?"#1a5c1a":"#3498db")+";background:"+(t.done?"#1a5c1a":"transparent")+";color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0"; chk.textContent = t.done ? "\u2713" : "";
+    chk.addEventListener("click", function(){
+      t.done = !t.done;
+      t.completedDate = t.done ? fd2date() : "";
+      saveTasks();
+      renderTasksView();
+      renderDash();
+      toast(t.done ? "Marked done \u2713" : "Reopened");
+    });
+    var left = document.createElement("div"); left.style.flex = "1";
+    var topRow = document.createElement("div"); topRow.style.cssText = "display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:2px";
+    var textEl = document.createElement("span"); textEl.style.cssText = "font-size:14px;font-weight:600"+(t.done?";text-decoration:line-through":""); textEl.textContent = t.text;
+    topRow.appendChild(textEl);
+    if (t.clientId) {
+      var cTag = document.createElement("span"); cTag.style.cssText = "font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--lbg);color:var(--ltxt);cursor:pointer"; cTag.textContent = t.clientName||"Client";
+      cTag.addEventListener("click", function(){ openC(t.clientId); });
+      topRow.appendChild(cTag);
+    } else {
+      var sTag = document.createElement("span"); sTag.style.cssText = "font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--alt);color:var(--muted)"; sTag.textContent = "Shop";
+      topRow.appendChild(sTag);
+    }
+    left.appendChild(topRow);
+    var meta = document.createElement("div"); meta.style.cssText = "font-size:10px;color:var(--muted)"; meta.textContent = t.done ? "Done "+(t.completedDate||"") : "Added "+(t.createdDate||"");
+    left.appendChild(meta);
+
+    var delBtn = document.createElement("button"); delBtn.style.cssText = "padding:4px 9px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);color:var(--rtxt);font-size:10px;font-weight:700;cursor:pointer;flex-shrink:0"; delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", function(){
+      if (confirm("Delete this task?")) {
+        tasks = tasks.filter(function(x){ return x.id!==t.id; });
+        sbDelete("tasks", t.id);
+        saveTasks();
+        renderTasksView();
+        renderDash();
+        toast("Deleted \u2713");
+      }
+    });
+    card.appendChild(chk); card.appendChild(left); card.appendChild(delBtn);
+    tv.appendChild(card);
+  });
+}
+
+function fd2date() {
+  var d = new Date();
+  return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();
+}
+
+function showTaskForm() {
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:420px";
+
+  var bh = document.createElement("div"); bh.style.cssText = "background:#3498db;padding:14px 18px";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:15px;font-weight:700;color:#fff"; bht.textContent = "\u2705 Add task";
+  bh.appendChild(bht); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:18px;display:flex;flex-direction:column;gap:12px";
+
+  function mkFd3(lbl, inp) { var w=document.createElement("div"); var l=document.createElement("label"); l.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; l.textContent=lbl; w.appendChild(l); w.appendChild(inp); return w; }
+
+  var textInp = document.createElement("input"); textInp.id="task_text"; textInp.placeholder="What needs doing?"; textInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  bd.appendChild(mkFd3("Task *", textInp));
+
+  var typeLbl = document.createElement("label"); typeLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:5px"; typeLbl.textContent = "Type";
+  var typeWrap = document.createElement("div"); typeWrap.style.cssText = "display:flex;gap:6px";
+  var btnShop = document.createElement("button"); btnShop.type="button"; btnShop.style.cssText = "flex:1;padding:7px;border:none;font-size:11px;font-weight:700;cursor:pointer;border-radius:var(--rs);background:#3498db;color:#fff"; btnShop.textContent = "\uD83C\uDFEA Shop task";
+  var btnClient3 = document.createElement("button"); btnClient3.type="button"; btnClient3.style.cssText = "flex:1;padding:7px;border:none;font-size:11px;font-weight:700;cursor:pointer;border-radius:var(--rs);background:var(--surface);color:var(--muted);border:1px solid var(--border)"; btnClient3.textContent = "\uD83D\uDC64 Client task";
+  typeWrap.appendChild(btnShop); typeWrap.appendChild(btnClient3);
+  var typeWrapOuter = document.createElement("div"); typeWrapOuter.appendChild(typeLbl); typeWrapOuter.appendChild(typeWrap);
+  bd.appendChild(typeWrapOuter);
+
+  var clientWrap = document.createElement("div"); clientWrap.style.display = "none";
+  var clientLbl = document.createElement("label"); clientLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:3px"; clientLbl.textContent = "Client";
+  var clientSel = document.createElement("select"); clientSel.id="task_client"; clientSel.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  var blankOpt3 = document.createElement("option"); blankOpt3.value=""; blankOpt3.textContent="-- Select client --"; clientSel.appendChild(blankOpt3);
+  clients.slice().sort(function(a,b){ return (a.name||"").localeCompare(b.name||""); }).forEach(function(c){
+    var o = document.createElement("option"); o.value=c.id; o.textContent=c.name; clientSel.appendChild(o);
+  });
+  clientWrap.appendChild(clientLbl); clientWrap.appendChild(clientSel);
+  bd.appendChild(clientWrap);
+
+  var currentTaskType = "shop";
+  function setTaskType(t) {
+    currentTaskType = t;
+    btnShop.style.background = t==="shop"?"#3498db":"var(--surface)"; btnShop.style.color = t==="shop"?"#fff":"var(--muted)"; btnShop.style.border = t==="shop"?"none":"1px solid var(--border)";
+    btnClient3.style.background = t==="client"?"#3498db":"var(--surface)"; btnClient3.style.color = t==="client"?"#fff":"var(--muted)"; btnClient3.style.border = t==="client"?"none":"1px solid var(--border)";
+    clientWrap.style.display = t==="client" ? "block" : "none";
+  }
+  btnShop.addEventListener("click", function(){ setTaskType("shop"); });
+  btnClient3.addEventListener("click", function(){ setTaskType("client"); });
+
+  box.appendChild(bd);
+
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px";
+  var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:8px 14px;background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
+  cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  var saveB = document.createElement("button"); saveB.style.cssText = "padding:8px 18px;background:#3498db;border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; saveB.textContent = "Save task";
+  saveB.addEventListener("click", function(){
+    var text = textInp.value.trim();
+    if (!text) { toast("Please enter a task"); return; }
+    var clientId = "", clientName = "";
+    if (currentTaskType === "client") {
+      clientId = clientSel.value;
+      if (!clientId) { toast("Please select a client"); return; }
+      var matchedClient = clients.find(function(c){ return c.id===clientId; });
+      clientName = matchedClient ? matchedClient.name : "";
+    }
+    tasks.push({
+      id: "TASK-"+Date.now(),
+      text: text,
+      clientId: clientId,
+      clientName: clientName,
+      done: false,
+      created: Date.now(),
+      createdDate: fd2date()
+    });
+    saveTasks();
+    document.body.removeChild(overlay);
+    renderTasksView();
+    renderDash();
+    toast("Task added \u2713");
+  });
+  foot.appendChild(cancelB); foot.appendChild(saveB);
+  box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
+  setTimeout(function(){ textInp.focus(); }, 100);
+}
+
 // ── ENQUIRIES (things asked for that we don't stock) ──────────────
 var ENQ_STORE = "spcrm_enquiries_v1";
 var enquiries = [];
@@ -5610,7 +5825,7 @@ openC = function(id) {
 };
 
 // Close sidebar when nav buttons clicked on mobile
-var navFns = ["showReps","showSales","showSamples","showBirthdays","showComplaints","showDiary","showQuotes","showDash","showEnquiries"];
+var navFns = ["showReps","showSales","showSamples","showBirthdays","showComplaints","showDiary","showQuotes","showDash","showEnquiries","showTasks"];
 navFns.forEach(function(fn) {
   var orig = window[fn];
   window[fn] = function() { closeMobSidebar(); orig(); };
@@ -5624,6 +5839,7 @@ function init(){
   archivedClients=loadArchive();
   docs=loadDocs();
   enquiries=loadEnquiries();
+  tasks=loadTasks();
   diaryEvents=loadDiary();
   activeFilter="All";activeId=null;editId=null;showLF=false;pendingDel=null;
   updateStats();renderList();showDash();
