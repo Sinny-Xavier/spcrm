@@ -1944,8 +1944,23 @@ function showRepDetail(id) {
     var bbtns = document.createElement("div");bbtns.style.cssText="display:flex;gap:6px;align-items:center";
     var editB = document.createElement("button");editB.style.cssText="padding:4px 10px;border:1px solid rgba(255,255,255,.25);border-radius:var(--rs);color:#fff;background:rgba(255,255,255,.08);font-size:10px;cursor:pointer";editB.textContent="✎ Edit";
     editB.addEventListener("click",function(){document.body.removeChild(overlay);showRepForm(id);});
+    var shareB = document.createElement("button");shareB.style.cssText="padding:4px 10px;border:1px solid rgba(255,255,255,.25);border-radius:var(--rs);color:#fff;background:rgba(255,255,255,.08);font-size:10px;cursor:pointer";shareB.textContent="\uD83D\uDCE4 Share";
+    shareB.addEventListener("click",function(){
+      var lines = [];
+      lines.push(r.name + (r.manufacturer ? " (" + r.manufacturer + ")" : ""));
+      if (r.company) lines.push(r.company);
+      if (r.tel) lines.push("Tel: " + r.tel);
+      if (r.mobile) lines.push("Mobile: " + r.mobile);
+      if (r.email) lines.push("Email: " + r.email);
+      if (r.website) lines.push("Website: " + r.website);
+      var body2 = lines.join("\n");
+      var subject2 = "Contact details: " + r.name;
+      var mailUrl = "mailto:?subject=" + encodeURIComponent(subject2) + "&body=" + encodeURIComponent(body2);
+      window.open(mailUrl, "_blank");
+    });
+    bbtns.appendChild(editB);bbtns.appendChild(shareB);
     var cx = document.createElement("button");cx.style.cssText="background:rgba(255,255,255,.1);border:none;border-radius:4px;width:26px;height:26px;color:#fff;font-size:17px;cursor:pointer;line-height:1";cx.textContent="×";cx.addEventListener("click",function(){document.body.removeChild(overlay);});
-    bbtns.appendChild(editB);bbtns.appendChild(cx);
+    bbtns.appendChild(cx);
     bh.appendChild(binfo);bh.appendChild(bbtns);box.appendChild(bh);
 
     var bd = document.createElement("div");bd.style.cssText="padding:16px;display:flex;flex-direction:column;gap:12px";
