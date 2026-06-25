@@ -1537,11 +1537,17 @@ function buildLogForm(cid){
   form.appendChild(smpF);
   var qf=document.createElement("div");qf.className="qfields";qf.id="qfields";
   var prodOpts=PRODUCTS.map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join("");
-  qf.innerHTML='<div class="qfgrid"><div class="qf"><label>Quote ref</label><input id="qref" placeholder="e.g. QT-001"></div><div class="qf"><label>Value (&#163;)</label><input id="qval" placeholder="e.g. 2500" type="number"></div><div class="qf s2"><label>Product category</label><select id="qprod"><option value="">-- Select product --</option>'+prodOpts+'</select></div><div class="qf"><label>Qty / detail</label><input id="qqty" placeholder="e.g. 50m&#178;"></div><div class="qf s2" id="qother_wrap" style="display:none"><label>Specify product</label><input id="qother" placeholder="e.g. Stair rods, Door bars..."></div><div class="qf"><label>Status</label><select id="qstat"><option>Quote</option><option>Confirmed</option><option>Invoiced</option><option>Paid</option><option>Lost</option><option>Expired</option></select></div></div>';
+  qf.innerHTML='<div class="qfgrid"><div class="qf"><label>Quote ref</label><input id="qref" placeholder="e.g. QT-001"></div><div class="qf"><label>Value (&#163;)</label><input id="qval" placeholder="e.g. 2500" type="number"></div><div class="qf s2"><label>Product category</label><select id="qprod"><option value="">-- Select product --</option>'+prodOpts+'</select></div><div class="qf"><label>Qty / detail</label><input id="qqty" placeholder="e.g. 50m&#178;"></div><div class="qf s2" id="qother_wrap" style="display:none"><label>Specify product</label><input id="qother" placeholder="e.g. Stair rods, Door bars..."></div><div class="qf"><label>Status</label><select id="qstat"><option>Quote</option><option>Confirmed</option><option>Invoiced</option><option>Paid</option><option>Lost</option><option>Expired</option></select></div><div class="qf"><label>Expires</label><div style="display:flex;gap:5px"><input id="qexpiry" type="date" style="flex:1"><button type="button" id="qexpiry4wk" style="padding:0 10px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">+4wk</button></div></div></div>';
   form.appendChild(qf);
   setTimeout(function(){
     var qpEl2=document.getElementById('qprod');
     if(qpEl2){qpEl2.addEventListener('change',function(){var ow=document.getElementById('qother_wrap');if(ow)ow.style.display=this.value==='Other'?'':'none';});}
+    var qexp4wkBtn=document.getElementById('qexpiry4wk');
+    if(qexp4wkBtn){qexp4wkBtn.addEventListener('click',function(){
+      var d=new Date(); d.setDate(d.getDate()+28);
+      var qexpEl=document.getElementById('qexpiry');
+      if(qexpEl) qexpEl.value=d.toISOString().split("T")[0];
+    });}
   },0);
   var btns=document.createElement("div");btns.className="lf-btns";btns.style.marginTop="8px";
   var saveB=document.createElement("button");saveB.className="lf-save";saveB.textContent="Save";saveB.addEventListener("click",function(){saveLog(cid);});
@@ -1649,7 +1655,7 @@ function saveLog(id){
   if(!c.log)c.log=[];
   var entry={date:fd(date),type:type,note:note};
   var hasQ=document.getElementById("hasQ").checked;
-  if(hasQ){var qpv=document.getElementById("qprod").value;var qother=(document.getElementById("qother")||{}).value||"";if(qpv==="Other"&&qother)qpv="Other: "+qother;var qqty=(document.getElementById("qqty")||{}).value||"";entry.quote={ref:document.getElementById("qref").value.trim(),value:document.getElementById("qval").value.trim(),products:qpv+(qqty?" ("+qqty+")":""),category:qpv,status:document.getElementById("qstat").value};}
+  if(hasQ){var qpv=document.getElementById("qprod").value;var qother=(document.getElementById("qother")||{}).value||"";if(qpv==="Other"&&qother)qpv="Other: "+qother;var qqty=(document.getElementById("qqty")||{}).value||"";var qexp=(document.getElementById("qexpiry")||{}).value||"";entry.quote={ref:document.getElementById("qref").value.trim(),value:document.getElementById("qval").value.trim(),products:qpv+(qqty?" ("+qqty+")":""),category:qpv,status:document.getElementById("qstat").value,expiry:qexp};}
   var fuChkEl=document.getElementById("setFU");var fuDateEl=document.getElementById("fuDate");
   if(fuChkEl&&fuChkEl.checked&&fuDateEl&&fuDateEl.value){c.followup=fd(fuDateEl.value);}
   c.log.unshift(entry);c.interactionType=type;c.lastContact=fd(date);if(note)c.notes=note;
