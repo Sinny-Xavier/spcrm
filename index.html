@@ -1075,7 +1075,7 @@ function renderDash(){
   });
   if(openQ.length>0){
     var oqLnk=document.createElement("div");oqLnk.style.cssText="font-size:11px;color:var(--navy);cursor:pointer;margin-top:8px;text-align:right;padding-top:7px;border-top:1px solid var(--border)";
-    oqLnk.textContent="View all quotes ("+allQuotes.length+") →";
+    oqLnk.textContent="View all quotes ("+openQ.length+") →";
     oqLnk.addEventListener("click",showQuotes);oqCard.appendChild(oqLnk);
   }
   dg.appendChild(oqCard);
