@@ -1015,6 +1015,14 @@ var TOOL_CATEGORIES=[
 var LVT_MANUFACTURERS=["Nordikka", "AW Invictus", "Polyflor", "Karndean", "Amtico", "Quickstep", "Moduleo"];
 var LAMINATE_MANUFACTURERS=["Egger", "Classen", "Quick Step", "Life"];
 var CONTRACT_VINYL_MANUFACTURERS=["Polyflor", "Altro", "Gerflor", "Forbo", "Tarkett"];
+// Shared lookup: which products have a sub-category dropdown, and what options it offers.
+// To add a new product split later, add ONE entry here - every form (sale log, create quote, edit quote) reads from this.
+var PRODUCT_SUBCATS={
+  "Tools": TOOL_CATEGORIES,
+  "LVT": LVT_MANUFACTURERS.map(function(m){return {name:m, note:""};}),
+  "Laminate": LAMINATE_MANUFACTURERS.map(function(m){return {name:m, note:""};}),
+  "Contract Vinyl": CONTRACT_VINYL_MANUFACTURERS.map(function(m){return {name:m, note:""};})
+};
 var MANUFACTURERS=["Aegean Sea", "Altro", "Amtico", "A.W - Invictus", "Axminster", "Brintons", "Camaro", "Carpenters", "Cormar", "F Ball", "Forbo", "Furlong", "Genesis", "Gerflor", "Gradus", "Heckmondwike", "Interface", "Kahrs", "Karndean", "Kelmore", "Kerakoll UK", "Likewise", "Luvanto", "Mapei", "Mercado", "Moduleo", "Orion", "Polyflor", "QEP", "Quantum", "Quick-Step", "Roberts - QEP", "R.S.Batemans", "Shaw", "Spotnails", "Stairrods", "Tarkett", "Ted Todd", "Toolbank", "Trade Choice", "Uzin", "Victoria", "Woodpecker", "Other"]
 var clients,reps,samples,birthdays,complaints;
 var activeFilter="All",activeId=null,editId=null,showLF=false,pendingDel=null;
@@ -1710,11 +1718,24 @@ function buildLogForm(cid){
   form.appendChild(smpF);
   var qf=document.createElement("div");qf.className="qfields";qf.id="qfields";
   var prodOpts=PRODUCTS.map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join("");
-  qf.innerHTML='<div class="qfgrid"><div class="qf"><label>Quote ref</label><input id="qref" placeholder="e.g. QT-001"></div><div class="qf"><label>Value (&#163;)</label><input id="qval" placeholder="e.g. 2500" type="number"></div><div class="qf s2"><label>Product category</label><select id="qprod"><option value="">-- Select product --</option>'+prodOpts+'</select></div><div class="qf"><label>Qty / detail</label><input id="qqty" placeholder="e.g. 50m&#178;"></div><div class="qf s2" id="qother_wrap" style="display:none"><label>Specify product</label><input id="qother" placeholder="e.g. Stair rods, Door bars..."></div><div class="qf"><label>Status</label><select id="qstat"><option>Quote</option><option>Confirmed</option><option>Invoiced</option><option>Paid</option><option>Lost</option><option>Expired</option></select></div><div class="qf"><label>Expires</label><div style="display:flex;gap:5px"><input id="qexpiry" type="date" style="flex:1"><button type="button" id="qexpiry4wk" style="padding:0 10px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">+4wk</button></div></div></div>';
+  qf.innerHTML='<div class="qfgrid"><div class="qf"><label>Quote ref</label><input id="qref" placeholder="e.g. QT-001"></div><div class="qf"><label>Value (&#163;)</label><input id="qval" placeholder="e.g. 2500" type="number"></div><div class="qf s2"><label>Product category</label><select id="qprod"><option value="">-- Select product --</option>'+prodOpts+'</select></div><div class="qf"><label>Qty / detail</label><input id="qqty" placeholder="e.g. 50m&#178;"></div><div class="qf s2" id="qother_wrap" style="display:none"><label>Specify product</label><input id="qother" placeholder="e.g. Stair rods, Door bars..."></div><div class="qf s2" id="qsubcat_wrap" style="display:none"><label id="qsubcat_lbl">Sub-category</label><select id="qsubcat"></select></div><div class="qf"><label>Status</label><select id="qstat"><option>Quote</option><option>Confirmed</option><option>Invoiced</option><option>Paid</option><option>Lost</option><option>Expired</option></select></div><div class="qf"><label>Expires</label><div style="display:flex;gap:5px"><input id="qexpiry" type="date" style="flex:1"><button type="button" id="qexpiry4wk" style="padding:0 10px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">+4wk</button></div></div></div>';
   form.appendChild(qf);
   setTimeout(function(){
     var qpEl2=document.getElementById('qprod');
-    if(qpEl2){qpEl2.addEventListener('change',function(){var ow=document.getElementById('qother_wrap');if(ow)ow.style.display=this.value==='Other'?'':'none';});}
+    if(qpEl2){qpEl2.addEventListener('change',function(){
+      var ow=document.getElementById('qother_wrap');if(ow)ow.style.display=this.value==='Other'?'':'none';
+      var sw=document.getElementById('qsubcat_wrap');var sSel=document.getElementById('qsubcat');var sLbl=document.getElementById('qsubcat_lbl');
+      var list=PRODUCT_SUBCATS[this.value];
+      if(list&&sw&&sSel){
+        sSel.innerHTML='<option value="">-- Select '+this.value+' category --</option>';
+        list.forEach(function(item){var o=document.createElement('option');o.value=item.name;o.textContent=item.note?(item.name+' ('+item.note+')'):item.name;sSel.appendChild(o);});
+        if(sLbl)sLbl.textContent=this.value+' category *';
+        sw.style.display='';
+      } else if(sw){
+        sw.style.display='none';
+        if(sSel)sSel.innerHTML='';
+      }
+    });}
     var qexp4wkBtn=document.getElementById('qexpiry4wk');
     if(qexp4wkBtn){qexp4wkBtn.addEventListener('click',function(){
       var d=new Date(); d.setDate(d.getDate()+28);
@@ -1745,6 +1766,14 @@ function showQuoteEditForm(clientId, logIdx) {
     var otherMatch = category.match(/^Other:\s*(.*)$/);
     if (otherMatch) { otherDetail = otherMatch[1]; category = "Other"; }
   }
+  // Split sub-category strings like "Tools: Blades" back into product + sub-category
+  var subDetail = "";
+  Object.keys(PRODUCT_SUBCATS).forEach(function(prodName) {
+    if (category.indexOf(prodName + ": ") === 0) {
+      subDetail = category.substring((prodName + ": ").length);
+      category = prodName;
+    }
+  });
 
   var overlay = document.createElement("div");
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
@@ -1774,7 +1803,29 @@ function showQuoteEditForm(clientId, logIdx) {
   var otherInp = document.createElement("input"); otherInp.id="qe_other"; otherInp.value=otherDetail; otherInp.placeholder="e.g. Stair rods, Door bars..."; otherInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
   otherWrap.appendChild(mkFd("Specify product", otherInp));
   bd.appendChild(otherWrap);
-  prodSel.addEventListener("change", function(){ otherWrap.style.display = this.value==="Other" ? "block" : "none"; });
+
+  var subcatWrap = document.createElement("div"); subcatWrap.style.display = PRODUCT_SUBCATS[category] ? "block" : "none";
+  var subcatSel = document.createElement("select"); subcatSel.id="qe_subcat"; subcatSel.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  function populateSubcat(prodName, preselect) {
+    subcatSel.innerHTML = "";
+    var blankO = document.createElement("option"); blankO.value=""; blankO.textContent="-- Select "+prodName+" category --"; subcatSel.appendChild(blankO);
+    var list = PRODUCT_SUBCATS[prodName] || [];
+    list.forEach(function(item){ var o=document.createElement("option"); o.value=item.name; o.textContent=item.note?(item.name+" ("+item.note+")"):item.name; if(item.name===preselect)o.selected=true; subcatSel.appendChild(o); });
+  }
+  if (PRODUCT_SUBCATS[category]) populateSubcat(category, subDetail);
+  var subcatLbl = mkFd("Sub-category *", subcatSel);
+  subcatWrap.appendChild(subcatLbl);
+  bd.appendChild(subcatWrap);
+
+  prodSel.addEventListener("change", function(){
+    otherWrap.style.display = this.value==="Other" ? "block" : "none";
+    if (PRODUCT_SUBCATS[this.value]) {
+      populateSubcat(this.value, "");
+      subcatWrap.style.display = "block";
+    } else {
+      subcatWrap.style.display = "none";
+    }
+  });
 
   var qtyInp = document.createElement("input"); qtyInp.id="qe_qty"; qtyInp.value=qtyDetail; qtyInp.placeholder="e.g. 50m\u00b2"; qtyInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
   bd.appendChild(mkFd("Qty / detail", qtyInp));
@@ -1802,6 +1853,11 @@ function showQuoteEditForm(clientId, logIdx) {
     var newCat = prodSel.value;
     var newOther = otherInp.value.trim();
     var finalCat = (newCat==="Other" && newOther) ? "Other: "+newOther : newCat;
+    if (PRODUCT_SUBCATS[newCat]) {
+      var newSub = subcatSel.value;
+      if (!newSub) { toast("Please select a "+newCat+" category"); return; }
+      finalCat = newCat + ": " + newSub;
+    }
     var newQty = qtyInp.value.trim();
     q.ref = refInp.value.trim();
     q.value = newVal;
@@ -1828,7 +1884,19 @@ function saveLog(id){
   if(!c.log)c.log=[];
   var entry={date:fd(date),type:type,note:note};
   var hasQ=document.getElementById("hasQ").checked;
-  if(hasQ){var qpv=document.getElementById("qprod").value;var qother=(document.getElementById("qother")||{}).value||"";if(qpv==="Other"&&qother)qpv="Other: "+qother;var qqty=(document.getElementById("qqty")||{}).value||"";var qexp=(document.getElementById("qexpiry")||{}).value||"";entry.quote={ref:document.getElementById("qref").value.trim(),value:document.getElementById("qval").value.trim(),products:qpv+(qqty?" ("+qqty+")":""),category:qpv,status:document.getElementById("qstat").value,expiry:qexp};}
+  if(hasQ){
+    var qpv=document.getElementById("qprod").value;
+    var qother=(document.getElementById("qother")||{}).value||"";
+    if(qpv==="Other"&&qother)qpv="Other: "+qother;
+    if(PRODUCT_SUBCATS[qpv]){
+      var qSubVal=(document.getElementById("qsubcat")||{}).value||"";
+      if(!qSubVal){toast("Please select a "+qpv+" category");return;}
+      qpv=qpv+": "+qSubVal;
+    }
+    var qqty=(document.getElementById("qqty")||{}).value||"";
+    var qexp=(document.getElementById("qexpiry")||{}).value||"";
+    entry.quote={ref:document.getElementById("qref").value.trim(),value:document.getElementById("qval").value.trim(),products:qpv+(qqty?" ("+qqty+")":""),category:qpv,status:document.getElementById("qstat").value,expiry:qexp};
+  }
   var fuChkEl=document.getElementById("setFU");var fuDateEl=document.getElementById("fuDate");
   if(fuChkEl&&fuChkEl.checked&&fuDateEl&&fuDateEl.value){c.followup=fd(fuDateEl.value);}
   c.log.unshift(entry);c.interactionType=type;c.lastContact=fd(date);if(note)c.notes=note;
@@ -2395,7 +2463,8 @@ function getSalesData(year){
     var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";
     var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
     var cat=l.quote.category||l.quote.products||"Other";
-    var matched=PRODUCTS.indexOf(cat)>-1?cat:"Other";
+    var baseCat=cat.indexOf(": ")>-1?cat.split(": ")[0]:cat;
+    var matched=PRODUCTS.indexOf(baseCat)>-1?baseCat:"Other";
     qtrs[q]+=v;yearTotal+=v;prodTotals[matched]=(prodTotals[matched]||0)+v;qtrProd[q][matched]=(qtrProd[q][matched]||0)+v;
   });});
   return{qtrs:qtrs,prodTotals:prodTotals,qtrProd:qtrProd,yearTotal:yearTotal};
@@ -3205,42 +3274,29 @@ function showSaleForm(clientId, clientName) {
   otherWrap.appendChild((function(){var w=mkF2("Specify product",otherInp);return w;})());
   bd.appendChild(otherWrap);
 
-  // Tool category dropdown (hidden unless Tools selected)
-  var toolWrap = document.createElement("div");
-  toolWrap.id = "sl_tool_wrap";
-  toolWrap.style.display = "none";
-  var toolSel = document.createElement("select");
-  toolSel.id = "sl_toolcat";
-  toolSel.style.cssText = "width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
-  var toolBlank = document.createElement("option"); toolBlank.value = ""; toolBlank.textContent = "-- Select tool category --"; toolSel.appendChild(toolBlank);
-  TOOL_CATEGORIES.forEach(function(tc) { var opt = document.createElement("option"); opt.value = tc.name; opt.textContent = tc.note ? (tc.name + " (" + tc.note + ")") : tc.name; toolSel.appendChild(opt); });
-  toolWrap.appendChild(mkF2("Tool category *", toolSel));
-  bd.appendChild(toolWrap);
-
-  // Generic helper to build a manufacturer dropdown wrap
-  function buildMfrWrap(wrapId, selId, label, list) {
+  // Generic sub-category dropdown: one per product key in PRODUCT_SUBCATS, hidden until that product is selected.
+  // sl_subcat_wraps maps product name -> {wrap, sel} so the change listener and save logic can look any of them up.
+  var sl_subcat_wraps = {};
+  Object.keys(PRODUCT_SUBCATS).forEach(function(prodName) {
+    var list = PRODUCT_SUBCATS[prodName];
     var w = document.createElement("div");
-    w.id = wrapId;
     w.style.display = "none";
     var sel = document.createElement("select");
-    sel.id = selId;
     sel.style.cssText = "width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
-    var blank = document.createElement("option"); blank.value = ""; blank.textContent = "-- Select manufacturer --"; sel.appendChild(blank);
-    list.forEach(function(m) { var opt = document.createElement("option"); opt.value = m; opt.textContent = m; sel.appendChild(opt); });
-    w.appendChild(mkF2(label, sel));
+    var blank = document.createElement("option"); blank.value = ""; blank.textContent = "-- Select " + prodName + " sub-category --"; sel.appendChild(blank);
+    list.forEach(function(item) { var opt = document.createElement("option"); opt.value = item.name; opt.textContent = item.note ? (item.name + " (" + item.note + ")") : item.name; sel.appendChild(opt); });
+    w.appendChild(mkF2(prodName + " category *", sel));
     bd.appendChild(w);
-    return w;
-  }
-  var lvtWrap = buildMfrWrap("sl_lvt_wrap", "sl_lvtmfr", "LVT manufacturer *", LVT_MANUFACTURERS);
-  var lamWrap = buildMfrWrap("sl_lam_wrap", "sl_lammfr", "Laminate manufacturer *", LAMINATE_MANUFACTURERS);
-  var cvWrap = buildMfrWrap("sl_cv_wrap", "sl_cvmfr", "Contract Vinyl manufacturer *", CONTRACT_VINYL_MANUFACTURERS);
+    sl_subcat_wraps[prodName] = { wrap: w, sel: sel };
+  });
+
 
   prodSel.addEventListener("change", function(){
-    otherWrap.style.display = this.value === "Other" ? "" : "none";
-    toolWrap.style.display = this.value === "Tools" ? "" : "none";
-    lvtWrap.style.display = this.value === "LVT" ? "" : "none";
-    lamWrap.style.display = this.value === "Laminate" ? "" : "none";
-    cvWrap.style.display = this.value === "Contract Vinyl" ? "" : "none";
+    var selectedProd = this.value;
+    otherWrap.style.display = selectedProd === "Other" ? "" : "none";
+    Object.keys(sl_subcat_wraps).forEach(function(prodName) {
+      sl_subcat_wraps[prodName].wrap.style.display = (selectedProd === prodName) ? "" : "none";
+    });
   });
 
   // Sale amount
@@ -3286,25 +3342,10 @@ function showSaleForm(clientId, clientName) {
     var prod = document.getElementById("sl_prod").value;
     var otherTxt = (document.getElementById("sl_other")||{}).value || "";
     if (prod === "Other" && otherTxt.trim()) prod = "Other: " + otherTxt.trim();
-    var toolCat = (document.getElementById("sl_toolcat")||{}).value || "";
-    if (prod === "Tools") {
-      if (!toolCat) { toast("Please select a tool category"); return; }
-      prod = "Tools: " + toolCat;
-    }
-    var lvtMfr = (document.getElementById("sl_lvtmfr")||{}).value || "";
-    if (prod === "LVT") {
-      if (!lvtMfr) { toast("Please select a manufacturer"); return; }
-      prod = "LVT: " + lvtMfr;
-    }
-    var lamMfr = (document.getElementById("sl_lammfr")||{}).value || "";
-    if (prod === "Laminate") {
-      if (!lamMfr) { toast("Please select a manufacturer"); return; }
-      prod = "Laminate: " + lamMfr;
-    }
-    var cvMfr = (document.getElementById("sl_cvmfr")||{}).value || "";
-    if (prod === "Contract Vinyl") {
-      if (!cvMfr) { toast("Please select a manufacturer"); return; }
-      prod = "Contract Vinyl: " + cvMfr;
+    if (sl_subcat_wraps[prod]) {
+      var subVal = sl_subcat_wraps[prod].sel.value;
+      if (!subVal) { toast("Please select a " + prod + " category"); return; }
+      prod = prod + ": " + subVal;
     }
     var val = document.getElementById("sl_val").value;
     var det = document.getElementById("sl_det").value.trim();
@@ -3346,14 +3387,10 @@ function showSaleForm(clientId, clientName) {
       document.getElementById("sl_another").checked = false;
       var otherEl=document.getElementById("sl_other");if(otherEl)otherEl.value="";
       var otherWrapEl=document.getElementById("sl_other_wrap");if(otherWrapEl)otherWrapEl.style.display="none";
-      var toolSelEl=document.getElementById("sl_toolcat");if(toolSelEl)toolSelEl.value="";
-      var toolWrapEl=document.getElementById("sl_tool_wrap");if(toolWrapEl)toolWrapEl.style.display="none";
-      var lvtSelEl=document.getElementById("sl_lvtmfr");if(lvtSelEl)lvtSelEl.value="";
-      var lvtWrapEl=document.getElementById("sl_lvt_wrap");if(lvtWrapEl)lvtWrapEl.style.display="none";
-      var lamSelEl=document.getElementById("sl_lammfr");if(lamSelEl)lamSelEl.value="";
-      var lamWrapEl=document.getElementById("sl_lam_wrap");if(lamWrapEl)lamWrapEl.style.display="none";
-      var cvSelEl=document.getElementById("sl_cvmfr");if(cvSelEl)cvSelEl.value="";
-      var cvWrapEl=document.getElementById("sl_cv_wrap");if(cvWrapEl)cvWrapEl.style.display="none";
+      Object.keys(sl_subcat_wraps).forEach(function(prodName) {
+        sl_subcat_wraps[prodName].sel.value = "";
+        sl_subcat_wraps[prodName].wrap.style.display = "none";
+      });
     } else {
       document.body.removeChild(overlay);
       renderDet();
