@@ -1855,6 +1855,11 @@ function showQuoteEditForm(clientId, logIdx) {
   expRow2.appendChild(expInp2); expRow2.appendChild(exp4wkBtn);
   bd.appendChild(mkFd("Expiry date", expRow2));
 
+  if (q.status === "Lost") {
+    var lostReasonInp = document.createElement("input"); lostReasonInp.id="qe_lostreason"; lostReasonInp.value=q.lostReason||""; lostReasonInp.placeholder="e.g. Price too high - went with competitor"; lostReasonInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+    bd.appendChild(mkFd("Lost reason", lostReasonInp));
+  }
+
   box.appendChild(bd);
 
   var foot = document.createElement("div"); foot.style.cssText = "padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px";
@@ -1878,6 +1883,8 @@ function showQuoteEditForm(clientId, logIdx) {
     q.category = finalCat;
     q.products = finalCat + (newQty ? " ("+newQty+")" : "");
     q.expiry = expInp2.value;
+    var lostReasonEl = document.getElementById("qe_lostreason");
+    if (lostReasonEl) q.lostReason = lostReasonEl.value.trim();
     saveC();
     document.body.removeChild(overlay);
     renderDet();
@@ -1947,7 +1954,10 @@ function updateQStatus(id,idx,status){
     cancel.addEventListener("click",function(){document.body.removeChild(overlay);});
     confirm.addEventListener("click",function(){
       c.log[idx].quote.lostReason=sel.value+(notes.value?" - "+notes.value:"");
-      c.log[idx].quote.status="Lost";saveC();toast("Quote marked lost");
+      c.log[idx].quote.status="Lost";
+      c.log[idx].quote.paidDate="";
+      c.log[idx].quote.collectedDate="";
+      saveC();toast("Quote marked lost");
       if(id===activeId)renderDet();
       document.body.removeChild(overlay);
     });
@@ -4339,6 +4349,11 @@ function renderQuotesView() {
       }
       var prod=document.createElement("div");prod.style.cssText="font-size:11px;color:var(--muted);margin-left:36px";prod.textContent=(q.log.quote.products||"")+(q.log.date?" · Quoted "+q.log.date:"")+(q.log.quote.paidDate?" · Paid "+q.log.quote.paidDate:"")+(q.log.quote.collectedDate?" · Collected "+q.log.quote.collectedDate:"");
       left.appendChild(av);left.appendChild(prod);
+      if(q.log.quote.status==="Lost"&&q.log.quote.lostReason){
+        var lostReasonDiv=document.createElement("div");lostReasonDiv.style.cssText="font-size:11px;color:var(--rtxt);background:var(--rbg);border-radius:var(--rs);padding:3px 8px;margin-left:36px;margin-top:4px;display:inline-block";
+        lostReasonDiv.innerHTML="<strong>Lost reason:</strong> "+q.log.quote.lostReason;
+        left.appendChild(lostReasonDiv);
+      }
       // Middle - value and days open
       var mid=document.createElement("div");mid.style.cssText="text-align:right;min-width:100px";
       var val2=document.createElement("div");val2.style.cssText="font-size:18px;font-weight:700;color:var(--gtxt)";val2.textContent=money(q.val);
@@ -4383,11 +4398,37 @@ function renderQuotesView() {
       expRow.appendChild(expLbl);expRow.appendChild(expInp);expRow.appendChild(exp4wkBtn2);
       // Status update
       var statSel=document.createElement("select");statSel.style.cssText="padding:3px 7px;border:1px solid var(--border);border-radius:var(--rs);font-size:10px;background:#fff;cursor:pointer;outline:none";
-      ["Quote","Confirmed","Invoiced","Paid","Collected"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(q.log.quote.status===s2)opt.selected=true;statSel.appendChild(opt);});
+      ["Quote","Confirmed","Invoiced","Paid","Collected","Lost"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(q.log.quote.status===s2)opt.selected=true;statSel.appendChild(opt);});
       statSel.addEventListener("click",function(e){e.stopPropagation();});
       statSel.addEventListener("change",(function(client3,li3){return function(e3){
         e3.stopPropagation();
         var newStatus = this.value;
+        if (newStatus === "Lost" && client3.log[li3].quote.status !== "Lost") {
+          var reasonOverlay=document.createElement("div");reasonOverlay.style.cssText="position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px";
+          var reasonBox=document.createElement("div");reasonBox.style.cssText="background:var(--surface);border-radius:var(--r);width:100%;max-width:400px;border-top:3px solid var(--rtxt);padding:20px";
+          var reasonTitle=document.createElement("div");reasonTitle.style.cssText="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--rtxt)";reasonTitle.textContent="Why was this quote lost?";
+          var reasonSel=document.createElement("select");reasonSel.style.cssText="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;margin-bottom:10px;font-family:inherit";
+          ["Price too high","Went with competitor","No response","Job cancelled","Timing/not ready","Budget cut","Went direct to supplier","Other"].forEach(function(r){var o=document.createElement("option");o.value=r;o.textContent=r;reasonSel.appendChild(o);});
+          var reasonNotes=document.createElement("input");reasonNotes.placeholder="Additional notes (optional)";reasonNotes.style.cssText="width:100%;padding:8px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;margin-bottom:14px;font-family:inherit";
+          var reasonBtns=document.createElement("div");reasonBtns.style.cssText="display:flex;gap:8px;justify-content:flex-end";
+          var reasonCancel=document.createElement("button");reasonCancel.textContent="Cancel";reasonCancel.style.cssText="padding:7px 16px;border:1px solid var(--border);border-radius:var(--rs);background:none;cursor:pointer;font-size:12px";
+          var reasonConfirm=document.createElement("button");reasonConfirm.textContent="Mark Lost";reasonConfirm.style.cssText="padding:7px 16px;background:var(--rtxt);border:none;border-radius:var(--rs);color:#fff;cursor:pointer;font-size:12px;font-weight:700";
+          reasonCancel.addEventListener("click",function(){document.body.removeChild(reasonOverlay);renderQuotesView();});
+          reasonConfirm.addEventListener("click",function(){
+            client3.log[li3].quote.lostReason=reasonSel.value+(reasonNotes.value?" - "+reasonNotes.value:"");
+            client3.log[li3].quote.status="Lost";
+            client3.log[li3].quote.paidDate="";
+            client3.log[li3].quote.collectedDate="";
+            saveC();
+            document.body.removeChild(reasonOverlay);
+            renderQuotesView();
+            toast("Quote marked lost");
+          });
+          reasonBtns.appendChild(reasonCancel);reasonBtns.appendChild(reasonConfirm);
+          reasonBox.appendChild(reasonTitle);reasonBox.appendChild(reasonSel);reasonBox.appendChild(reasonNotes);reasonBox.appendChild(reasonBtns);
+          reasonOverlay.appendChild(reasonBox);document.body.appendChild(reasonOverlay);
+          return;
+        }
         if (newStatus === "Paid" && client3.log[li3].quote.status !== "Paid") {
           var today9 = new Date();
           var defaultPaid = String(today9.getDate()).padStart(2,"0")+"/"+String(today9.getMonth()+1).padStart(2,"0")+"/"+today9.getFullYear();
