@@ -4325,7 +4325,7 @@ function renderQuotesView() {
     var statusCols={"Quote":"background:var(--abg);color:var(--atxt)","Confirmed":"background:var(--gbg);color:var(--gtxt)","Invoiced":"background:var(--lbg);color:var(--ltxt)","Paid":"background:#d0f0d0;color:#1a5c1a","Collected":"background:#d0e8f5;color:#0a4a7a","Lost":"background:var(--rbg);color:var(--rtxt)","Expired":"background:var(--grbg);color:var(--grtxt)"};
     filtered.forEach(function(q) {
       var card=document.createElement("div");card.style.cssText="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;cursor:pointer";
-      card.addEventListener("click",(function(cid){return function(){openC(cid);};})(q.client.id));
+      card.addEventListener("click",(function(cid,li4){return function(){showQuoteEditForm(cid,li4);};})(q.client.id,q.logIdx));
       // Left - client info
       var left=document.createElement("div");left.style.flex="1";left.style.minWidth="180px";
       var av=document.createElement("div");av.style.cssText="display:flex;align-items:center;gap:8px;margin-bottom:4px";
