@@ -21,14 +21,16 @@
   --grbg:#f0efeb;--grtxt:#4a4845;
 }
 body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(--text)}
-.hdr{background:var(--navy3);position:sticky;top:0;z-index:100;border-bottom:2px solid var(--red3)}.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.1)}.hdr-bottom{display:flex;align-items:center;justify-content:flex-start;padding:5px 10px;background:rgba(0,0,0,.15);flex-wrap:nowrap;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.hdr-bottom::-webkit-scrollbar{display:none}
-@media (min-width:900px){.hdr-bottom{justify-content:center;flex-wrap:wrap;overflow-x:visible}}
+.hdr{background:var(--navy3);position:sticky;top:0;z-index:100;border-bottom:2px solid var(--red3)}.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.1)}.hdr-bottom{padding:5px 10px;background:rgba(0,0,0,.15);display:flex;justify-content:center}
+.hdr-nav-rows{display:flex;flex-direction:column;gap:4px;width:100%}
+.hdr-nav{display:flex;align-items:center;justify-content:flex-start;gap:4px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:100%;width:100%}
+.hdr-nav::-webkit-scrollbar{display:none}
+@media (min-width:600px){.hdr-nav{justify-content:center;flex-wrap:wrap;overflow-x:visible}}
 .hdr-logo{display:flex;flex-direction:row;align-items:center;gap:10px;flex-shrink:0}
 .sq-logo{width:44px;height:34px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px;color:#fff;line-height:1.1;text-align:center;flex-shrink:0}
 .hdr h1{font-size:13px;font-weight:700;color:#fff;white-space:nowrap}
 .hdr h1 span{color:#e74c3c}
-.hdr-nav{display:flex;gap:5px;align-items:center;flex-shrink:0}
-.nav-btn{padding:4px 8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:#fff;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap}
+.nav-btn{padding:4px 8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:#fff;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .nav-btn:hover{background:rgba(255,255,255,.2)}
 .hdr-stats{display:flex;gap:5px;flex-shrink:0}
 .hs{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);padding:3px 9px;border-radius:20px;font-size:10px;color:rgba(255,255,255,.8);white-space:nowrap}
@@ -221,7 +223,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   .hdr-top h1 { font-size:11px; }
   .sq-logo { width:36px;height:28px;font-size:10px; }
   .hdr-stats { display:none; }
-  .hdr-bottom { padding:4px 10px;gap:4px; }
+  .hdr-bottom { padding:4px 10px; }
   .nav-btn { padding:4px 8px;font-size:9px; }
   .app { flex-direction:column;height:auto;min-height:calc(100vh - 88px); }
   .sb { width:100%;height:auto;border-right:none;border-bottom:1px solid var(--border);display:none; }
@@ -247,7 +249,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 }
 
 @media (max-width:480px) {
-  .hdr-bottom { justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding-bottom:6px; }
+  .hdr-nav { justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px; }
   .nav-btn { font-size:9px;padding:4px 7px;white-space:nowrap; }
   .kpi-val { font-size:18px; }
   .ci { padding:10px 12px; }
@@ -292,22 +294,26 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
     </div>
   </div>
   <div class="hdr-bottom">
-    <div class="hdr-nav">
-      <button class="nav-btn" onclick="showDash()" style="background:rgba(255,185,0,.25);border-color:rgba(255,185,0,.5)">&#127968; Dashboard</button>
-      <button class="nav-btn" onclick="showReps()">&#128101; Rep/ASM</button>
-      <button class="nav-btn" onclick="showSales()">&#128200; Sales</button>
-      <button class="nav-btn" onclick="showSamples()">&#128230; Samples</button>
-      <button class="nav-btn" onclick="showComplaints()">&#128221; Complaints</button>
-      <button class="nav-btn" onclick="showEnquiries()" style="background:rgba(155,89,182,.2);border-color:rgba(155,89,182,.4)">&#128172; Enquiries</button>
-      <button class="nav-btn" onclick="showTasks()" style="background:rgba(52,152,219,.2);border-color:rgba(52,152,219,.4)">&#9989; To-Do</button>
-    <button class="nav-btn" onclick="showQuotes()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128178; Quotes</button>
-      <button class="nav-btn" onclick="showDiary()" style="background:rgba(255,153,0,.25);border-color:rgba(255,153,0,.5)">&#128197; Diary</button>
-    <button class="nav-btn" onclick="showMonthlyReport()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128202; Report</button>
-    <button class="nav-btn" onclick="showWebsites()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#127760; Websites</button>
-    <button class="nav-btn" onclick="showDocs()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128196; Docs</button>
-    <button class="nav-btn" onclick="showNotesSearch()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128269; Search Notes</button>
+    <div class="hdr-nav-rows">
+      <div class="hdr-nav">
+        <button class="nav-btn" onclick="showDash()" style="background:rgba(255,185,0,.25);border-color:rgba(255,185,0,.5)">&#127968; Dashboard</button>
+        <button class="nav-btn" onclick="showSales()">&#128200; Sales</button>
+        <button class="nav-btn" onclick="showQuotes()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128178; Quotes</button>
+        <button class="nav-btn" onclick="showSamples()">&#128230; Samples</button>
+        <button class="nav-btn" onclick="showTasks()" style="background:rgba(52,152,219,.2);border-color:rgba(52,152,219,.4)">&#9989; To-Do</button>
+        <button class="nav-btn" onclick="showDiary()" style="background:rgba(255,153,0,.25);border-color:rgba(255,153,0,.5)">&#128197; Diary</button>
+      </div>
+      <div class="hdr-nav">
+        <button class="nav-btn" onclick="showReps()">&#128101; Rep/ASM</button>
+        <button class="nav-btn" onclick="showComplaints()">&#128221; Complaints</button>
+        <button class="nav-btn" onclick="showEnquiries()" style="background:rgba(155,89,182,.2);border-color:rgba(155,89,182,.4)">&#128172; Enquiries</button>
+        <button class="nav-btn" onclick="showMonthlyReport()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128202; Report</button>
+        <button class="nav-btn" onclick="showWebsites()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#127760; Websites</button>
+        <button class="nav-btn" onclick="showDocs()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128196; Docs</button>
+        <button class="nav-btn" onclick="showNotesSearch()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128269; Search Notes</button>
+        <button class="nav-btn" onclick="showAdmin()" style="background:rgba(255,185,0,.25);border-color:rgba(255,185,0,.5)">&#9881;&#65039; Admin</button>
+      </div>
     </div>
-    <button class="nav-btn" onclick="showAdmin()" style="background:rgba(255,185,0,.25);border-color:rgba(255,185,0,.5);margin-left:8px">&#9881;&#65039; Admin</button>
   </div>
 </header>
 
