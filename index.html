@@ -1021,6 +1021,7 @@ var CONTRACT_ADHESIVE_MANUFACTURERS=["Amtico", "F.Ball", "Karndean", "Uzin"];
 var CARPET_ADHESIVE_MANUFACTURERS=["Amtico", "F.Ball", "Karndean", "Uzin"];
 var PLYWOOD_MANUFACTURERS=["Hanson Sp101", "Q Ply", "Sanders & Fink PFP1"];
 var CONTRACT_TRIMS_MANUFACTURERS=["Genesis", "Gradus", "Quantum"];
+var ENGINEERED_WOOD_MANUFACTURERS=["Life Flooring", "Pure Woods", "Sanders & Fink", "V4 Wood"];
 // Shared lookup: which products have a sub-category dropdown, and what options it offers.
 // To add a new product split later, add ONE entry here - every form (sale log, create quote, edit quote) reads from this.
 var PRODUCT_SUBCATS={
@@ -1033,7 +1034,8 @@ var PRODUCT_SUBCATS={
   "Contract Adhesive": CONTRACT_ADHESIVE_MANUFACTURERS.map(function(m){return {name:m, note:""};}),
   "Carpet Adhesive": CARPET_ADHESIVE_MANUFACTURERS.map(function(m){return {name:m, note:""};}),
   "Plywood": PLYWOOD_MANUFACTURERS.map(function(m){return {name:m, note:""};}),
-  "Contract Trims": CONTRACT_TRIMS_MANUFACTURERS.map(function(m){return {name:m, note:""};})
+  "Contract Trims": CONTRACT_TRIMS_MANUFACTURERS.map(function(m){return {name:m, note:""};}),
+  "Engineered Wood": ENGINEERED_WOOD_MANUFACTURERS.map(function(m){return {name:m, note:""};})
 };
 var MANUFACTURERS=["Aegean Sea", "Altro", "Amtico", "A.W - Invictus", "Axminster", "Brintons", "Camaro", "Carpenters", "Cormar", "F Ball", "Forbo", "Furlong", "Genesis", "Gerflor", "Gradus", "Heckmondwike", "Interface", "Kahrs", "Karndean", "Kelmore", "Kerakoll UK", "Likewise", "Luvanto", "Mapei", "Mercado", "Moduleo", "Orion", "Polyflor", "QEP", "Quantum", "Quick-Step", "Roberts - QEP", "R.S.Batemans", "Shaw", "Spotnails", "Stairrods", "Tarkett", "Ted Todd", "Toolbank", "Trade Choice", "Uzin", "Victoria", "Woodpecker", "Other"]
 var clients,reps,samples,birthdays,complaints;
