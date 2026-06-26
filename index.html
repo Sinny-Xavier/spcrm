@@ -87,6 +87,8 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .kpi-sub{font-size:10px;color:var(--muted);margin-top:2px}
 .kv-blue{color:var(--navy)} .kv-green{color:var(--gtxt)} .kv-red{color:var(--red)} .kv-amber{color:var(--atxt)}
 .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.diary-cell{min-width:0;height:80px}
+@media (max-width:600px){.diary-cell{height:64px;padding:2px !important}}
 .dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px}
 .dash-card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
 .fu-item{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer}
@@ -3678,7 +3680,7 @@ function renderDiaryView() {
 
   // Prev month padding
   for (var i = 0; i < startOffset; i++) {
-    var pd = document.createElement("div"); pd.style.cssText = "border:1px solid var(--border);min-height:80px;padding:4px;background:#f0f0f2;color:#ccc;font-size:11px;"; pd.textContent = daysInPrevMonth - startOffset + 1 + i; grid.appendChild(pd);
+    var pd = document.createElement("div"); pd.className="diary-cell"; pd.style.cssText = "border:1px solid var(--border);padding:4px;background:#f0f0f2;color:#ccc;font-size:11px;overflow:hidden;"; pd.textContent = daysInPrevMonth - startOffset + 1 + i; grid.appendChild(pd);
   }
 
   // Current month days
@@ -3689,7 +3691,8 @@ function renderDiaryView() {
     var bh = isBankHoliday(diaryYear, diaryMonth, day);
     var cellBg = isToday ? "#eef1f8" : bh ? "#fff8f0" : isWeekend ? "#f4f4f6" : "#fff";
     var cell = document.createElement("div");
-    cell.style.cssText = "border:1px solid var(--border);min-height:80px;padding:4px;cursor:pointer;position:relative;background:"+cellBg+";";
+    cell.className = "diary-cell";
+    cell.style.cssText = "border:1px solid var(--border);padding:4px;cursor:pointer;position:relative;overflow:hidden;background:"+cellBg+";";
     cell.addEventListener("click", (function(d){ return function(){ openDiaryDay(d); }; })(day));
 
     var dayNum = document.createElement("div"); dayNum.style.cssText = "font-size:11px;font-weight:700;margin-bottom:3px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;" + (isToday ? "background:var(--navy);color:#fff;" : "color:var(--text);");
@@ -3741,7 +3744,7 @@ function renderDiaryView() {
   var totalCells = startOffset + daysInMonth;
   var remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
   for (var j = 1; j <= remaining; j++) {
-    var nd = document.createElement("div"); nd.style.cssText = "border:1px solid var(--border);min-height:80px;padding:4px;background:#f0f0f2;color:#ccc;font-size:11px;"; nd.textContent = j; grid.appendChild(nd);
+    var nd = document.createElement("div"); nd.className="diary-cell"; nd.style.cssText = "border:1px solid var(--border);padding:4px;background:#f0f0f2;color:#ccc;font-size:11px;overflow:hidden;"; nd.textContent = j; grid.appendChild(nd);
   }
   cal.appendChild(grid); dv.appendChild(cal);
 
