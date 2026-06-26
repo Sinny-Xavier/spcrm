@@ -5868,13 +5868,49 @@ function saveArchive() {
 }
 
 function showAdmin() {
-  var entered = prompt("Re-enter your CRM password to access Admin:");
-  if (entered === null) return; // cancelled
-  if (entered !== getCurrentPassword()) {
-    toast("Incorrect password \u2014 Admin access denied");
-    return;
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:360px;border-top:3px solid #e8a020";
+  var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy);padding:13px 16px;display:flex;align-items:center;justify-content:space-between";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:13px;font-weight:700;color:#fff"; bht.textContent = "\uD83D\uDD12 Admin Access";
+  var cx = document.createElement("button"); cx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:26px;height:26px;color:#fff;font-size:17px;cursor:pointer;line-height:1"; cx.textContent = "\u00d7";
+  cx.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  bh.appendChild(bht); bh.appendChild(cx); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:16px;display:flex;flex-direction:column;gap:10px";
+  var lbl = document.createElement("div"); lbl.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:3px"; lbl.textContent = "Re-enter your CRM password";
+  bd.appendChild(lbl);
+
+  var wrap = document.createElement("div"); wrap.style.cssText = "position:relative";
+  var pwInp = document.createElement("input"); pwInp.id = "admin_pw_check"; pwInp.type = "password"; pwInp.placeholder = "Enter password";
+  pwInp.autocomplete = "current-password"; pwInp.autocorrect = "off"; pwInp.autocapitalize = "none";
+  pwInp.style.cssText = "width:100%;padding:8px 40px 8px 10px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;color:var(--text);outline:none";
+  var eye = document.createElement("button"); eye.type = "button"; eye.textContent = "\uD83D\uDC41";
+  eye.style.cssText = "position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:15px;padding:0;line-height:1";
+  eye.addEventListener("click", function(){ pwInp.type = pwInp.type==="password" ? "text" : "password"; eye.textContent = pwInp.type==="password" ? "\uD83D\uDC41" : "\uD83D\uDE48"; });
+  wrap.appendChild(pwInp); wrap.appendChild(eye);
+  bd.appendChild(wrap);
+  box.appendChild(bd);
+
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
+  var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:7px 12px;background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
+  cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  var unlockB = document.createElement("button"); unlockB.style.cssText = "padding:7px 16px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; unlockB.textContent = "Unlock";
+  function attemptUnlock(){
+    var entered = pwInp.value;
+    if (entered !== getCurrentPassword()) {
+      toast("Incorrect password \u2014 Admin access denied");
+      return;
+    }
+    document.body.removeChild(overlay);
+    showAdminPanel();
   }
-  showAdminPanel();
+  unlockB.addEventListener("click", attemptUnlock);
+  pwInp.addEventListener("keydown", function(e){ if(e.key==="Enter") attemptUnlock(); });
+  foot.appendChild(cancelB); foot.appendChild(unlockB);
+  box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
+  setTimeout(function(){ pwInp.focus(); }, 100);
 }
 
 function showAdminPanel() {
