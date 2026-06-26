@@ -5992,7 +5992,8 @@ function showAdminPanel() {
       clients: clients, reps: reps, samples: samples,
       birthdays: birthdays, complaints: complaints,
       diaryEvents: diaryEvents, websites: websites,
-      docs: docs, archivedClients: archivedClients
+      docs: docs, archivedClients: archivedClients,
+      tasks: tasks, enquiries: enquiries
     };
     var blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
     var url = URL.createObjectURL(blob);
@@ -6022,6 +6023,8 @@ function showAdminPanel() {
           if(data.websites) { websites = data.websites; saveWebsites(); }
           if(data.docs) { docs = data.docs; saveDocs(); }
           if(data.archivedClients) { archivedClients = data.archivedClients; saveArchive(); }
+          if(data.tasks) { tasks = data.tasks; saveTasks(); }
+          if(data.enquiries) { enquiries = data.enquiries; saveEnquiries(); }
           renderList(); renderDash(); updateStats();
           toast("\u2713 Backup restored successfully!");
         } catch(err) { toast("\u26A0\uFE0F Error reading backup file"); }
