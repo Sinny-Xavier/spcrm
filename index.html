@@ -1758,13 +1758,14 @@ function buildLogForm(cid){
   form.appendChild(smpF);
   var qf=document.createElement("div");qf.className="qfields";qf.id="qfields";
   var prodOpts=PRODUCTS.map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join("");
-  qf.innerHTML='<div class="qfgrid"><div class="qf"><label>Quote ref</label><input id="qref" placeholder="e.g. QT-001"></div><div class="qf"><label>Value (&#163;)</label><input id="qval" placeholder="e.g. 2500" type="number"></div><div class="qf s2"><label>Product category</label><select id="qprod"><option value="">-- Select product --</option>'+prodOpts+'</select></div><div class="qf"><label>Qty / detail</label><input id="qqty" placeholder="e.g. 50m&#178;"></div><div class="qf s2" id="qother_wrap" style="display:none"><label>Specify product</label><input id="qother" placeholder="e.g. Stair rods, Door bars..."></div><div class="qf s2" id="qsubcat_wrap" style="display:none"><label id="qsubcat_lbl">Sub-category</label><select id="qsubcat"></select></div><div class="qf"><label>Status</label><select id="qstat"><option>Quote</option><option>Confirmed</option><option>Invoiced</option><option>Paid</option><option>Lost</option><option>Expired</option></select></div><div class="qf"><label>Expires</label><div style="display:flex;gap:5px"><input id="qexpiry" type="date" style="flex:1"><button type="button" id="qexpiry4wk" style="padding:0 10px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">+4wk</button></div></div></div>';
+  qf.innerHTML='<div class="qfgrid"><div class="qf"><label>Quote ref</label><input id="qref" placeholder="e.g. QT-001"></div><div class="qf"><label>Value (&#163;)</label><input id="qval" placeholder="e.g. 2500" type="number"></div><div class="qf s2"><label>Product category</label><select id="qprod"><option value="">-- Select product --</option>'+prodOpts+'</select></div><div class="qf"><label>Qty / detail</label><input id="qqty" placeholder="e.g. 50m&#178;"></div><div class="qf s2" id="qother_wrap" style="display:none"><label>Specify product</label><input id="qother" placeholder="e.g. Stair rods, Door bars..."></div><div class="qf s2" id="qsubcat_wrap" style="display:none"><label id="qsubcat_lbl">Sub-category</label><select id="qsubcat"></select></div><div class="qf s2" id="qrange_wrap" style="display:none"><label>Range</label><select id="qrange"></select></div><div class="qf"><label>Status</label><select id="qstat"><option>Quote</option><option>Confirmed</option><option>Invoiced</option><option>Paid</option><option>Lost</option><option>Expired</option></select></div><div class="qf"><label>Expires</label><div style="display:flex;gap:5px"><input id="qexpiry" type="date" style="flex:1"><button type="button" id="qexpiry4wk" style="padding:0 10px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">+4wk</button></div></div></div>';
   form.appendChild(qf);
   setTimeout(function(){
     var qpEl2=document.getElementById('qprod');
     if(qpEl2){qpEl2.addEventListener('change',function(){
       var ow=document.getElementById('qother_wrap');if(ow)ow.style.display=this.value==='Other'?'':'none';
       var sw=document.getElementById('qsubcat_wrap');var sSel=document.getElementById('qsubcat');var sLbl=document.getElementById('qsubcat_lbl');
+      var rw=document.getElementById('qrange_wrap');var rSel=document.getElementById('qrange');
       var list=PRODUCT_SUBCATS[this.value];
       if(list&&sw&&sSel){
         sSel.innerHTML='<option value="">-- Select '+this.value+' category --</option>';
@@ -1774,6 +1775,23 @@ function buildLogForm(cid){
       } else if(sw){
         sw.style.display='none';
         if(sSel)sSel.innerHTML='';
+      }
+      if(rw){rw.style.display='none';if(rSel)rSel.innerHTML='';}
+    });}
+    var qsEl=document.getElementById('qsubcat');
+    if(qsEl){qsEl.addEventListener('change',function(){
+      var rw=document.getElementById('qrange_wrap');var rSel=document.getElementById('qrange');
+      var prodVal=document.getElementById('qprod').value;
+      var list=PRODUCT_SUBCATS[prodVal]||[];
+      var chosen=list.filter(function(item){return item.name===qsEl.value;})[0];
+      var ranges=(chosen&&chosen.ranges)?chosen.ranges:[];
+      if(ranges.length&&rw&&rSel){
+        rSel.innerHTML='<option value="">-- Select range --</option>';
+        ranges.forEach(function(rg){var ro=document.createElement('option');ro.value=rg;ro.textContent=rg;rSel.appendChild(ro);});
+        rw.style.display='';
+      } else if(rw){
+        rw.style.display='none';
+        if(rSel)rSel.innerHTML='';
       }
     });}
     var qexp4wkBtn=document.getElementById('qexpiry4wk');
@@ -1808,12 +1826,19 @@ function showQuoteEditForm(clientId, logIdx) {
   }
   // Split sub-category strings like "Tools: Blades" back into product + sub-category
   var subDetail = "";
+  var rangeDetail = "";
   Object.keys(PRODUCT_SUBCATS).forEach(function(prodName) {
     if (category.indexOf(prodName + ": ") === 0) {
       subDetail = category.substring((prodName + ": ").length);
       category = prodName;
     }
   });
+  // Further split "Cloud 9 - Cumulus" into subDetail="Cloud 9", rangeDetail="Cumulus"
+  if (subDetail.indexOf(" - ") > -1) {
+    var rangeSplit = subDetail.split(" - ");
+    rangeDetail = rangeSplit.pop();
+    subDetail = rangeSplit.join(" - ");
+  }
 
   var overlay = document.createElement("div");
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
@@ -1857,6 +1882,22 @@ function showQuoteEditForm(clientId, logIdx) {
   subcatWrap.appendChild(subcatLbl);
   bd.appendChild(subcatWrap);
 
+  var rangeWrap = document.createElement("div"); rangeWrap.style.display = "none";
+  var rangeSel = document.createElement("select"); rangeSel.id="qe_range"; rangeSel.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  function populateRange(prodName, subName, preselect) {
+    var list = PRODUCT_SUBCATS[prodName] || [];
+    var item = list.filter(function(it){ return it.name === subName; })[0];
+    var ranges = (item && item.ranges) ? item.ranges : [];
+    if (!ranges.length) { rangeWrap.style.display = "none"; rangeSel.innerHTML = ""; return; }
+    rangeSel.innerHTML = "";
+    var rBlank = document.createElement("option"); rBlank.value=""; rBlank.textContent="-- Select range --"; rangeSel.appendChild(rBlank);
+    ranges.forEach(function(rg){ var ro=document.createElement("option"); ro.value=rg; ro.textContent=rg; if(rg===preselect)ro.selected=true; rangeSel.appendChild(ro); });
+    rangeWrap.style.display = "block";
+  }
+  if (PRODUCT_SUBCATS[category] && subDetail) populateRange(category, subDetail, rangeDetail);
+  rangeWrap.appendChild(mkFd("Range *", rangeSel));
+  bd.appendChild(rangeWrap);
+
   prodSel.addEventListener("change", function(){
     otherWrap.style.display = this.value==="Other" ? "block" : "none";
     if (PRODUCT_SUBCATS[this.value]) {
@@ -1865,6 +1906,11 @@ function showQuoteEditForm(clientId, logIdx) {
     } else {
       subcatWrap.style.display = "none";
     }
+    rangeWrap.style.display = "none"; rangeSel.innerHTML = "";
+  });
+
+  subcatSel.addEventListener("change", function(){
+    populateRange(prodSel.value, subcatSel.value, "");
   });
 
   var qtyInp = document.createElement("input"); qtyInp.id="qe_qty"; qtyInp.value=qtyDetail; qtyInp.placeholder="e.g. 50m\u00b2"; qtyInp.style.cssText="width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
@@ -1901,7 +1947,14 @@ function showQuoteEditForm(clientId, logIdx) {
     if (PRODUCT_SUBCATS[newCat]) {
       var newSub = subcatSel.value;
       if (!newSub) { toast("Please select a "+newCat+" category"); return; }
-      finalCat = newCat + ": " + newSub;
+      var newSubItem = (PRODUCT_SUBCATS[newCat]||[]).filter(function(it){return it.name===newSub;})[0];
+      if (newSubItem && newSubItem.ranges && newSubItem.ranges.length && rangeWrap.style.display !== "none") {
+        var newRange = rangeSel.value;
+        if (!newRange) { toast("Please select a range"); return; }
+        finalCat = newCat + ": " + newSub + " - " + newRange;
+      } else {
+        finalCat = newCat + ": " + newSub;
+      }
     }
     var newQty = qtyInp.value.trim();
     q.ref = refInp.value.trim();
@@ -1938,7 +1991,15 @@ function saveLog(id){
     if(PRODUCT_SUBCATS[qpv]){
       var qSubVal=(document.getElementById("qsubcat")||{}).value||"";
       if(!qSubVal){toast("Please select a "+qpv+" category");return;}
-      qpv=qpv+": "+qSubVal;
+      var qSubItem=PRODUCT_SUBCATS[qpv].filter(function(it){return it.name===qSubVal;})[0];
+      var qRangeEl=document.getElementById("qrange_wrap");
+      if(qSubItem&&qSubItem.ranges&&qSubItem.ranges.length&&qRangeEl&&qRangeEl.style.display!=="none"){
+        var qRangeVal=(document.getElementById("qrange")||{}).value||"";
+        if(!qRangeVal){toast("Please select a range");return;}
+        qpv=qpv+": "+qSubVal+" - "+qRangeVal;
+      } else {
+        qpv=qpv+": "+qSubVal;
+      }
     }
     var qqty=(document.getElementById("qqty")||{}).value||"";
     var qexp=(document.getElementById("qexpiry")||{}).value||"";
@@ -3366,7 +3427,7 @@ function showSaleForm(clientId, clientName) {
   bd.appendChild(otherWrap);
 
   // Generic sub-category dropdown: one per product key in PRODUCT_SUBCATS, hidden until that product is selected.
-  // sl_subcat_wraps maps product name -> {wrap, sel} so the change listener and save logic can look any of them up.
+  // sl_subcat_wraps maps product name -> {wrap, sel, rangeWrap, rangeSel} so the change listener and save logic can look any of them up.
   var sl_subcat_wraps = {};
   Object.keys(PRODUCT_SUBCATS).forEach(function(prodName) {
     var list = PRODUCT_SUBCATS[prodName];
@@ -3378,7 +3439,30 @@ function showSaleForm(clientId, clientName) {
     list.forEach(function(item) { var opt = document.createElement("option"); opt.value = item.name; opt.textContent = item.note ? (item.name + " (" + item.note + ")") : item.name; sel.appendChild(opt); });
     w.appendChild(mkF2(prodName + " category *", sel));
     bd.appendChild(w);
-    sl_subcat_wraps[prodName] = { wrap: w, sel: sel };
+
+    // Range dropdown (second level) - hidden unless the chosen sub-category item has ranges
+    var rangeWrap = document.createElement("div");
+    rangeWrap.style.display = "none";
+    var rangeSel = document.createElement("select");
+    rangeSel.style.cssText = "width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+    rangeWrap.appendChild(mkF2("Range *", rangeSel));
+    bd.appendChild(rangeWrap);
+
+    sel.addEventListener("change", function() {
+      var chosen = list.filter(function(item) { return item.name === sel.value; })[0];
+      var ranges = (chosen && chosen.ranges) ? chosen.ranges : [];
+      if (ranges.length) {
+        rangeSel.innerHTML = "";
+        var rblank = document.createElement("option"); rblank.value = ""; rblank.textContent = "-- Select range --"; rangeSel.appendChild(rblank);
+        ranges.forEach(function(rg) { var ro = document.createElement("option"); ro.value = rg; ro.textContent = rg; rangeSel.appendChild(ro); });
+        rangeWrap.style.display = "";
+      } else {
+        rangeWrap.style.display = "none";
+        rangeSel.innerHTML = "";
+      }
+    });
+
+    sl_subcat_wraps[prodName] = { wrap: w, sel: sel, rangeWrap: rangeWrap, rangeSel: rangeSel };
   });
 
 
@@ -3386,7 +3470,10 @@ function showSaleForm(clientId, clientName) {
     var selectedProd = this.value;
     otherWrap.style.display = selectedProd === "Other" ? "" : "none";
     Object.keys(sl_subcat_wraps).forEach(function(prodName) {
-      sl_subcat_wraps[prodName].wrap.style.display = (selectedProd === prodName) ? "" : "none";
+      var entry = sl_subcat_wraps[prodName];
+      var show = (selectedProd === prodName);
+      entry.wrap.style.display = show ? "" : "none";
+      if (!show) { entry.rangeWrap.style.display = "none"; entry.sel.value = ""; entry.rangeSel.innerHTML = ""; }
     });
   });
 
@@ -3436,7 +3523,14 @@ function showSaleForm(clientId, clientName) {
     if (sl_subcat_wraps[prod]) {
       var subVal = sl_subcat_wraps[prod].sel.value;
       if (!subVal) { toast("Please select a " + prod + " category"); return; }
-      prod = prod + ": " + subVal;
+      var rangeWrapEntry = sl_subcat_wraps[prod];
+      if (rangeWrapEntry.rangeWrap.style.display !== "none") {
+        var rangeVal = rangeWrapEntry.rangeSel.value;
+        if (!rangeVal) { toast("Please select a range"); return; }
+        prod = prod + ": " + subVal + " - " + rangeVal;
+      } else {
+        prod = prod + ": " + subVal;
+      }
     }
     var val = document.getElementById("sl_val").value;
     var det = document.getElementById("sl_det").value.trim();
@@ -3481,6 +3575,8 @@ function showSaleForm(clientId, clientName) {
       Object.keys(sl_subcat_wraps).forEach(function(prodName) {
         sl_subcat_wraps[prodName].sel.value = "";
         sl_subcat_wraps[prodName].wrap.style.display = "none";
+        sl_subcat_wraps[prodName].rangeWrap.style.display = "none";
+        sl_subcat_wraps[prodName].rangeSel.innerHTML = "";
       });
     } else {
       document.body.removeChild(overlay);
@@ -6188,6 +6284,7 @@ function showProductManager() {
   box.appendChild(bd);
 
   var pmExpanded = null;
+  var pmRangeExpanded = null; // key: prodName + "::" + itemName, identifies which item's ranges panel is open
 
   function pmRenderList() {
     bd.innerHTML = "";
@@ -6333,6 +6430,13 @@ function showProductManager() {
 
   function pmRenderItemRow(prodName, idx) {
     var item = PRODUCT_SUBCATS[prodName][idx];
+    var rangeKey = prodName + "::" + item.name;
+    var hasRanges = !!(item.ranges && item.ranges.length);
+    var isRangeOpen = (pmRangeExpanded === rangeKey);
+
+    var container = document.createElement("div");
+    container.style.cssText = "display:flex;flex-direction:column;gap:0;flex-shrink:0";
+
     var itemRow = document.createElement("div");
     itemRow.style.cssText = "display:flex;gap:6px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:var(--rs);padding:5px 7px";
 
@@ -6354,6 +6458,16 @@ function showProductManager() {
     nameInp.addEventListener("blur", commitEdit);
     noteInp.addEventListener("blur", commitEdit);
 
+    var rangeBtn = document.createElement("button");
+    rangeBtn.type = "button";
+    rangeBtn.textContent = hasRanges ? ("\u25B8 " + item.ranges.length) : "+ Ranges";
+    rangeBtn.title = "Manage ranges for this item";
+    rangeBtn.style.cssText = "background:none;border:1px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:10px;cursor:pointer;flex-shrink:0;padding:3px 7px;white-space:nowrap";
+    rangeBtn.addEventListener("click", function () {
+      pmRangeExpanded = isRangeOpen ? null : rangeKey;
+      pmRenderList();
+    });
+
     var rmBtn = document.createElement("button");
     rmBtn.textContent = "\u00d7";
     rmBtn.style.cssText = "background:none;border:none;color:var(--rtxt);font-size:15px;cursor:pointer;flex-shrink:0;padding:0 3px";
@@ -6365,9 +6479,73 @@ function showProductManager() {
 
     itemRow.appendChild(nameInp);
     itemRow.appendChild(noteInp);
+    itemRow.appendChild(rangeBtn);
     itemRow.appendChild(rmBtn);
-    return itemRow;
+    container.appendChild(itemRow);
+
+    if (isRangeOpen) {
+      container.appendChild(pmRenderRangePanel(prodName, idx));
+    }
+
+    return container;
   }
+
+  function pmRenderRangePanel(prodName, idx) {
+    var item = PRODUCT_SUBCATS[prodName][idx];
+    if (!item.ranges) { item.ranges = []; }
+
+    var panel = document.createElement("div");
+    panel.style.cssText = "padding:7px 7px 7px 18px;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--rs) var(--rs);background:#fafbfd;display:flex;flex-direction:column;gap:5px";
+
+    var label = document.createElement("div");
+    label.style.cssText = "font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px";
+    label.textContent = "Ranges for " + item.name;
+    panel.appendChild(label);
+
+    item.ranges.forEach(function (rangeName, rangeIdx) {
+      var rRow = document.createElement("div");
+      rRow.style.cssText = "display:flex;gap:6px;align-items:center;background:#fff;border:1px solid var(--border);border-radius:var(--rs);padding:4px 6px";
+      var rInp = document.createElement("input");
+      rInp.value = rangeName;
+      rInp.style.cssText = "flex:1;border:none;outline:none;font-size:12px;font-family:inherit;min-width:0";
+      rInp.addEventListener("blur", function () {
+        var v = rInp.value.trim();
+        if (v) { item.ranges[rangeIdx] = v; saveProductSubcats(); }
+      });
+      var rRm = document.createElement("button");
+      rRm.textContent = "\u00d7";
+      rRm.style.cssText = "background:none;border:none;color:var(--rtxt);font-size:14px;cursor:pointer;flex-shrink:0;padding:0 3px";
+      rRm.addEventListener("click", function () {
+        item.ranges.splice(rangeIdx, 1);
+        saveProductSubcats();
+        pmRenderList();
+      });
+      rRow.appendChild(rInp);
+      rRow.appendChild(rRm);
+      panel.appendChild(rRow);
+    });
+
+    var addRow = document.createElement("div");
+    addRow.style.cssText = "display:flex;gap:6px";
+    var addInp = document.createElement("input");
+    addInp.placeholder = "New range name, e.g. Cumulus";
+    addInp.style.cssText = "flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none";
+    var addBtn = pmSmallBtn("+ Add range", "#2d6a0f");
+    addBtn.addEventListener("click", function () {
+      var v = addInp.value.trim();
+      if (!v) { toast("Enter a range name"); return; }
+      item.ranges.push(v);
+      saveProductSubcats();
+      pmRenderList();
+    });
+    addInp.addEventListener("keydown", function (e) { if (e.key === "Enter") { addBtn.click(); } });
+    addRow.appendChild(addInp);
+    addRow.appendChild(addBtn);
+    panel.appendChild(addRow);
+
+    return panel;
+  }
+
 
   pmRenderList();
 
