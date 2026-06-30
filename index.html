@@ -346,7 +346,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
     </div>
     <div class="clist" id="clist"></div>
   </aside>
-  <main class="main" id="mainArea">
+  <main class="main" id="mainArea" tabindex="-1" style="outline:none">
     <div id="dashView" class="dash"></div>
     <div id="detView" class="page"></div>
     <div id="clientsView" class="page"></div>
@@ -1130,7 +1130,11 @@ function showView(v){
     var el=document.getElementById(id);
     el.style.display=(id===v+"View"||(v==="det"&&id==="detView")||(v==="form"&&id==="formView"))?"block":"none";
   });
-  var ma=document.getElementById("mainArea");if(ma)ma.scrollTop=0;
+  var ma=document.getElementById("mainArea");
+  if(ma){
+    ma.scrollTop=0;
+    try{ma.focus({preventScroll:true});}catch(e){ma.focus();}
+  }
 }
 function showDash(){activeId=null;renderList();showView("dash");renderDash();}
 function showClients(){activeId=null;renderList();showView("clients");renderClientsView();}
