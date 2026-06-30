@@ -2241,10 +2241,11 @@ function renderRepsView(searchTerm){
   var q=(searchTerm||"").toLowerCase();
   var filteredReps=q?reps.filter(function(r){return[r.name,r.company,r.manufacturer,r.tel].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});}):reps;
   var sw=document.createElement("div");sw.style.cssText="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px;margin-bottom:16px;max-width:360px";
+  var sIcon=document.createElement("span");sIcon.textContent="\uD83D\uDD0D";sIcon.style.cssText="font-size:12px;opacity:.6";
   var si=document.createElement("input");si.type="text";si.id="repSearch";si.placeholder="Search name, company or manufacturer...";si.value=searchTerm||"";
   si.style.cssText="background:none;border:none;outline:none;font-size:12px;color:var(--text);flex:1;min-width:0";
   si.addEventListener("input",function(){renderRepsView(this.value);});
-  sw.appendChild(si);rv.appendChild(sw);
+  sw.appendChild(sIcon);sw.appendChild(si);rv.appendChild(sw);
   if(searchTerm){setTimeout(function(){var el=document.getElementById("repSearch");if(el)el.focus();},10);}
   var byMfr={};filteredReps.forEach(function(r){var m=r.manufacturer||"Other";if(!byMfr[m])byMfr[m]=[];byMfr[m].push(r);});
   if(!filteredReps.length){var em=document.createElement("div");em.className="empty-state";em.innerHTML="<div>&#128101;</div><div class='es-title'>"+(q?"No results found":"No reps added yet")+"</div><div class='es-sub'>Add your ASMs and manufacturer reps to keep track of contacts and visits</div>";rv.appendChild(em);}
@@ -4608,6 +4609,16 @@ function renderWebsitesView() {
   addBtn.addEventListener("click", function(){ showAddWebsite(); });
   hdr.appendChild(title); hdr.appendChild(addBtn); wv.appendChild(hdr);
 
+  // Search box
+  var sw = document.createElement("div");
+  sw.style.cssText = "display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px;margin-bottom:14px;max-width:360px";
+  var sIcon = document.createElement("span"); sIcon.textContent = "\uD83D\uDD0D"; sIcon.style.cssText = "font-size:12px;opacity:.6";
+  var si = document.createElement("input"); si.type = "text"; si.id = "webSearch"; si.placeholder = "Search name, URL or description...";
+  si.style.cssText = "background:none;border:none;outline:none;font-size:12px;color:var(--text);flex:1;min-width:0";
+  si.addEventListener("input", function(){ activeSearch = this.value; renderList2(); });
+  sw.appendChild(sIcon); sw.appendChild(si); wv.appendChild(sw);
+  var activeSearch = "";
+
   // Category filter
   var cats = ["All"];
   websites.forEach(function(w){ if(w.category && cats.indexOf(w.category)<0) cats.push(w.category); });
@@ -4634,9 +4645,15 @@ function renderWebsitesView() {
   function renderList2() {
     listWrap.innerHTML = "";
     var filtered = activeCat==="All" ? websites : websites.filter(function(w){ return w.category===activeCat; });
+    var q = (activeSearch||"").toLowerCase();
+    if (q) {
+      filtered = filtered.filter(function(w){
+        return [w.name, w.url, w.description, w.category].some(function(v){ return (v||"").toLowerCase().indexOf(q) > -1; });
+      });
+    }
     if (!filtered.length) {
       var em = document.createElement("div"); em.className = "empty-state";
-      em.innerHTML = "<div>&#127760;</div><div class='es-title'>No websites added yet</div><div class='es-sub'>Add your useful trade websites, supplier portals, reference sites — they travel with you wherever you go</div>";
+      em.innerHTML = q ? "<div>&#128269;</div><div class='es-title'>No results found</div><div class='es-sub'>Try a different search term</div>" : "<div>&#127760;</div><div class='es-title'>No websites added yet</div><div class='es-sub'>Add your useful trade websites, supplier portals, reference sites — they travel with you wherever you go</div>";
       listWrap.appendChild(em); return;
     }
 
