@@ -38,7 +38,13 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .hs.alert{background:rgba(192,57,43,.3);border-color:rgba(192,57,43,.5)}
 .hs.alert b{color:#ff9999}
 .app{display:flex;height:calc(100vh - 88px);overflow:hidden;min-height:0}
-.sb{width:270px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sb{position:fixed;left:0;top:0;bottom:0;width:300px;max-width:88vw;background:var(--surface);border-right:2px solid var(--border);display:none;flex-direction:column;z-index:160;box-shadow:4px 0 24px rgba(0,0,0,.18);transform:translateX(-100%);transition:transform .2s ease;overflow:hidden}
+.sb.mob-open{display:flex;transform:translateX(0)}
+.sb-backdrop{position:fixed;inset:0;background:rgba(10,15,25,.45);z-index:155;display:none}
+.sb-backdrop.show{display:block}
+.mob-search-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:2px solid var(--border)}
+.mob-search-bar input{flex:1;min-width:0;padding:8px 12px;border:2px solid var(--border);border-radius:20px;font-size:13px;outline:none;font-family:inherit;background:var(--alt)}
+.mob-menu-btn{padding:8px 14px;background:var(--navy);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .sb-top{padding:10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:7px}
 .srch{display:flex;align-items:center;gap:6px;background:var(--alt);border:2px solid var(--border);border-radius:var(--rs);padding:6px 9px}
 .srch input{background:none;border:none;outline:none;font-size:12px;color:var(--text);flex:1}
@@ -228,12 +234,8 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   .hdr-bottom { padding:4px 10px; }
   .nav-btn { padding:4px 8px;font-size:9px; }
   .app { flex-direction:column;height:auto;min-height:calc(100vh - 88px); }
-  .sb { width:100%;height:auto;border-right:none;border-bottom:1px solid var(--border);display:none; }
-  .sb.mob-open { display:flex;flex-direction:column;max-height:60vh; }
+  .sb { width:88vw;max-height:75vh; }
   .main { flex:1;overflow-y:auto; }
-  .mob-search-bar { display:flex;align-items:center;gap:6px;padding:8px 10px;background:var(--surface);border-bottom:1px solid var(--border);overflow:hidden; }
-  .mob-search-bar input { flex:1;min-width:0;padding:7px 10px;border:2px solid var(--border);border-radius:20px;font-size:13px;outline:none;font-family:inherit; }
-  .mob-menu-btn { padding:7px 10px;background:var(--navy);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0; }
   .kpi-grid { grid-template-columns:1fr 1fr;gap:8px; }
   .dash-grid { grid-template-columns:1fr;gap:10px; }
   .sec-grid { grid-template-columns:1fr; }
@@ -246,8 +248,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   .stat-row.cols4 { grid-template-columns:1fr 1fr; }
 }
 @media (min-width:769px) {
-  .mob-search-bar { display:none; }
-  .mob-menu-btn { display:none; }
+  .mob-search-bar { padding:10px 16px; }
 }
 
 @media (max-width:480px) {
@@ -299,6 +300,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
     <div class="hdr-nav-rows">
       <div class="hdr-nav">
         <button class="nav-btn" onclick="showDash()" style="background:rgba(255,185,0,.25);border-color:rgba(255,185,0,.5)">&#127968; Dashboard</button>
+        <button class="nav-btn" onclick="showClients()" style="background:rgba(0,90,200,.3);border-color:rgba(0,90,200,.5)">&#128101; Clients</button>
         <button class="nav-btn" onclick="showSales()">&#128200; Sales</button>
         <button class="nav-btn" onclick="showQuotes()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128178; Quotes</button>
         <button class="nav-btn" onclick="showSamples()">&#128230; Samples</button>
@@ -325,6 +327,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   <button class="mob-menu-btn" onclick="showDash()" style="background:var(--red)">&#127968;</button>
   <button class="mob-menu-btn" onclick="logOut()" style="background:rgba(192,57,43,.8)">&#128274;</button>
 </div>
+<div class="sb-backdrop" id="sbBackdrop" onclick="toggleMobSidebar()"></div>
 <div class="app">
   <aside class="sb" id="sidebar">
     <div class="sb-top">
@@ -346,6 +349,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   <main class="main" id="mainArea">
     <div id="dashView" class="dash"></div>
     <div id="detView" class="page"></div>
+    <div id="clientsView" class="page"></div>
     <div id="formView" class="formv"></div>
     <div id="repsView" class="page"></div>
     <div id="salesView" class="page"></div>
@@ -1122,12 +1126,14 @@ function updateStats(){
 
 // ── VIEW MANAGER ──────────────────────────────────────────────────
 function showView(v){
-  ["dashView","detView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView","tasksView"].forEach(function(id){
+  ["dashView","detView","clientsView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView","tasksView"].forEach(function(id){
     var el=document.getElementById(id);
     el.style.display=(id===v+"View"||(v==="det"&&id==="detView")||(v==="form"&&id==="formView"))?"block":"none";
   });
+  var ma=document.getElementById("mainArea");if(ma)ma.scrollTop=0;
 }
 function showDash(){activeId=null;renderList();showView("dash");renderDash();}
+function showClients(){activeId=null;renderList();showView("clients");renderClientsView();}
 function openC(id){activeId=id;showLF=false;detLogTab="Interactions";renderList();showView("det");renderDet();}
 function showReps(){activeId=null;renderList();showView("reps");renderRepsView();}
 function showSales(){activeId=null;renderList();showView("sales");renderSalesView();}
@@ -1186,7 +1192,83 @@ function renderList(){
   });
 }
 
-// ── DASHBOARD ────────────────────────────────────────────────────
+// ── CLIENTS FULL PAGE ────────────────────────────────────────────
+function renderClientsView(searchTerm){
+  var cv=document.getElementById("clientsView");cv.innerHTML="";
+  var hdr=document.createElement("div");hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px";
+  var title=document.createElement("div");title.className="page-title";title.textContent="Clients";
+  var addBtn=document.createElement("button");addBtn.style.cssText="padding:7px 16px;background:var(--red);border:none;border-radius:20px;color:#1a1a1a;font-size:12px;font-weight:700;cursor:pointer";addBtn.textContent="+ Add client";addBtn.addEventListener("click",function(){showForm();});
+  hdr.appendChild(title);hdr.appendChild(addBtn);cv.appendChild(hdr);
+
+  var sw=document.createElement("div");sw.style.cssText="display:flex;align-items:center;gap:8px;background:var(--surface);border:2px solid var(--navy);border-radius:var(--rs);padding:9px 12px;margin-bottom:12px;max-width:360px;box-shadow:0 1px 4px rgba(0,0,0,.06)";
+  var sIcon=document.createElement("span");sIcon.textContent="\uD83D\uDD0D";sIcon.style.cssText="font-size:14px";
+  var si=document.createElement("input");si.type="text";si.id="clientsSearch";si.placeholder="Search name, ref, phone...";si.value=searchTerm||"";
+  si.style.cssText="background:none;border:none;outline:none;font-size:13px;color:var(--text);flex:1;min-width:0";
+  si.addEventListener("input",function(){renderClientsView(this.value);});
+  sw.appendChild(sIcon);sw.appendChild(si);cv.appendChild(sw);
+  if(searchTerm){setTimeout(function(){var el=document.getElementById("clientsSearch");if(el){el.focus();el.selectionStart=el.selectionEnd=el.value.length;}},10);}
+
+  var q=(searchTerm||"").toLowerCase();
+  var statuses=["All","Active","Prospect","On Hold","Lost"];
+  var clientsActiveStatus=window._clientsViewStatus||"All";
+  var fbar=document.createElement("div");fbar.style.cssText="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px";
+  statuses.forEach(function(s){
+    var b=document.createElement("button");
+    b.className="fb"+(clientsActiveStatus===s?" on":"");
+    b.textContent=s;
+    b.addEventListener("click",function(){window._clientsViewStatus=s;renderClientsView(si.value);});
+    fbar.appendChild(b);
+  });
+  cv.appendChild(fbar);
+
+  var filtered=clients.filter(function(c){
+    var mq=!q||[c.name,c.binder,c.tel,c.mobile,c.contact].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
+    var ms=clientsActiveStatus==="All"||c.status===clientsActiveStatus;
+    return mq&&ms;
+  }).sort(function(a,b){return(a.name||"").localeCompare(b.name||"",undefined,{sensitivity:"base"});});
+
+  if(!filtered.length){
+    var em=document.createElement("div");em.className="empty-state";
+    em.innerHTML="<div>&#128101;</div><div class='es-title'>"+(q?"No results found":"No clients yet")+"</div><div class='es-sub'>"+(q?"Try a different search term":"Add your first client to get started")+"</div>";
+    cv.appendChild(em);
+  } else {
+    var byStatus={};
+    filtered.forEach(function(c){var s=c.status||"Other";if(!byStatus[s])byStatus[s]=[];byStatus[s].push(c);});
+    var order=["Active","Prospect","On Hold","Lost"];
+    var keys=Object.keys(byStatus).sort(function(a,b){var ia=order.indexOf(a),ib=order.indexOf(b);return(ia<0?99:ia)-(ib<0?99:ib);});
+    keys.forEach(function(st){
+      var section=document.createElement("div");section.style.marginBottom="20px";
+      var mhdr=document.createElement("div");mhdr.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid var(--red3);display:flex;align-items:center;gap:7px";
+      var dot=document.createElement("span");dot.style.cssText="width:7px;height:7px;border-radius:50%;background:var(--navy);display:inline-block";
+      var mn=document.createElement("span");mn.textContent=st;
+      var cnt=document.createElement("span");cnt.style.cssText="margin-left:auto;background:var(--alt);border:1px solid var(--border);border-radius:20px;padding:1px 7px;font-size:9px";cnt.textContent=byStatus[st].length+" client"+(byStatus[st].length>1?"s":"");
+      mhdr.appendChild(dot);mhdr.appendChild(mn);mhdr.appendChild(cnt);section.appendChild(mhdr);
+      var grid=document.createElement("div");grid.style.cssText="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px";
+      byStatus[st].forEach(function(c){
+        var d=du(c.followup);var dl=d<0?"Overdue":d===0?"Today":d<=3?d+"d":fd(c.followup)||"";var dc=d<0?"fdue":d<=3?"famb":"fok";
+        var card=document.createElement("div");card.className="rep-card";card.style.cursor="pointer";
+        card.addEventListener("click",(function(cid){return function(){openC(cid);};})(c.id));
+        var top=document.createElement("div");top.className="rep-card-top";
+        var av=document.createElement("div");av.className="rep-av";av.textContent=ini(c.name);
+        var info=document.createElement("div");
+        var nm=document.createElement("div");nm.className="rep-name";nm.textContent=c.name;
+        var co=document.createElement("div");co.className="rep-co";co.textContent=c.binder+(c.contact?" \u00b7 "+c.contact:"");
+        info.appendChild(nm);info.appendChild(co);top.appendChild(av);top.appendChild(info);card.appendChild(top);
+        var body=document.createElement("div");body.className="rep-card-body";
+        var meta=document.createElement("div");meta.style.cssText="display:flex;align-items:center;gap:6px;margin-bottom:6px";
+        var pill=document.createElement("span");pill.className="pl "+scls(c.status);pill.textContent=c.status;meta.appendChild(pill);
+        if(c.priority){var st2=document.createElement("span");st2.className="stars";st2.textContent=c.priority;meta.appendChild(st2);}
+        if(dl){var ft=document.createElement("span");ft.className="ftag "+dc;ft.textContent=dl;meta.appendChild(ft);}
+        body.appendChild(meta);
+        if(c.tel){var tr=document.createElement("div");tr.style.cssText="font-size:11px;margin-bottom:4px";tr.innerHTML='<span style="color:var(--muted);font-size:9px;font-weight:700;text-transform:uppercase;margin-right:5px">Tel</span>'+c.tel;body.appendChild(tr);}
+        card.appendChild(body);grid.appendChild(card);
+      });
+      section.appendChild(grid);cv.appendChild(section);
+    });
+  }
+}
+
+
 function renderDash(){
   var overdue=clients.filter(function(c){return du(c.followup)<0;});
   var today2=clients.filter(function(c){var d=du(c.followup);return d>=0&&d<=1;});
@@ -6752,11 +6834,16 @@ function isMobile() { return window.innerWidth <= 768; }
 function toggleMobSidebar() {
   var sb = document.getElementById("sidebar");
   var btn = document.getElementById("mobMenuBtn");
+  var bd = document.getElementById("sbBackdrop");
   if (sb.classList.contains("mob-open")) {
     sb.classList.remove("mob-open");
+    bd.classList.remove("show");
     btn.textContent = "\u2261 Clients";
   } else {
+    var hdrH = document.querySelector(".hdr").offsetHeight + document.getElementById("mobBar").offsetHeight;
+    sb.style.top = hdrH + "px";
     sb.classList.add("mob-open");
+    bd.classList.add("show");
     btn.textContent = "\u2715 Close";
     sb.scrollTop = 0;
   }
@@ -6765,17 +6852,17 @@ function toggleMobSidebar() {
 function mobSearch(val) {
   document.getElementById("sq").value = val;
   renderList();
-  if (val.length > 0 && isMobile()) {
+  if (val.length > 0) {
     var sb = document.getElementById("sidebar");
-    sb.classList.add("mob-open");
-    document.getElementById("mobMenuBtn").textContent = "\u2715 Close";
+    if (!sb.classList.contains("mob-open")) toggleMobSidebar();
   }
 }
 
 function closeMobSidebar() {
-  if (isMobile()) {
-    var sb = document.getElementById("sidebar");
+  var sb = document.getElementById("sidebar");
+  if (sb.classList.contains("mob-open")) {
     sb.classList.remove("mob-open");
+    document.getElementById("sbBackdrop").classList.remove("show");
     var btn = document.getElementById("mobMenuBtn");
     if (btn) btn.textContent = "\u2261 Clients";
   }
@@ -6789,7 +6876,7 @@ openC = function(id) {
 };
 
 // Close sidebar when nav buttons clicked on mobile
-var navFns = ["showReps","showSales","showSamples","showBirthdays","showComplaints","showDiary","showQuotes","showDash","showEnquiries","showTasks"];
+var navFns = ["showReps","showSales","showSamples","showBirthdays","showComplaints","showDiary","showQuotes","showDash","showEnquiries","showTasks","showClients"];
 navFns.forEach(function(fn) {
   var orig = window[fn];
   window[fn] = function() { closeMobSidebar(); orig(); };
