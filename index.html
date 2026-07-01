@@ -1076,9 +1076,9 @@ var MANUFACTURERS_DEFAULT=["Aegean Sea", "Altro", "Amtico", "A.W - Invictus", "A
 var MANUFACTURERS_STORE="spcrm_manufacturers";
 var CLIENT_CATS_DEFAULT=["Existing Customer","Existing Customer (Dormant 12m+)","New - Walk In","New - Referral","Fitter"];
 var CLIENT_CATS_STORE="spcrm_client_cats";
-function loadManufacturers(){try{var s=localStorage.getItem(MANUFACTURERS_STORE);if(s){var c=JSON.parse(s);if(Array.isArray(c))return c;}}catch(e){}return MANUFACTURERS_DEFAULT.slice();}
+function loadManufacturers(){try{var s=localStorage.getItem(MANUFACTURERS_STORE);if(s){var c=JSON.parse(s);if(Array.isArray(c)&&c.length)return c;}}catch(e){}return MANUFACTURERS_DEFAULT.slice();}
 function saveManufacturers(){try{localStorage.setItem(MANUFACTURERS_STORE,JSON.stringify(MANUFACTURERS));}catch(e){}}
-function loadClientCats(){try{var s=localStorage.getItem(CLIENT_CATS_STORE);if(s){var c=JSON.parse(s);if(Array.isArray(c))return c;}}catch(e){}return CLIENT_CATS_DEFAULT.slice();}
+function loadClientCats(){try{var s=localStorage.getItem(CLIENT_CATS_STORE);if(s){var c=JSON.parse(s);if(Array.isArray(c)&&c.length)return c;}}catch(e){}return CLIENT_CATS_DEFAULT.slice();}
 function saveClientCats(){try{localStorage.setItem(CLIENT_CATS_STORE,JSON.stringify(CLIENT_CATS));}catch(e){}}
 var MANUFACTURERS=loadManufacturers();
 var CLIENT_CATS=loadClientCats();
@@ -6864,7 +6864,7 @@ function showAdminPanel() {
       title: "Manufacturers",
       icon: "\uD83C\uDFED",
       getList: function(){ return MANUFACTURERS; },
-      setList: function(arr){ MANUFACTURERS.length=0; arr.forEach(function(v){MANUFACTURERS.push(v);}); saveManufacturers(); },
+      setList: function(arr){ var copy=arr.slice(); MANUFACTURERS.length=0; copy.forEach(function(v){MANUFACTURERS.push(v);}); saveManufacturers(); },
       placeholder: "e.g. Kahrs",
       note: "Used in the Rep/ASM form — manufacturer dropdown."
     });
@@ -6878,7 +6878,7 @@ function showAdminPanel() {
       title: "Client Source Categories",
       icon: "\uD83C\uDFF7",
       getList: function(){ return CLIENT_CATS; },
-      setList: function(arr){ CLIENT_CATS.length=0; arr.forEach(function(v){CLIENT_CATS.push(v);}); saveClientCats(); },
+      setList: function(arr){ var copy=arr.slice(); CLIENT_CATS.length=0; copy.forEach(function(v){CLIENT_CATS.push(v);}); saveClientCats(); },
       placeholder: "e.g. New - Trade Show",
       note: "Used in the client form — Customer source dropdown."
     });
@@ -6889,7 +6889,7 @@ function showAdminPanel() {
       title: "Document Categories",
       icon: "\uD83D\uDCC2",
       getList: function(){ return DOC_CATS; },
-      setList: function(arr){ DOC_CATS.length=0; arr.forEach(function(v){DOC_CATS.push(v);}); saveDocCats(); },
+      setList: function(arr){ var copy=arr.slice(); DOC_CATS.length=0; copy.forEach(function(v){DOC_CATS.push(v);}); saveDocCats(); },
       placeholder: "e.g. Moduleo Docs",
       note: "Used in the Documents page category filter and the Add Document form."
     });
