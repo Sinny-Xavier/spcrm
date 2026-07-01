@@ -1067,7 +1067,21 @@ function saveProductSubcats(){
 }
 var PRODUCTS=loadProducts();
 var PRODUCT_SUBCATS=loadProductSubcats();
-var MANUFACTURERS=["Aegean Sea", "Altro", "Amtico", "A.W - Invictus", "Axminster", "Brintons", "Camaro", "Carpenters", "Cormar", "F Ball", "Forbo", "Furlong", "Genesis", "Gerflor", "Gradus", "Heckmondwike", "Interface", "Kahrs", "Karndean", "Kelmore", "Kerakoll UK", "Likewise", "Luvanto", "Mapei", "Mercado", "Moduleo", "Orion", "Polyflor", "QEP", "Quantum", "Quick-Step", "Roberts - QEP", "R.S.Batemans", "Shaw", "Spotnails", "Stairrods", "Tarkett", "Ted Todd", "Toolbank", "Trade Choice", "Uzin", "Victoria", "Woodpecker", "Other"];
+var DOC_CATS_DEFAULT=["Fitting Instructions","Product Spec","Parts List","Price List","Safety Data","Brochure","Warranty","Other"];
+var DOC_CATS_STORE="spcrm_doc_cats";
+function loadDocCats(){try{var s=localStorage.getItem(DOC_CATS_STORE);if(s){var c=JSON.parse(s);if(Array.isArray(c)&&c.length)return c;}}catch(e){}return DOC_CATS_DEFAULT.slice();}
+function saveDocCats(){try{localStorage.setItem(DOC_CATS_STORE,JSON.stringify(DOC_CATS));}catch(e){}}
+var DOC_CATS=loadDocCats();
+var MANUFACTURERS_DEFAULT=["Aegean Sea", "Altro", "Amtico", "A.W - Invictus", "Axminster", "Brintons", "Camaro", "Carpenters", "Cormar", "F Ball", "Forbo", "Furlong", "Genesis", "Gerflor", "Gradus", "Heckmondwike", "Interface", "Kahrs", "Karndean", "Kelmore", "Kerakoll UK", "Likewise", "Luvanto", "Mapei", "Mercado", "Moduleo", "Orion", "Polyflor", "QEP", "Quantum", "Quick-Step", "Roberts - QEP", "R.S.Batemans", "Shaw", "Spotnails", "Stairrods", "Tarkett", "Ted Todd", "Toolbank", "Trade Choice", "Uzin", "Victoria", "Woodpecker", "Other"];
+var MANUFACTURERS_STORE="spcrm_manufacturers";
+var CLIENT_CATS_DEFAULT=["Existing Customer","Existing Customer (Dormant 12m+)","New - Walk In","New - Referral","Fitter"];
+var CLIENT_CATS_STORE="spcrm_client_cats";
+function loadManufacturers(){try{var s=localStorage.getItem(MANUFACTURERS_STORE);if(s){var c=JSON.parse(s);if(Array.isArray(c))return c;}}catch(e){}return MANUFACTURERS_DEFAULT.slice();}
+function saveManufacturers(){try{localStorage.setItem(MANUFACTURERS_STORE,JSON.stringify(MANUFACTURERS));}catch(e){}}
+function loadClientCats(){try{var s=localStorage.getItem(CLIENT_CATS_STORE);if(s){var c=JSON.parse(s);if(Array.isArray(c))return c;}}catch(e){}return CLIENT_CATS_DEFAULT.slice();}
+function saveClientCats(){try{localStorage.setItem(CLIENT_CATS_STORE,JSON.stringify(CLIENT_CATS));}catch(e){}}
+var MANUFACTURERS=loadManufacturers();
+var CLIENT_CATS=loadClientCats();
 var clients,reps,samples,birthdays,complaints;
 var activeFilter="All",activeId=null,editId=null,showLF=false,pendingDel=null;
 var detLogTab="Interactions";
@@ -2710,7 +2724,7 @@ function showForm(id){
   g1.appendChild(dupWarnWrap);
   mkF(g1,"Contact name",mkI("e_contact",c?c.contact:"","Primary contact person"),true);
   var srcSel=document.createElement("select");srcSel.id="e_source";srcSel.style.cssText="width:100%;padding:6px 8px;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;color:var(--text);outline:none";
-  ["","Existing Customer","Existing Customer (Dormant 12m+)","New - Sinbad's Old Customer","New - Walk In","New - Referral","Fitter"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2||"-- Select source --";if(c&&c.source===s2)opt.selected=true;srcSel.appendChild(opt);});
+  [""].concat(CLIENT_CATS).forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2||"-- Select source --";if(c&&c.source===s2)opt.selected=true;srcSel.appendChild(opt);});
   mkF(g1,"Customer source",srcSel,true);
 
   var g2=mkSec("Contact");
@@ -5869,6 +5883,16 @@ function renderDocsView() {
   addBtn.addEventListener("click", function(){ showAddDoc(); });
   hdr.appendChild(title); hdr.appendChild(addBtn); dv2.appendChild(hdr);
 
+  // Search box
+  var docSearchTerm = "";
+  var docSearchBox = document.createElement("div");
+  docSearchBox.style.cssText = "display:flex;align-items:center;gap:8px;background:var(--surface);border:2px solid var(--navy);border-radius:var(--rs);padding:9px 12px;margin-bottom:14px;max-width:360px;box-shadow:0 1px 4px rgba(0,0,0,.06)";
+  var docSI = document.createElement("span"); docSI.textContent = "🔍"; docSI.style.cssText = "font-size:14px";
+  var docSInput = document.createElement("input"); docSInput.type = "text"; docSInput.placeholder = "Search documents...";
+  docSInput.style.cssText = "background:none;border:none;outline:none;font-size:13px;color:var(--text);flex:1;min-width:0";
+  docSInput.addEventListener("input", function(){ docSearchTerm = this.value; renderDocs(); });
+  docSearchBox.appendChild(docSI); docSearchBox.appendChild(docSInput); dv2.appendChild(docSearchBox);
+
   // Category filter
   var cats = ["All"];
   docs.forEach(function(d){ if(d.category && cats.indexOf(d.category)<0) cats.push(d.category); });
@@ -5907,10 +5931,18 @@ function renderDocsView() {
   function renderDocs() {
     listWrap.innerHTML = "";
     var filtered = activeCat==="All" ? docs : docs.filter(function(d){ return d.category===activeCat; });
+    var q = (docSearchTerm||"").toLowerCase();
+    if (q) {
+      filtered = filtered.filter(function(d){
+        return [d.name, d.supplier, d.category, d.description].some(function(v){ return (v||"").toLowerCase().indexOf(q) > -1; });
+      });
+    }
 
     if (!filtered.length) {
       var em = document.createElement("div"); em.className = "empty-state";
-      em.innerHTML = "<div>&#128196;</div><div class='es-title'>No documents added yet</div><div class='es-sub'>Add links to fitting instructions, product specs, price lists, brochures — upload to Google Drive first then paste the link here</div>";
+      em.innerHTML = q
+        ? "<div>🔍</div><div class='es-title'>No documents found</div><div class='es-sub'>Try a different search term</div>"
+        : "<div>📄</div><div class='es-title'>No documents added yet</div><div class='es-sub'>Add links to fitting instructions, product specs, price lists, brochures — upload to Google Drive first then paste the link here</div>";
       listWrap.appendChild(em); return;
     }
 
@@ -6000,7 +6032,9 @@ function showAddDoc(editIdx) {
   // Category dropdown
   var catSel2 = document.createElement("select"); catSel2.id = "d_cat";
   catSel2.style.cssText = "width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
-  ["Fitting Instructions","Product Spec","Parts List","Price List","Safety Data","Brochure","Warranty","Other"].forEach(function(c){
+  var defaultDocCats=["Fitting Instructions","Product Spec","Parts List","Price List","Safety Data","Brochure","Warranty","Other"];
+  var allDocCats=defaultDocCats.concat(DOC_CATS.filter(function(c){return defaultDocCats.indexOf(c)<0;}));
+  allDocCats.forEach(function(c){
     var opt=document.createElement("option");opt.value=c;opt.textContent=c;if(d&&d.category===c)opt.selected=true;catSel2.appendChild(opt);
   });
 
@@ -6604,6 +6638,84 @@ function showMonthlyReport() {
 }
 
 
+// ── LIST EDITOR (Admin: Manufacturers / Categories) ──────────────
+function showListEditor(opts) {
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:480px;max-height:88vh;overflow-y:auto;border-top:3px solid #e8a020";
+
+  var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:14px;font-weight:700;color:#fff"; bht.textContent = opts.icon+" "+opts.title;
+  var cx = document.createElement("button"); cx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:28px;height:28px;color:#fff;font-size:18px;cursor:pointer;line-height:1"; cx.textContent = "\u00d7";
+  cx.addEventListener("click", function(){ document.body.removeChild(overlay); showAdmin(); });
+  bh.appendChild(bht); bh.appendChild(cx); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:16px;display:flex;flex-direction:column;gap:10px";
+
+  if (opts.note) {
+    var note = document.createElement("div"); note.style.cssText = "font-size:11px;color:var(--muted);background:var(--alt);border-radius:var(--rs);padding:8px 12px;border-left:3px solid var(--navy)"; note.textContent = opts.note;
+    bd.appendChild(note);
+  }
+
+  // Add new item row
+  var addRow = document.createElement("div"); addRow.style.cssText = "display:flex;gap:8px";
+  var newInp = document.createElement("input"); newInp.type = "text"; newInp.placeholder = opts.placeholder || "Add new...";
+  newInp.style.cssText = "flex:1;padding:8px 10px;border:2px solid var(--navy);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+  var addBtn2 = document.createElement("button"); addBtn2.style.cssText = "padding:8px 16px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap"; addBtn2.textContent = "+ Add";
+  function doAdd() {
+    var val = newInp.value.trim();
+    if (!val) { toast("Please enter a name"); return; }
+    var list = opts.getList();
+    if (list.some(function(v){ return v.toLowerCase() === val.toLowerCase(); })) { toast("Already in the list"); return; }
+    list.push(val);
+    opts.setList(list);
+    newInp.value = "";
+    renderItems();
+    toast("\u2713 Added: "+val);
+  }
+  addBtn2.addEventListener("click", doAdd);
+  newInp.addEventListener("keydown", function(e){ if(e.key==="Enter") doAdd(); });
+  addRow.appendChild(newInp); addRow.appendChild(addBtn2); bd.appendChild(addRow);
+
+  // List of current items
+  var listWrap2 = document.createElement("div"); listWrap2.style.cssText = "display:flex;flex-direction:column;gap:6px";
+  bd.appendChild(listWrap2);
+
+  function renderItems() {
+    listWrap2.innerHTML = "";
+    var list = opts.getList();
+    if (!list.length) {
+      var em = document.createElement("div"); em.style.cssText = "text-align:center;padding:20px;color:var(--muted);font-size:12px"; em.textContent = "No items yet.";
+      listWrap2.appendChild(em); return;
+    }
+    var sorted = list.slice().sort(function(a,b){ return a.localeCompare(b, undefined, {sensitivity:"base"}); });
+    sorted.forEach(function(item) {
+      var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--alt);border:2px solid var(--border);border-radius:var(--rs)";
+      var lbl = document.createElement("span"); lbl.style.cssText = "font-size:12px;color:var(--text);font-weight:500"; lbl.textContent = item;
+      var delB = document.createElement("button");
+      delB.style.cssText = "padding:4px 10px;background:none;border:2px solid var(--border);border-radius:20px;font-size:11px;color:var(--muted);cursor:pointer;font-weight:700";
+      delB.textContent = "\u00d7 Remove";
+      delB.addEventListener("click", (function(v){return function(){
+        if (!confirm("Remove \""+v+"\" from the list?")) return;
+        var l = opts.getList();
+        var idx = l.indexOf(v);
+        if (idx > -1) { l.splice(idx,1); opts.setList(l); renderItems(); toast("Removed: "+v); }
+      };})(item));
+      row.appendChild(lbl); row.appendChild(delB); listWrap2.appendChild(row);
+    });
+  }
+  renderItems();
+
+  box.appendChild(bd);
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 16px;border-top:2px solid var(--border);display:flex;justify-content:flex-end";
+  var doneB = document.createElement("button"); doneB.style.cssText = "padding:8px 20px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; doneB.textContent = "Done";
+  doneB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  foot.appendChild(doneB); box.appendChild(foot);
+  overlay.appendChild(box); document.body.appendChild(overlay);
+  setTimeout(function(){ newInp.focus(); }, 100);
+}
+
 // ── ADMIN ─────────────────────────────────────────────────────────
 
 function loadArchive() {
@@ -6744,6 +6856,45 @@ function showAdminPanel() {
   }));
 
   // DIARY (export / wipe by category)
+  // MANUFACTURERS
+  bd.appendChild(divider("Manage Manufacturers"));
+  bd.appendChild(adminSection("\uD83C\uDFED", "Manufacturers list", "Add or remove manufacturers shown in the Rep/ASM form dropdown. Core defaults are always preserved — changes add or remove on top.", "Manage", "var(--navy)", function(){
+    document.body.removeChild(overlay);
+    showListEditor({
+      title: "Manufacturers",
+      icon: "\uD83C\uDFED",
+      getList: function(){ return MANUFACTURERS; },
+      setList: function(arr){ MANUFACTURERS.length=0; arr.forEach(function(v){MANUFACTURERS.push(v);}); saveManufacturers(); },
+      placeholder: "e.g. Kahrs",
+      note: "Used in the Rep/ASM form — manufacturer dropdown."
+    });
+  }));
+
+  // CLIENT CATEGORIES
+  bd.appendChild(divider("Manage Categories"));
+  bd.appendChild(adminSection("\uD83C\uDFF7", "Client source categories", "Add or remove the options shown in the 'Customer source' dropdown on the client form.", "Manage", "var(--navy)", function(){
+    document.body.removeChild(overlay);
+    showListEditor({
+      title: "Client Source Categories",
+      icon: "\uD83C\uDFF7",
+      getList: function(){ return CLIENT_CATS; },
+      setList: function(arr){ CLIENT_CATS.length=0; arr.forEach(function(v){CLIENT_CATS.push(v);}); saveClientCats(); },
+      placeholder: "e.g. New - Trade Show",
+      note: "Used in the client form — Customer source dropdown."
+    });
+  }));
+  bd.appendChild(adminSection("\uD83D\uDCC2", "Document categories", "Add or remove categories shown in the Documents page and the Add Document form — e.g. Moduleo Docs, Install Guides, Warranties.", "Manage", "var(--navy)", function(){
+    document.body.removeChild(overlay);
+    showListEditor({
+      title: "Document Categories",
+      icon: "\uD83D\uDCC2",
+      getList: function(){ return DOC_CATS; },
+      setList: function(arr){ DOC_CATS.length=0; arr.forEach(function(v){DOC_CATS.push(v);}); saveDocCats(); },
+      placeholder: "e.g. Moduleo Docs",
+      note: "Used in the Documents page category filter and the Add Document form."
+    });
+  }));
+
   bd.appendChild(divider("Diary"));
   bd.appendChild(adminSection("\uD83D\uDCC5", "Export personal entries", "Download a CSV of personal diary entries and birthdays \u2014 your own backup, kept separate from work data.", "Export Personal", "#9333ea", function(){
     exportPersonalData();
