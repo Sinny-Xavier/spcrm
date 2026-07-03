@@ -5226,6 +5226,11 @@ function showWebsites() {
   activeId = null; renderList(); showView("websites"); renderWebsitesView();
 }
 
+var TOOLS_LIST = [
+  { name: "Margin Cutter", desc: "Work out the discount needed to hit a target margin, inc/ex VAT.", icon: "\uD83D\uDCB0", url: "margin-cutter.html" },
+  { name: "Roll Planner", desc: "Carpet area & roll-width planner for rectangles, L-shapes, stairs and chimney breasts.", icon: "\uD83D\uDCD0", url: "roll-planner.html" }
+];
+
 function renderToolsView() {
   var tv = document.getElementById("toolsView");
   tv.innerHTML = "";
@@ -5235,23 +5240,18 @@ function renderToolsView() {
 
   var sub = document.createElement("div");
   sub.style.cssText = "font-size:12px;color:var(--muted);margin-bottom:16px;margin-top:-8px";
-  sub.textContent = "Quick calculators for the trade counter — opens in a new tab.";
+  sub.textContent = "Quick calculators for the trade counter.";
   tv.appendChild(sub);
 
   var grid = document.createElement("div");
   grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px";
 
-  var tools = [
-    { name: "Margin Cutter", desc: "Work out the discount needed to hit a target margin, inc/ex VAT.", icon: "\uD83D\uDCB0", url: "margin-cutter.html" },
-    { name: "Roll Planner", desc: "Carpet area & roll-width planner for rectangles, L-shapes, stairs and chimney breasts.", icon: "\uD83D\uDCD0", url: "roll-planner.html" }
-  ];
-
-  tools.forEach(function(t){
-    var card = document.createElement("a");
-    card.href = t.url; card.target = "_blank"; card.rel = "noopener";
-    card.style.cssText = "display:block;background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:16px;text-decoration:none;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.06);transition:border-color .15s ease";
+  TOOLS_LIST.forEach(function(t){
+    var card = document.createElement("div");
+    card.style.cssText = "display:block;background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:16px;cursor:pointer;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.06);transition:border-color .15s ease";
     card.onmouseenter = function(){ card.style.borderColor = "var(--navy)"; };
     card.onmouseleave = function(){ card.style.borderColor = "var(--border)"; };
+    card.onclick = function(){ openToolInline(t); };
 
     var iconEl = document.createElement("div"); iconEl.style.cssText = "font-size:26px;margin-bottom:8px"; iconEl.textContent = t.icon;
     var nameEl = document.createElement("div"); nameEl.style.cssText = "font-size:14px;font-weight:700;margin-bottom:4px;color:var(--navy)"; nameEl.textContent = t.name;
@@ -5262,6 +5262,39 @@ function renderToolsView() {
   });
 
   tv.appendChild(grid);
+}
+
+function openToolInline(t){
+  var tv = document.getElementById("toolsView");
+  tv.innerHTML = "";
+
+  var barWrap = document.createElement("div");
+  barWrap.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px";
+
+  var backBtn = document.createElement("button");
+  backBtn.className = "nav-btn";
+  backBtn.style.cssText = "background:var(--navy);color:#fff;border-color:var(--navy)";
+  backBtn.textContent = "\u2190 Back to Tools";
+  backBtn.onclick = function(){ renderToolsView(); };
+
+  var label = document.createElement("div");
+  label.style.cssText = "font-size:14px;font-weight:700;color:var(--navy)";
+  label.textContent = t.icon + " " + t.name;
+
+  var openNewTab = document.createElement("a");
+  openNewTab.href = t.url; openNewTab.target = "_blank"; openNewTab.rel = "noopener";
+  openNewTab.style.cssText = "font-size:11px;color:var(--muted);text-decoration:underline";
+  openNewTab.textContent = "open in new tab \u2197";
+
+  barWrap.appendChild(backBtn);
+  barWrap.appendChild(label);
+  barWrap.appendChild(openNewTab);
+  tv.appendChild(barWrap);
+
+  var iframe = document.createElement("iframe");
+  iframe.src = t.url;
+  iframe.style.cssText = "width:100%;height:78vh;border:2px solid var(--border);border-radius:var(--r);background:#fff";
+  tv.appendChild(iframe);
 }
 
 function renderWebsitesView() {
