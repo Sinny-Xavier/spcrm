@@ -525,10 +525,11 @@ async function ensureBirthdayReminders() {
 
 async function loadFromSupabase() {
   try {
-    var [c, r, s, b, comp, d, w, docs2, enq, tsk] = await Promise.all([
+    var [c, r, s, b, comp, d, w, docs2, enq, tsk, arch] = await Promise.all([
       sbGet("clients"), sbGet("reps"), sbGet("samples"),
       sbGet("birthdays"), sbGet("complaints"), sbGet("diary_events"),
-      sbGet("websites"), sbGet("docs"), sbGet("enquiries"), sbGet("tasks")
+      sbGet("websites"), sbGet("docs"), sbGet("enquiries"), sbGet("tasks"),
+      sbGet("archived_clients")
     ]);
 
     // CLIENTS: Supabase is master. If empty, push local up.
@@ -555,6 +556,11 @@ async function loadFromSupabase() {
     if (enq && enq.length > 0) enquiries = enq;
     if (tsk && tsk.length > 0) tasks = tsk;
     if (w && w.length > 0) websites = w;
+    if (arch && arch.length > 0) {
+      archivedClients = arch;
+    } else if (archivedClients && archivedClients.length > 0) {
+      await sbSaveAll("archived_clients", archivedClients, "id");
+    }
     // One-time fix: collapse duplicate/id-less website records (same legacy bug as docs - created a fresh duplicate on every load)
     var seenWebKeys = {};
     var cleanWebsites = [];
@@ -1063,6 +1069,19 @@ function loadProducts(){
 }
 function saveProducts(){
   try { localStorage.setItem(PRODUCTS_STORE, JSON.stringify(PRODUCTS)); } catch(e){}
+  sbUpsert("settings","products",{key:"products",value:PRODUCTS});
+}
+async function syncProductsFromCloud(){
+  try{
+    var rows=await sbGet("settings");
+    if(rows){
+      var row=rows.find(function(r){return r&&r.key==="products";});
+      if(row&&Array.isArray(row.value)&&row.value.length){
+        PRODUCTS.length=0; row.value.forEach(function(v){PRODUCTS.push(v);});
+        try{localStorage.setItem(PRODUCTS_STORE,JSON.stringify(PRODUCTS));}catch(e){}
+      }
+    }
+  }catch(e){ console.warn("products cloud sync failed", e); }
 }
 function loadProductSubcats(){
   try { var r=localStorage.getItem(PRODUCT_SUBCATS_STORE); if(r) return JSON.parse(r); } catch(e){}
@@ -1070,24 +1089,89 @@ function loadProductSubcats(){
 }
 function saveProductSubcats(){
   try { localStorage.setItem(PRODUCT_SUBCATS_STORE, JSON.stringify(PRODUCT_SUBCATS)); } catch(e){}
+  sbUpsert("settings","product_subcats",{key:"product_subcats",value:PRODUCT_SUBCATS});
+}
+async function syncProductSubcatsFromCloud(){
+  try{
+    var rows=await sbGet("settings");
+    if(rows){
+      var row=rows.find(function(r){return r&&r.key==="product_subcats";});
+      if(row&&row.value&&Object.keys(row.value).length){
+        for(var k in PRODUCT_SUBCATS){ delete PRODUCT_SUBCATS[k]; }
+        for(var k2 in row.value){ PRODUCT_SUBCATS[k2]=row.value[k2]; }
+        try{localStorage.setItem(PRODUCT_SUBCATS_STORE,JSON.stringify(PRODUCT_SUBCATS));}catch(e){}
+      }
+    }
+  }catch(e){ console.warn("product subcats cloud sync failed", e); }
 }
 var PRODUCTS=loadProducts();
 var PRODUCT_SUBCATS=loadProductSubcats();
+syncProductsFromCloud();
+syncProductSubcatsFromCloud();
 var DOC_CATS_DEFAULT=["Fitting Instructions","Product Spec","Parts List","Price List","Safety Data","Brochure","Warranty","Other"];
 var DOC_CATS_STORE="spcrm_doc_cats";
 function loadDocCats(){try{var s=localStorage.getItem(DOC_CATS_STORE);if(s){var c=JSON.parse(s);if(Array.isArray(c)&&c.length)return c;}}catch(e){}return DOC_CATS_DEFAULT.slice();}
-function saveDocCats(){try{localStorage.setItem(DOC_CATS_STORE,JSON.stringify(DOC_CATS));}catch(e){}}
+function saveDocCats(){
+  try{localStorage.setItem(DOC_CATS_STORE,JSON.stringify(DOC_CATS));}catch(e){}
+  sbUpsert("settings","doc_cats",{key:"doc_cats",value:DOC_CATS});
+}
+async function syncDocCatsFromCloud(){
+  try{
+    var rows=await sbGet("settings");
+    if(rows){
+      var row=rows.find(function(r){return r&&r.key==="doc_cats";});
+      if(row&&Array.isArray(row.value)&&row.value.length){
+        DOC_CATS.length=0; row.value.forEach(function(v){DOC_CATS.push(v);});
+        try{localStorage.setItem(DOC_CATS_STORE,JSON.stringify(DOC_CATS));}catch(e){}
+      }
+    }
+  }catch(e){ console.warn("doc cats cloud sync failed", e); }
+}
 var DOC_CATS=loadDocCats();
+syncDocCatsFromCloud();
 var MANUFACTURERS_DEFAULT=["Aegean Sea", "Altro", "Amtico", "A.W - Invictus", "Axminster", "Brintons", "Camaro", "Carpenters", "Cormar", "F Ball", "Forbo", "Furlong", "Genesis", "Gerflor", "Gradus", "Heckmondwike", "Interface", "Kahrs", "Karndean", "Kelmore", "Kerakoll UK", "Likewise", "Luvanto", "Mapei", "Mercado", "Moduleo", "Orion", "Polyflor", "QEP", "Quantum", "Quick-Step", "Roberts - QEP", "R.S.Batemans", "Shaw", "Spotnails", "Stairrods", "Tarkett", "Ted Todd", "Toolbank", "Trade Choice", "Uzin", "Victoria", "Woodpecker", "Other"];
 var MANUFACTURERS_STORE="spcrm_manufacturers";
 var CLIENT_CATS_DEFAULT=["Existing Customer","Existing Customer (Dormant 12m+)","New - Walk In","New - Referral","Fitter"];
 var CLIENT_CATS_STORE="spcrm_client_cats";
 function loadManufacturers(){try{var s=localStorage.getItem(MANUFACTURERS_STORE);if(s){var c=JSON.parse(s);if(Array.isArray(c)&&c.length)return c;}}catch(e){}return MANUFACTURERS_DEFAULT.slice();}
-function saveManufacturers(){try{localStorage.setItem(MANUFACTURERS_STORE,JSON.stringify(MANUFACTURERS));}catch(e){}}
+function saveManufacturers(){
+  try{localStorage.setItem(MANUFACTURERS_STORE,JSON.stringify(MANUFACTURERS));}catch(e){}
+  sbUpsert("settings","manufacturers",{key:"manufacturers",value:MANUFACTURERS});
+}
+async function syncManufacturersFromCloud(){
+  try{
+    var rows=await sbGet("settings");
+    if(rows){
+      var row=rows.find(function(r){return r&&r.key==="manufacturers";});
+      if(row&&Array.isArray(row.value)&&row.value.length){
+        MANUFACTURERS.length=0; row.value.forEach(function(v){MANUFACTURERS.push(v);});
+        try{localStorage.setItem(MANUFACTURERS_STORE,JSON.stringify(MANUFACTURERS));}catch(e){}
+      }
+    }
+  }catch(e){ console.warn("manufacturers cloud sync failed", e); }
+}
 function loadClientCats(){try{var s=localStorage.getItem(CLIENT_CATS_STORE);if(s){var c=JSON.parse(s);if(Array.isArray(c)&&c.length)return c;}}catch(e){}return CLIENT_CATS_DEFAULT.slice();}
-function saveClientCats(){try{localStorage.setItem(CLIENT_CATS_STORE,JSON.stringify(CLIENT_CATS));}catch(e){}}
+function saveClientCats(){
+  try{localStorage.setItem(CLIENT_CATS_STORE,JSON.stringify(CLIENT_CATS));}catch(e){}
+  sbUpsert("settings","client_cats",{key:"client_cats",value:CLIENT_CATS});
+}
+async function syncClientCatsFromCloud(){
+  try{
+    var rows=await sbGet("settings");
+    if(rows){
+      var row=rows.find(function(r){return r&&r.key==="client_cats";});
+      if(row&&Array.isArray(row.value)&&row.value.length){
+        CLIENT_CATS.length=0;
+        row.value.forEach(function(v){CLIENT_CATS.push(v);});
+        try{localStorage.setItem(CLIENT_CATS_STORE,JSON.stringify(CLIENT_CATS));}catch(e){}
+      }
+    }
+  }catch(e){ console.warn("client cats cloud sync failed", e); }
+}
 var MANUFACTURERS=loadManufacturers();
+syncManufacturersFromCloud();
 var CLIENT_CATS=loadClientCats();
+syncClientCatsFromCloud();
 var clients,reps,samples,birthdays,complaints;
 var activeFilter="All",activeId=null,editId=null,showLF=false,pendingDel=null;
 var detLogTab="Interactions";
@@ -1185,7 +1269,7 @@ function renderList(){
         card.addEventListener("click",(function(ac){return function(){
           if(confirm(ac.name+" is archived.\nRestore to your active client list?")){
             var ai=archivedClients.findIndex(function(x){return x.id===ac.id;});
-            if(ai>-1){archivedClients.splice(ai,1);ac.status="Prospect";clients.push(ac);saveC();try{localStorage.setItem(ARCHIVE_STORE,JSON.stringify(archivedClients));}catch(e){}updateStats();renderList();toast(ac.name+" restored \u2713");}
+            if(ai>-1){archivedClients.splice(ai,1);ac.status="Prospect";clients.push(ac);saveC();saveArchive();sbDelete("archived_clients",ac.id);updateStats();renderList();toast(ac.name+" restored \u2713");}
           }
         };})(c));
         var nm=document.createElement("div");nm.style.cssText="font-weight:700;font-size:12px";nm.textContent="\uD83D\uDDC4\uFE0F "+c.name+" (Archived)";
@@ -2139,7 +2223,7 @@ function renderDet(){
       archivedClients.push(c);
       var archId=c.id;
       clients=clients.filter(function(x){return x.id!==archId;});
-      try{localStorage.setItem(ARCHIVE_STORE,JSON.stringify(archivedClients));}catch(e){}
+      saveArchive();
       saveC();
       sbDelete("clients",archId);
       activeId=null;
@@ -6151,7 +6235,7 @@ function showAddDoc(editIdx) {
 
 // ── CHANGE PASSWORD ───────────────────────────────────────────────
 var PW_STORE = "spcrm_pw_v1";
-var API_KEY_STORE = "spcrm_api_key_v1";
+var API_KEY_STORE = "spcrm_api_key_v1"; // deliberately local-only — never synced to the cloud (secret key)
 function getApiKey(){ try{ return localStorage.getItem(API_KEY_STORE)||""; }catch(e){ return ""; } }
 function setApiKey(k){ try{ localStorage.setItem(API_KEY_STORE,k); }catch(e){} }
 
@@ -6159,6 +6243,22 @@ function getCurrentPassword() {
   try { var p = localStorage.getItem(PW_STORE); if (p) return p; } catch(e) {}
   return "WaffleWoo2026"; // default
 }
+function savePassword(pw){
+  try { localStorage.setItem(PW_STORE, pw); } catch(e) {}
+  sbUpsert("settings","admin_pw",{key:"admin_pw",value:pw});
+}
+async function syncPasswordFromCloud(){
+  try{
+    var rows=await sbGet("settings");
+    if(rows){
+      var row=rows.find(function(r){return r&&r.key==="admin_pw";});
+      if(row&&row.value){
+        try{localStorage.setItem(PW_STORE,row.value);}catch(e){}
+      }
+    }
+  }catch(e){ console.warn("password cloud sync failed", e); }
+}
+syncPasswordFromCloud();
 
 function showChangePassword() {
   var overlay = document.createElement("div");
@@ -6185,7 +6285,7 @@ function showChangePassword() {
     wrap.appendChild(i); wrap.appendChild(eye); return wrap;
   }
 
-  var note = document.createElement("div"); note.style.cssText = "font-size:11px;color:var(--muted);background:var(--alt);border-radius:var(--rs);padding:8px 10px"; note.textContent = "Your new password will be saved to this device. Make it something memorable but not obvious!";
+  var note = document.createElement("div"); note.style.cssText = "font-size:11px;color:var(--muted);background:var(--alt);border-radius:var(--rs);padding:8px 10px"; note.textContent = "Your new password syncs across all your devices. Make it something memorable but not obvious!";
   bd.appendChild(note);
   bd.appendChild(mkPwF("Current password", mkPwI("pw_current", "Enter current password")));
   bd.appendChild(mkPwF("New password *", mkPwI("pw_new", "Enter new password")));
@@ -6203,7 +6303,7 @@ function showChangePassword() {
     if (current !== getCurrentPassword()) { toast("Current password is incorrect"); return; }
     if (!newPw || newPw.length < 6) { toast("New password must be at least 6 characters"); return; }
     if (newPw !== confirm2) { toast("Passwords don\'t match"); return; }
-    try { localStorage.setItem(PW_STORE, newPw); } catch(e) {}
+    try { savePassword(newPw); } catch(e) {}
     document.body.removeChild(overlay);
     toast("Password changed \u2713");
   });
@@ -6821,6 +6921,7 @@ function loadArchive() {
 }
 function saveArchive() {
   try { localStorage.setItem(ARCHIVE_STORE, JSON.stringify(archivedClients)); } catch(e) {}
+  sbSaveAll("archived_clients", archivedClients, "id");
 }
 
 function showAdmin() {
@@ -7473,6 +7574,7 @@ function showArchiveView() {
         restored.status = "Prospect";
         clients.push(restored);
         saveC(); saveArchive();
+        sbDelete("archived_clients", restored.id);
         renderList(); updateStats();
         document.body.removeChild(overlay);
         toast(restored.name+" restored \u2713");
@@ -7482,7 +7584,9 @@ function showArchiveView() {
       delBtn.textContent = "\u00d7";
       delBtn.addEventListener("click", (function(idx){ return function(){
         if(confirm("Permanently delete "+archivedClients[idx].name+"? This cannot be undone.")){
+          var deletedId = archivedClients[idx].id;
           archivedClients.splice(idx,1); saveArchive();
+          sbDelete("archived_clients", deletedId);
           document.body.removeChild(overlay); showArchiveView();
           toast("Permanently deleted");
         }
