@@ -313,6 +313,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
         <button class="nav-btn" onclick="showEnquiries()" style="background:rgba(155,89,182,.2);border-color:rgba(155,89,182,.4)">&#128172; Enquiries</button>
         <button class="nav-btn" onclick="showMonthlyReport()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128202; Report</button>
         <button class="nav-btn" onclick="showWebsites()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#127760; Websites</button>
+        <button class="nav-btn" onclick="showTools()" style="background:rgba(255,185,0,.25);border-color:rgba(255,185,0,.5)">&#128295; Tools</button>
         <button class="nav-btn" onclick="showDocs()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128196; Docs</button>
         <button class="nav-btn" onclick="showNotesSearch()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128269; Search Notes</button>
         <button class="nav-btn" onclick="showAdmin()" style="background:rgba(255,185,0,.25);border-color:rgba(255,185,0,.5)">&#9881;&#65039; Admin</button>
@@ -359,6 +360,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
     <div id="diaryView" class="page"></div>
     <div id="quotesView" class="page"></div>
     <div id="websitesView" class="page"></div>
+    <div id="toolsView" class="page"></div>
     <div id="docsView" class="page"></div>
     <div id="enquiriesView" class="page"></div>
     <div id="tasksView" class="page"></div>
@@ -1140,7 +1142,7 @@ function updateStats(){
 
 // ── VIEW MANAGER ──────────────────────────────────────────────────
 function showView(v){
-  ["dashView","detView","clientsView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView","tasksView"].forEach(function(id){
+  ["dashView","detView","clientsView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView","tasksView","toolsView"].forEach(function(id){
     var el=document.getElementById(id);
     el.style.display=(id===v+"View"||(v==="det"&&id==="detView")||(v==="form"&&id==="formView"))?"block":"none";
   });
@@ -1158,6 +1160,7 @@ function showSales(){activeId=null;renderList();showView("sales");renderSalesVie
 function showSamples(){activeId=null;renderList();showView("samples");renderSamplesView();}
 function showBirthdays(){activeId=null;renderList();showView("birthdays");renderBirthdaysView();}
 function showComplaints(){activeId=null;renderList();showView("complaints");renderComplaintsView();}
+function showTools(){activeId=null;renderList();showView("tools");renderToolsView();}
 
 // ── SIDEBAR ───────────────────────────────────────────────────────
 function setF(btn){document.querySelectorAll(".fb").forEach(function(b){b.classList.remove("on");});btn.classList.add("on");activeFilter=btn.dataset.f;renderList();}
@@ -5221,6 +5224,44 @@ function loadWebsites() {
 
 function showWebsites() {
   activeId = null; renderList(); showView("websites"); renderWebsitesView();
+}
+
+function renderToolsView() {
+  var tv = document.getElementById("toolsView");
+  tv.innerHTML = "";
+
+  var title = document.createElement("div"); title.className = "page-title"; title.textContent = "Trade Tools";
+  tv.appendChild(title);
+
+  var sub = document.createElement("div");
+  sub.style.cssText = "font-size:12px;color:var(--muted);margin-bottom:16px;margin-top:-8px";
+  sub.textContent = "Quick calculators for the trade counter — opens in a new tab.";
+  tv.appendChild(sub);
+
+  var grid = document.createElement("div");
+  grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px";
+
+  var tools = [
+    { name: "Margin Cutter", desc: "Work out the discount needed to hit a target margin, inc/ex VAT.", icon: "\uD83D\uDCB0", url: "tools/margin-cutter.html" },
+    { name: "Roll Planner", desc: "Carpet area & roll-width planner for rectangles, L-shapes, stairs and chimney breasts.", icon: "\uD83D\uDCD0", url: "tools/roll-planner.html" }
+  ];
+
+  tools.forEach(function(t){
+    var card = document.createElement("a");
+    card.href = t.url; card.target = "_blank"; card.rel = "noopener";
+    card.style.cssText = "display:block;background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:16px;text-decoration:none;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.06);transition:border-color .15s ease";
+    card.onmouseenter = function(){ card.style.borderColor = "var(--navy)"; };
+    card.onmouseleave = function(){ card.style.borderColor = "var(--border)"; };
+
+    var iconEl = document.createElement("div"); iconEl.style.cssText = "font-size:26px;margin-bottom:8px"; iconEl.textContent = t.icon;
+    var nameEl = document.createElement("div"); nameEl.style.cssText = "font-size:14px;font-weight:700;margin-bottom:4px;color:var(--navy)"; nameEl.textContent = t.name;
+    var descEl = document.createElement("div"); descEl.style.cssText = "font-size:11.5px;color:var(--muted);line-height:1.4"; descEl.textContent = t.desc;
+
+    card.appendChild(iconEl); card.appendChild(nameEl); card.appendChild(descEl);
+    grid.appendChild(card);
+  });
+
+  tv.appendChild(grid);
 }
 
 function renderWebsitesView() {
