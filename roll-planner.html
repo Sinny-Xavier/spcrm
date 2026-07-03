@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roll Planner — Carpet Area &amp; Cut Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --navy: #0F2438;
+    --navy-2: #16324D;
+    --orange: #E86A2E;
+    --orange-2: #FF8A3D;
+    --paper: #F3EFE7;
+    --line: #D8CFBE;
+    --ink: #1A1E22;
+    --green: #2F7D5C;
+    --red: #B23A2E;
+    --muted: #8A8064;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--paper);
+    background-image:
+      repeating-linear-gradient(0deg, rgba(15,36,56,0.035) 0px, rgba(15,36,56,0.035) 1px, transparent 1px, transparent 32px),
+      repeating-linear-gradient(90deg, rgba(15,36,56,0.035) 0px, rgba(15,36,56,0.035) 1px, transparent 1px, transparent 32px);
+    color: var(--ink);
+    font-family: 'Archivo', sans-serif;
+    min-height:100vh;
+    padding: 18px 14px 60px;
+  }
+  .wrap{ max-width: 920px; margin: 0 auto; }
+
+  header{
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 14px; margin-bottom: 16px;
+  }
+  .brand-eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--orange); font-weight:700; margin-bottom:4px;
+  }
+  h1{
+    font-family:'Archivo Black', sans-serif;
+    font-size: clamp(24px, 6vw, 34px);
+    margin:0; color: var(--navy); line-height: 1;
+    text-transform: uppercase; letter-spacing: -0.01em;
+  }
+  .sub{ font-size:13px; color:#5B5346; max-width:480px; margin-top:6px; }
+
+  .disclaimer{
+    background:#fff; border:1.5px solid var(--line); border-left: 4px solid var(--orange);
+    padding: 10px 14px; margin-bottom: 16px; font-size:12.5px; color:#5B5346; line-height:1.5;
+  }
+  .disclaimer b{ color: var(--navy); }
+
+  .toolbar{
+    display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;
+    align-items:center; justify-content:space-between;
+  }
+  .add-group{ display:flex; gap:8px; flex-wrap:wrap; }
+  .add-btn{
+    background: var(--navy); color: var(--paper); border:none;
+    font-family:'Archivo', sans-serif; font-weight:700; font-size:13px;
+    padding: 10px 14px; cursor:pointer; letter-spacing:0.01em;
+    display:flex; align-items:center; gap:6px;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .add-btn:hover{ background: var(--navy-2); }
+  .add-btn:active{ transform: scale(0.97); }
+  .add-btn svg{ width:14px; height:14px; }
+
+  .defaults{
+    display:flex; gap:14px; flex-wrap:wrap;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color: var(--navy);
+  }
+  .defaults label{ display:flex; align-items:center; gap:6px; }
+  .defaults select, .defaults input{
+    font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:700;
+    border: 2px solid var(--navy); background:#fff; padding:5px 6px; color: var(--navy);
+  }
+
+  .cards{ display:flex; flex-direction:column; gap:14px; }
+
+  .card{
+    background:#fff;
+    border: 1.5px solid var(--line);
+    border-left: 5px solid var(--navy);
+    padding: 14px 16px;
+  }
+
+  .card-top{
+    display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:12px;
+    flex-wrap: wrap;
+  }
+  .item-num{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:#9A8F78;
+    letter-spacing:0.08em;
+  }
+  .item-name{
+    flex:1;
+    font-family:'Archivo', sans-serif; font-weight:700; font-size:15px;
+    border:none; border-bottom: 1.5px dashed var(--line); background:transparent;
+    padding: 4px 2px; color: var(--navy); min-width: 100px;
+  }
+  .item-name:focus{ outline:none; border-bottom-color: var(--orange); }
+  .shape-select{
+    font-family:'JetBrains Mono', monospace; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.04em; font-weight:700; color: var(--navy);
+    border: 1.5px solid var(--navy); background: var(--paper); padding: 6px 8px;
+  }
+  .remove-btn{
+    background:none; border:none; color:#B7AB92; cursor:pointer;
+    font-size:18px; line-height:1; padding:2px 6px;
+  }
+  .remove-btn:hover{ color: var(--red); }
+
+  .sub-block{ margin-bottom: 12px; }
+  .sub-block-label{
+    font-family:'JetBrains Mono', monospace; font-size:10px; text-transform:uppercase;
+    letter-spacing:0.1em; color: var(--orange); font-weight:700; margin-bottom:8px;
+  }
+  .inputs-row{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:10px;
+  }
+  .field label{
+    display:block; font-family:'JetBrains Mono', monospace; font-size:10px;
+    text-transform:uppercase; letter-spacing:0.06em; color: var(--muted); margin-bottom:4px;
+  }
+  .field .input-affix{
+    display:flex; align-items:center; border: 1.5px solid var(--line);
+    background: var(--paper);
+  }
+  .field .input-affix span{
+    font-family:'JetBrains Mono', monospace; font-size:11px; color: var(--muted); padding: 0 6px;
+  }
+  .field select{
+    border:none; background:transparent; width:100%; padding: 9px 4px;
+    font-family:'JetBrains Mono', monospace; font-size:14px; font-weight:700; color:var(--ink);
+  }
+  .field input{
+    border:none; background:transparent; width:100%; padding: 9px 4px;
+    font-family:'JetBrains Mono', monospace; font-size:14px; font-weight:700; color:var(--ink);
+    min-width:0;
+  }
+  .field input:focus, .field select:focus{ outline:none; }
+  .field .input-affix:focus-within{ border-color: var(--orange); }
+
+  .result{
+    background: var(--navy); color: var(--paper);
+    padding: 12px 14px; margin-top: 4px;
+  }
+  .result-grid{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap:10px 16px;
+  }
+  .result-label{
+    font-family:'JetBrains Mono', monospace; font-size:9.5px; text-transform:uppercase;
+    letter-spacing:0.08em; color: rgba(243,239,231,0.6); display:block; margin-bottom:2px;
+  }
+  .result-val{
+    font-family:'Archivo Black', sans-serif; font-size: 18px; color: var(--orange-2); line-height:1.1;
+  }
+  .result-val.small{ font-size:15px; color: var(--paper); font-family:'JetBrains Mono', monospace; font-weight:700; }
+  .waste-note{
+    font-family:'JetBrains Mono', monospace; font-size:10.5px; color: rgba(243,239,231,0.75);
+    margin-top:10px; padding-top:10px; border-top: 1px solid rgba(243,239,231,0.15);
+  }
+
+  .empty{
+    text-align:center; padding: 50px 20px; color:#9A8F78;
+    font-family:'JetBrains Mono', monospace; font-size:13px;
+    border: 1.5px dashed var(--line);
+  }
+
+  .grand-total{
+    margin-top:18px; background: var(--navy); color:var(--paper); padding: 16px 18px;
+    border-left: 5px solid var(--orange);
+  }
+  .grand-total-title{
+    font-family:'JetBrains Mono', monospace; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.1em; color: var(--orange-2); font-weight:700; margin-bottom:10px;
+  }
+  .grand-grid{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap:12px 18px;
+  }
+  .grand-grid .result-val{ font-size:20px; }
+
+  footer{
+    margin-top:22px; padding-top:14px; border-top: 1.5px solid var(--line);
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:#9A8F78;
+  }
+
+  @media (max-width:420px){
+    .result-grid{ grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand-eyebrow">Trade Counter // Carpet Tool</div>
+    <h1>Roll Planner</h1>
+    <div class="sub">Work out linear metres, seams and waste for rectangular rooms, L-shapes, and stairs &amp; landings — before you cut.</div>
+  </header>
+
+  <div class="disclaimer">
+    <b>Planning aid, not a template.</b> Carpet runs one direction only (pile/pattern match), so strips can't be rotated to cut waste like tiles. Stairs use an adjustable per-step allowance — always confirm awkward staircases with an on-site measure before ordering.
+  </div>
+
+  <div class="toolbar">
+    <div class="add-group">
+      <button class="add-btn" onclick="addRoom('rectangle')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+        Rectangle
+      </button>
+      <button class="add-btn" onclick="addRoom('lshape')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+        L-Shape
+      </button>
+      <button class="add-btn" onclick="addRoom('stairs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+        Stairs &amp; Landing
+      </button>
+      <button class="add-btn" onclick="addRoom('chimney')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+        Chimney Breast
+      </button>
+    </div>
+    <div class="defaults">
+      <label>Roll width
+        <select id="defaultRoll">
+          <option value="4">4m</option>
+          <option value="5" selected>5m</option>
+          <option value="3.66">3.66m</option>
+        </select>
+      </label>
+      <label>Trim/waste
+        <input type="text" inputmode="decimal" id="defaultTrim" value="10" style="width:50px"> %
+      </label>
+    </div>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div id="grandTotal"></div>
+
+  <footer>
+    Strips are cut to the room's longest run, matched across seams. Landing/stair widths are cut from the same roll width.
+  </footer>
+</div>
+
+<script>
+let rooms = [];
+let idCounter = 0;
+
+function addRoom(shape){
+  idCounter++;
+  const base = {
+    id: idCounter,
+    shape: shape,
+    name: (shape === 'rectangle' ? 'Room' : shape === 'lshape' ? 'L-Shape Room' : shape === 'chimney' ? 'Chimney Breast Room' : 'Stairs & Landing') + ' ' + idCounter,
+    rollWidth: document.getElementById('defaultRoll') ? document.getElementById('defaultRoll').value : '5',
+    trim: document.getElementById('defaultTrim') ? document.getElementById('defaultTrim').value : '10',
+  };
+  if(shape === 'rectangle'){
+    Object.assign(base, { length: '', width: '' });
+  } else if(shape === 'lshape'){
+    Object.assign(base, { aLength: '', aWidth: '', bLength: '', bWidth: '' });
+  } else if(shape === 'stairs'){
+    Object.assign(base, { steps: '', perStep: '0.65', stairWidth: '0.8', landingLength: '', landingWidth: '' });
+  } else if(shape === 'chimney'){
+    Object.assign(base, { mainLength: '', mainWidth: '', alcove1Width: '', alcove1Depth: '', alcove2Width: '', alcove2Depth: '' });
+  }
+  rooms.push(base);
+  render();
+}
+
+function removeRoom(id){
+  rooms = rooms.filter(r => r.id !== id);
+  render();
+}
+
+function updateRoom(id, field, value){
+  const r = rooms.find(x => x.id === id);
+  if(r) r[field] = value;
+  render();
+}
+
+function fmt(n, dp){
+  if(!isFinite(n)) return '—';
+  return n.toLocaleString('en-GB', {minimumFractionDigits: dp===undefined?2:dp, maximumFractionDigits: dp===undefined?2:dp});
+}
+
+// Strip calc for a single rectangle against a roll width
+function stripCalc(length, width, rollWidth, trimPct){
+  const L = parseFloat(length), W = parseFloat(width), RW = parseFloat(rollWidth), T = parseFloat(trimPct);
+  if(!isFinite(L) || !isFinite(W) || !isFinite(RW) || L<=0 || W<=0 || RW<=0){
+    return null;
+  }
+  const trimFactor = 1 + (isFinite(T) ? T/100 : 0);
+  const strips = Math.ceil(W / RW);
+  const cutLength = L * trimFactor;
+  const totalLength = strips * cutLength;
+  const grossArea = totalLength * RW;
+  const netArea = L * W;
+  const seams = strips - 1;
+  return { strips, seams, cutLength, totalLength, grossArea, netArea };
+}
+
+// Strip calc for a main room with two alcoves either side of a chimney breast
+function chimneyCalc(mainLength, mainWidth, a1w, a1d, a2w, a2d, rollWidth, trimPct){
+  const L = parseFloat(mainLength), Wd = parseFloat(mainWidth), RW = parseFloat(rollWidth), T = parseFloat(trimPct);
+  const A1W = parseFloat(a1w) || 0, A1D = parseFloat(a1d) || 0;
+  const A2W = parseFloat(a2w) || 0, A2D = parseFloat(a2d) || 0;
+  if(!isFinite(L) || !isFinite(Wd) || !isFinite(RW) || L<=0 || Wd<=0 || RW<=0) return null;
+  if(A1W + A2W >= Wd) return { error: 'Alcove widths exceed the main room width' };
+
+  const trimFactor = 1 + (isFinite(T) ? T/100 : 0);
+  const strips = Math.ceil(Wd / RW);
+  const alcove2Start = Wd - A2W;
+  let totalLength = 0;
+
+  for(let i = 0; i < strips; i++){
+    const xStart = i * RW;
+    const xEnd = Math.min(xStart + RW, Wd);
+    const overlapsAlcove1 = A1W > 0 && xStart < A1W && xEnd > 0;
+    const overlapsAlcove2 = A2W > 0 && xEnd > alcove2Start && xStart < Wd;
+    let depth = L;
+    if(overlapsAlcove1) depth = Math.max(depth, L + A1D);
+    if(overlapsAlcove2) depth = Math.max(depth, L + A2D);
+    totalLength += depth * trimFactor;
+  }
+
+  const grossArea = totalLength * RW;
+  const netArea = (L * Wd) + (A1W * A1D) + (A2W * A2D);
+  const breastWidth = Wd - A1W - A2W;
+  return {
+    totalLength, grossArea, netArea, seams: strips - 1, rollWidth: RW,
+    wastePct: netArea>0 ? ((grossArea - netArea) / netArea) * 100 : 0,
+    breastWidth
+  };
+}
+
+function calcRoom(room){
+  if(room.shape === 'rectangle'){
+    const c = stripCalc(room.length, room.width, room.rollWidth, room.trim);
+    if(!c) return null;
+    return {
+      totalLength: c.totalLength, grossArea: c.grossArea, netArea: c.netArea,
+      seams: c.seams, rollWidth: parseFloat(room.rollWidth),
+      wastePct: ((c.grossArea - c.netArea) / c.netArea) * 100
+    };
+  }
+  if(room.shape === 'lshape'){
+    const cA = stripCalc(room.aLength, room.aWidth, room.rollWidth, room.trim);
+    const cB = stripCalc(room.bLength, room.bWidth, room.rollWidth, room.trim);
+    if(!cA || !cB) return null;
+    const totalLength = cA.totalLength + cB.totalLength;
+    const grossArea = cA.grossArea + cB.grossArea;
+    const netArea = cA.netArea + cB.netArea;
+    const seams = cA.seams + cB.seams + 1; // +1 join between the two sections
+    return {
+      totalLength, grossArea, netArea, seams, rollWidth: parseFloat(room.rollWidth),
+      wastePct: ((grossArea - netArea) / netArea) * 100
+    };
+  }
+  if(room.shape === 'stairs'){
+    const steps = parseFloat(room.steps), perStep = parseFloat(room.perStep);
+    const stairWidth = parseFloat(room.stairWidth), RW = parseFloat(room.rollWidth);
+    const T = parseFloat(room.trim);
+    if(!isFinite(steps) || !isFinite(perStep) || steps<=0 || !isFinite(RW)) return null;
+    const trimFactor = 1 + (isFinite(T) ? T/100 : 0);
+    const stairLength = steps * perStep * trimFactor;
+    const stairArea = stairLength * (isFinite(stairWidth) ? stairWidth : RW);
+
+    let landingLength = 0, landingArea = 0, landingNet = 0, landingSeams = 0;
+    const ll = parseFloat(room.landingLength), lw = parseFloat(room.landingWidth);
+    if(isFinite(ll) && isFinite(lw) && ll>0 && lw>0){
+      const cL = stripCalc(room.landingLength, room.landingWidth, room.rollWidth, room.trim);
+      if(cL){ landingLength = cL.totalLength; landingArea = cL.grossArea; landingNet = cL.netArea; landingSeams = cL.seams; }
+    }
+    const totalLength = stairLength + landingLength;
+    const grossArea = stairArea + landingArea;
+    const netArea = (steps * perStep * (isFinite(stairWidth)?stairWidth:RW)) + landingNet;
+    return {
+      totalLength, grossArea, netArea, seams: landingSeams, rollWidth: RW,
+      wastePct: netArea>0 ? ((grossArea - netArea) / netArea) * 100 : 0,
+      isStairs: true
+    };
+  }
+  if(room.shape === 'chimney'){
+    const c = chimneyCalc(room.mainLength, room.mainWidth, room.alcove1Width, room.alcove1Depth, room.alcove2Width, room.alcove2Depth, room.rollWidth, room.trim);
+    return c;
+  }
+  return null;
+}
+
+function shapeFields(room){
+  if(room.shape === 'rectangle'){
+    return `
+      <div class="sub-block">
+        <div class="inputs-row">
+          <div class="field"><label>Length</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.length}" data-key="${room.id}-length" oninput="updateRoom(${room.id},'length',this.value)"><span>m</span></div></div>
+          <div class="field"><label>Width</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.width}" data-key="${room.id}-width" oninput="updateRoom(${room.id},'width',this.value)"><span>m</span></div></div>
+        </div>
+      </div>`;
+  }
+  if(room.shape === 'lshape'){
+    return `
+      <div class="sub-block">
+        <div class="sub-block-label">Section A</div>
+        <div class="inputs-row">
+          <div class="field"><label>Length</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.aLength}" data-key="${room.id}-aLength" oninput="updateRoom(${room.id},'aLength',this.value)"><span>m</span></div></div>
+          <div class="field"><label>Width</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.aWidth}" data-key="${room.id}-aWidth" oninput="updateRoom(${room.id},'aWidth',this.value)"><span>m</span></div></div>
+        </div>
+      </div>
+      <div class="sub-block">
+        <div class="sub-block-label">Section B</div>
+        <div class="inputs-row">
+          <div class="field"><label>Length</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.bLength}" data-key="${room.id}-bLength" oninput="updateRoom(${room.id},'bLength',this.value)"><span>m</span></div></div>
+          <div class="field"><label>Width</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.bWidth}" data-key="${room.id}-bWidth" oninput="updateRoom(${room.id},'bWidth',this.value)"><span>m</span></div></div>
+        </div>
+      </div>`;
+  }
+  if(room.shape === 'stairs'){
+    return `
+      <div class="sub-block">
+        <div class="sub-block-label">Stairs</div>
+        <div class="inputs-row">
+          <div class="field"><label>No. of steps</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.steps}" data-key="${room.id}-steps" oninput="updateRoom(${room.id},'steps',this.value)"></div></div>
+          <div class="field"><label>Per-step allow.</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.perStep}" data-key="${room.id}-perStep" oninput="updateRoom(${room.id},'perStep',this.value)"><span>m</span></div></div>
+          <div class="field"><label>Stair width</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.stairWidth}" data-key="${room.id}-stairWidth" oninput="updateRoom(${room.id},'stairWidth',this.value)"><span>m</span></div></div>
+        </div>
+      </div>
+      <div class="sub-block">
+        <div class="sub-block-label">Landing (optional)</div>
+        <div class="inputs-row">
+          <div class="field"><label>Length</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.landingLength}" data-key="${room.id}-landingLength" oninput="updateRoom(${room.id},'landingLength',this.value)"><span>m</span></div></div>
+          <div class="field"><label>Width</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.landingWidth}" data-key="${room.id}-landingWidth" oninput="updateRoom(${room.id},'landingWidth',this.value)"><span>m</span></div></div>
+        </div>
+      </div>`;
+  }
+  if(room.shape === 'chimney'){
+    return `
+      <div class="sub-block">
+        <div class="sub-block-label">Main Room</div>
+        <div class="inputs-row">
+          <div class="field"><label>Length</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.mainLength}" data-key="${room.id}-mainLength" oninput="updateRoom(${room.id},'mainLength',this.value)"><span>m</span></div></div>
+          <div class="field"><label>Width</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.mainWidth}" data-key="${room.id}-mainWidth" oninput="updateRoom(${room.id},'mainWidth',this.value)"><span>m</span></div></div>
+        </div>
+      </div>
+      <div class="sub-block">
+        <div class="sub-block-label">Alcove 1 (left of breast)</div>
+        <div class="inputs-row">
+          <div class="field"><label>Width</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.alcove1Width}" data-key="${room.id}-alcove1Width" oninput="updateRoom(${room.id},'alcove1Width',this.value)"><span>m</span></div></div>
+          <div class="field"><label>Extra depth</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.alcove1Depth}" data-key="${room.id}-alcove1Depth" oninput="updateRoom(${room.id},'alcove1Depth',this.value)"><span>m</span></div></div>
+        </div>
+      </div>
+      <div class="sub-block">
+        <div class="sub-block-label">Alcove 2 (right of breast)</div>
+        <div class="inputs-row">
+          <div class="field"><label>Width</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.alcove2Width}" data-key="${room.id}-alcove2Width" oninput="updateRoom(${room.id},'alcove2Width',this.value)"><span>m</span></div></div>
+          <div class="field"><label>Extra depth</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.alcove2Depth}" data-key="${room.id}-alcove2Depth" oninput="updateRoom(${room.id},'alcove2Depth',this.value)"><span>m</span></div></div>
+        </div>
+      </div>`;
+  }
+  return '';
+}
+
+function render(){
+  const cardsEl = document.getElementById('cards');
+
+  // Remember which field was focused (and cursor position) so we can restore it after rebuilding
+  const active = document.activeElement;
+  let focusKey = null, focusStart = null, focusEnd = null;
+  if(active && active.dataset && active.dataset.key && cardsEl.contains(active)){
+    focusKey = active.dataset.key;
+    focusStart = active.selectionStart;
+    focusEnd = active.selectionEnd;
+  }
+
+  if(rooms.length === 0){
+    cardsEl.innerHTML = '<div class="empty">No rooms yet. Add a rectangle, L-shape, or stairs &amp; landing to start planning.</div>';
+    document.getElementById('grandTotal').innerHTML = '';
+    return;
+  }
+
+  let grandLength = 0, grandGross = 0, grandNet = 0, allValid = true;
+
+  cardsEl.innerHTML = rooms.map((room, idx) => {
+    const r = calcRoom(room);
+    if(r && !r.error){ grandLength += r.totalLength; grandGross += r.grossArea; grandNet += r.netArea; }
+    else { allValid = false; }
+
+    const shapeLabel = room.shape === 'rectangle' ? 'Rectangle' : room.shape === 'lshape' ? 'L-Shape' : room.shape === 'chimney' ? 'Chimney Breast' : 'Stairs & Landing';
+
+    let resultHtml = '<div class="result"><span class="result-label">Enter dimensions to calculate</span></div>';
+    if(r && r.error){
+      resultHtml = `<div class="result"><span class="result-label" style="color:#FF9B8A;">${r.error}</span></div>`;
+    } else if(r){
+      resultHtml = `
+        <div class="result">
+          <div class="result-grid">
+            <div><span class="result-label">Order length</span><span class="result-val">${fmt(r.totalLength)}m</span></div>
+            <div><span class="result-label">Gross area</span><span class="result-val small">${fmt(r.grossArea)} m²</span></div>
+            <div><span class="result-label">Net floor area</span><span class="result-val small">${fmt(r.netArea)} m²</span></div>
+            <div><span class="result-label">${r.isStairs ? 'Landing seams' : 'Seams'}</span><span class="result-val small">${r.seams}</span></div>
+          </div>
+          <div class="waste-note">Roll width ${fmt(r.rollWidth,2)}m · ${fmt(r.wastePct,1)}% over net area (trim &amp; seam allowance)${r.breastWidth!==undefined ? ' · breast width ≈ ' + fmt(r.breastWidth,2) + 'm' : ''}</div>
+        </div>`;
+    }
+
+    return `
+      <div class="card">
+        <div class="card-top">
+          <span class="item-num">#${String(idx+1).padStart(2,'0')}</span>
+          <input class="item-name" data-key="${room.id}-name" value="${room.name.replace(/"/g,'&quot;')}" onchange="updateRoom(${room.id},'name',this.value)">
+          <span class="shape-select">${shapeLabel}</span>
+          <button class="remove-btn" onclick="removeRoom(${room.id})" aria-label="Remove room">✕</button>
+        </div>
+        ${shapeFields(room)}
+        <div class="sub-block">
+          <div class="inputs-row">
+            <div class="field"><label>Roll width</label><div class="input-affix">
+              <select onchange="updateRoom(${room.id},'rollWidth',this.value)">
+                <option value="4" ${room.rollWidth=='4'?'selected':''}>4m</option>
+                <option value="5" ${room.rollWidth=='5'?'selected':''}>5m</option>
+                <option value="3.66" ${room.rollWidth=='3.66'?'selected':''}>3.66m</option>
+              </select>
+            </div></div>
+            <div class="field"><label>Trim/waste</label><div class="input-affix"><input type="text" inputmode="decimal" value="${room.trim}" data-key="${room.id}-trim" oninput="updateRoom(${room.id},'trim',this.value)"><span>%</span></div></div>
+          </div>
+        </div>
+        ${resultHtml}
+      </div>`;
+  }).join('');
+
+  if(grandNet > 0){
+    const wastePct = ((grandGross - grandNet) / grandNet) * 100;
+    document.getElementById('grandTotal').innerHTML = `
+      <div class="grand-total">
+        <div class="grand-total-title">Whole job totals${allValid ? '' : ' (partial — some rooms incomplete)'}</div>
+        <div class="grand-grid">
+          <div><span class="result-label">Total order length</span><span class="result-val">${fmt(grandLength)}m</span></div>
+          <div><span class="result-label">Total gross area</span><span class="result-val">${fmt(grandGross)} m²</span></div>
+          <div><span class="result-label">Total net floor area</span><span class="result-val">${fmt(grandNet)} m²</span></div>
+          <div><span class="result-label">Overall waste</span><span class="result-val">${fmt(wastePct,1)}%</span></div>
+        </div>
+      </div>`;
+  } else {
+    document.getElementById('grandTotal').innerHTML = '';
+  }
+
+  // Restore focus + cursor position to whichever field was being typed in
+  if(focusKey){
+    const el = cardsEl.querySelector(`[data-key="${focusKey}"]`);
+    if(el){
+      el.focus();
+      if(focusStart !== null && el.setSelectionRange){
+        try { el.setSelectionRange(focusStart, focusEnd); } catch(e) {}
+      }
+    }
+  }
+}
+
+render();
+</script>
+</body>
+</html>
