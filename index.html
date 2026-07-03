@@ -199,8 +199,9 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .conf-btns{display:flex;gap:9px;justify-content:center}
 .conf-del{padding:7px 18px;background:var(--red);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer}
 .conf-no{padding:7px 14px;background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer}
-.notify{position:fixed;bottom:18px;right:18px;background:var(--navy3);color:#fff;padding:9px 16px;border-radius:var(--rs);font-size:11px;font-weight:700;z-index:400;opacity:0;transition:opacity .2s;pointer-events:none;border-left:3px solid var(--red)}
+.notify{position:fixed;bottom:18px;right:18px;background:var(--navy3);color:#fff;padding:9px 16px;border-radius:var(--rs);font-size:11px;font-weight:700;z-index:400;opacity:0;transition:opacity .2s;pointer-events:none;border-left:3px solid var(--red);max-width:320px;line-height:1.4}
 .notify.show{opacity:1}
+.notify.warn{background:#b23a2e;border-left-color:#7a1f18}
 .bkl{padding:6px 12px;border:2px solid var(--border);border-radius:var(--rs);background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer;margin-top:10px;display:inline-block}
 .empty-state{text-align:center;padding:36px 16px;color:var(--muted)}
 .empty-state div:first-child{font-size:28px;margin-bottom:10px}
@@ -411,21 +412,33 @@ async function sbGet(table) {
 
 async function sbUpsert(table, id, data) {
   try {
-    await fetch(SB_URL+"/rest/v1/"+table, {
+    var r = await fetch(SB_URL+"/rest/v1/"+table, {
       method: "POST",
       headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json","Prefer":"resolution=merge-duplicates"},
       body: JSON.stringify({id:id, data:data, updated_at: new Date().toISOString()})
     });
-  } catch(e) { console.warn("Supabase upsert error:", e); }
+    if (!r.ok) {
+      console.warn("sbUpsert error:", table, r.status, await r.text());
+      toast("\u26a0\ufe0f Cloud save failed \u2014 saved on this device only. Check your connection and try again.", true);
+      return false;
+    }
+    return true;
+  } catch(e) { console.warn("Supabase upsert error:", e); toast("\u26a0\ufe0f Cloud save failed \u2014 saved on this device only. Check your connection and try again.", true); return false; }
 }
 
 async function sbDelete(table, id) {
   try {
-    await fetch(SB_URL+"/rest/v1/"+table+"?id=eq."+id, {
+    var r = await fetch(SB_URL+"/rest/v1/"+table+"?id=eq."+id, {
       method: "DELETE",
       headers: {"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY}
     });
-  } catch(e) { console.warn("Supabase delete error:", e); }
+    if (!r.ok) {
+      console.warn("sbDelete error:", table, r.status, await r.text());
+      toast("\u26a0\ufe0f Cloud delete failed \u2014 this may reappear until it syncs. Check your connection.", true);
+      return false;
+    }
+    return true;
+  } catch(e) { console.warn("Supabase delete error:", e); toast("\u26a0\ufe0f Cloud delete failed \u2014 this may reappear until it syncs. Check your connection.", true); return false; }
 }
 
 async function sbSaveAll(table, items, idField) {
@@ -456,13 +469,17 @@ async function sbSaveAll(table, items, idField) {
         var errText = await r.text();
         console.warn("sbSaveAll error:", table, r.status, errText);
         try{document.getElementById("sbStatus").textContent="\u26a0\ufe0f";document.getElementById("sbStatus").title="Save error: "+errText.substring(0,60);}catch(e){}
-        return;
+        toast("\u26a0\ufe0f Cloud save failed \u2014 saved on this device only. Check your connection and try again.", true);
+        return false;
       }
     }
     try{document.getElementById("sbStatus").textContent="\u2601\ufe0f";document.getElementById("sbStatus").title="Cloud synced";}catch(e){}
+    return true;
   } catch(e) {
     console.warn("Supabase saveAll error:", e);
     try{document.getElementById("sbStatus").textContent="\u26a0\ufe0f";document.getElementById("sbStatus").title="Offline: "+e.message;}catch(e2){}
+    toast("\u26a0\ufe0f Cloud save failed \u2014 saved on this device only. Check your connection and try again.", true);
+    return false;
   }
 }
 
@@ -1213,7 +1230,7 @@ function fd(d){
 function ti(d){
   if(!d||d==="")return"";if(d.indexOf("/")>-1){var p=d.split("/");return p[2]+"-"+p[1]+"-"+p[0];}return d;
 }
-function toast(msg){var t=document.getElementById("notify");t.textContent=msg;t.classList.add("show");setTimeout(function(){t.classList.remove("show");},2200);}
+function toast(msg,isWarn){var t=document.getElementById("notify");t.textContent=msg;t.classList.add("show");if(isWarn){t.classList.add("warn");}else{t.classList.remove("warn");}clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(function(){t.classList.remove("show");t.classList.remove("warn");},isWarn?6000:2200);}
 function nextId(){return"SFTC-"+Date.now()+"-"+Math.floor(Math.random()*1000);}
 function money(v){var n=parseFloat(String(v||"0").replace(/[^0-9.]/g,""))||0;return"\u00a3"+n.toLocaleString("en-GB");}
 
@@ -4427,6 +4444,7 @@ function eventsForDay(y, m, d) {
   // Live-calculated birthdays/anniversaries: always show on their date, every year, until removed
   var liveBdays = birthdays.filter(function(b){
     if (!b.date) return false;
+    if (b.lastDoneYear === y) return false;
     var dp = b.date.split("-");
     if (dp.length !== 3) return false;
     var bMonth = parseInt(dp[1]) - 1;
@@ -4619,7 +4637,16 @@ function renderDiaryView() {
       if (e.notes) { var en = document.createElement("div"); en.style.cssText = "font-size:11px;color:var(--muted);margin-top:3px"; en.textContent = e.notes; info.appendChild(en); }
       var badge = document.createElement("span"); badge.style.cssText = "font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0;"+diffCls; badge.textContent = diffStr;
       var doneBtn = document.createElement("button"); doneBtn.style.cssText = "padding:4px 10px;background:var(--gbg);border:1px solid var(--gtxt);border-radius:20px;font-size:10px;color:var(--gtxt);cursor:pointer;font-weight:700;flex-shrink:0"; doneBtn.textContent = "✓ Done";
-      doneBtn.addEventListener("click", (function(eid){ return function(ev3){ ev3.stopPropagation(); var ev=diaryEvents.find(function(x){return x.id===eid;}); if(ev){ev.completed=true;saveDiary();renderDiaryView();renderDash();toast("Event marked done ✓");} }; })(e.id));
+      doneBtn.addEventListener("click", (function(eid,isBday,bdId,evYear){ return function(ev3){
+        ev3.stopPropagation();
+        if(isBday){
+          var b=birthdays.find(function(x){return x.id===bdId;});
+          if(b){ b.lastDoneYear=evYear; saveBirthdays(); renderDiaryView(); renderDash(); toast("Marked done for this year \u2713"); }
+        } else {
+          var ev=diaryEvents.find(function(x){return x.id===eid;});
+          if(ev){ev.completed=true;saveDiary();renderDiaryView();renderDash();toast("Event marked done ✓");}
+        }
+      }; })(e.id, e.isBirthday, e.bdId, e.year));
       row.appendChild(dot); row.appendChild(info); row.appendChild(badge); row.appendChild(doneBtn);
       dv.appendChild(row);
     });
