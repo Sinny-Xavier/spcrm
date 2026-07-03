@@ -126,8 +126,11 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .t-in{background:var(--abg);color:var(--atxt)} .t-tr{background:var(--gbg);color:var(--gtxt)}
 .t-lg{background:#e8edf6;color:#2348b0} .t-ch{background:var(--rbg);color:var(--rtxt)}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fg-compact{display:flex;flex-wrap:wrap;gap:8px 16px}
+.fg-compact .fi{flex:0 0 auto;max-width:220px}
 .fi label{display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:2px}
 .fv{font-size:11px;color:var(--text);min-height:14px;line-height:1.4}
+.fv-trunc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;display:block}
 .fi.s2{grid-column:1/-1}
 .nbox{background:var(--alt);border:2px solid var(--border);border-radius:var(--rs);padding:8px;font-size:11px;line-height:1.6}
 .log-entry{background:var(--alt);border:2px solid var(--border);border-radius:var(--rs);padding:9px 11px;margin-bottom:7px}
@@ -2151,20 +2154,18 @@ function renderDet(){
   var db2=document.createElement("button");db2.className="dbtn danger";db2.textContent="\uD83D\uDDD1 Delete";db2.addEventListener("click",function(){askDel(c.id,c.name);});
   dbtns.appendChild(eb);dbtns.appendChild(archB2);dbtns.appendChild(db2);hdr.appendChild(dtop);hdr.appendChild(dbtns);dv.appendChild(hdr);
   var grid=document.createElement("div");grid.className="sec-grid";
-  function addSec(extra,tagCls,tagTxt,fields){
+  function addSec(extra,tagCls,tagTxt,fields,compact){
     var sec=document.createElement("div");sec.className="sec"+(extra?" "+extra:"");
     var tag=document.createElement("span");tag.className="stag "+tagCls;tag.textContent=tagTxt;sec.appendChild(tag);
-    var fg=document.createElement("div");fg.className="fg";
-    fields.forEach(function(f){if(!f)return;var fi=document.createElement("div");fi.className="fi"+(f.wide?" s2":"");var lbl=document.createElement("label");lbl.textContent=f.label;var val=document.createElement("div");val.className="fv";if(f.html){val.innerHTML=f.html;}else{val.textContent=f.val||"\u2014";}fi.appendChild(lbl);fi.appendChild(val);fg.appendChild(fi);});
+    var fg=document.createElement("div");fg.className=compact?"fg fg-compact":"fg";
+    fields.forEach(function(f){if(!f)return;var fi=document.createElement("div");fi.className="fi"+(f.wide?" s2":"");var lbl=document.createElement("label");lbl.textContent=f.label;var val=document.createElement("div");val.className="fv";if(f.html){val.innerHTML=f.html;}else{var rawVal=f.val||"\u2014";if(!f.wide&&rawVal.length>40){val.className="fv fv-trunc";val.textContent=rawVal.slice(0,40)+"\u2026";val.title=rawVal;}else{val.textContent=rawVal;}}fi.appendChild(lbl);fi.appendChild(val);fg.appendChild(fi);});
     sec.appendChild(fg);return sec;
   }
     var sourceColors = {"Existing Customer":"background:#e8edf6;color:#2348b0","Existing Customer (Dormant 12m+)":"background:#f0e6f6;color:#6b2d8b","New - Sinbad's Old Customer":"background:var(--gbg);color:var(--gtxt)","New - Walk In":"background:#e8f5e0;color:#2d6a0f","New - Referral":"background:#fff3e0;color:#854f0b","Fitter":"background:var(--lbg);color:var(--ltxt)"};
   var sourceHtml = c.source ? "<span style=\'font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;"+(sourceColors[c.source]||"background:var(--alt);color:var(--muted)")+"\'>"+c.source+"</span>" : "&mdash;";
-  grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",val:c.binder},{label:"Manager",val:c.manager},{label:"Account name",val:c.name,wide:true},{label:"Contact name",val:c.contact,wide:true},{label:"Customer source",html:sourceHtml}]));
-  grid.appendChild(addSec("","t-ct","Contact",[{label:"Telephone",val:c.tel},{label:"Mobile",val:c.mobile},{label:"Area",val:c.address}]));
-  grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",val:c.product,wide:true},{label:"Est. annual spend",val:c.spend},{label:"Priority",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected")t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",val:c.wontBuy,wide:true}]));
-  grid.appendChild(addSec("","t-ch","Competitor notes",[{label:"Who else they buy from",val:c.competitorNotes,wide:true}]));
-  grid.appendChild(addSec("","t-tr","Tracking",[{label:"Status",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",val:c.interactionType},{label:"Last contacted",val:c.lastContact},{label:"Follow-up date",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Account opened",val:c.dateOpened||"—"},{label:"Key dates",val:c.keyDates,wide:true}]));
+  grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",val:c.binder},{label:"Manager",val:c.manager},{label:"Account name",val:c.name,wide:true},{label:"Contact name",val:c.contact,wide:true},{label:"Customer source",html:sourceHtml},{label:"Telephone",val:c.tel},{label:"Mobile",val:c.mobile},{label:"Area",val:c.address}]));
+  grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",val:c.product,wide:true},{label:"Est. annual spend",html:(function(){var auto=calcAnnualSpend(c);if(auto>0){return "<span style='color:var(--gtxt);font-weight:700'>\u00a3"+auto.toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>(paid orders, last 12mo)</span>";}return c.spend?("\u00a3"+c.spend+" <span style='font-size:9px;color:var(--muted)'>(manual estimate)</span>"):"\u2014";})()},{label:"Priority",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected")t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",val:c.wontBuy,wide:true},{label:"Who else they buy from",val:c.competitorNotes,wide:true}]));
+  grid.appendChild(addSec("full","t-tr","Tracking",[{label:"Status",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",val:c.interactionType},{label:"Last contacted",val:c.lastContact},{label:"Follow-up date",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Account opened",val:c.dateOpened||"—"},{label:"Key dates",val:c.keyDates,wide:true}],true));
   var notesSec=document.createElement("div");notesSec.className="sec full";
   var nt=document.createElement("span");nt.className="stag t-tr";nt.textContent="Last interaction notes";notesSec.appendChild(nt);
   var nb=document.createElement("div");nb.className="nbox";nb.textContent=c.notes||"No notes yet.";notesSec.appendChild(nb);
@@ -2729,15 +2730,17 @@ function showForm(id){
   var srcSel=document.createElement("select");srcSel.id="e_source";srcSel.style.cssText="width:100%;padding:6px 8px;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;color:var(--text);outline:none";
   [""].concat(CLIENT_CATS).forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2||"-- Select source --";if(c&&c.source===s2)opt.selected=true;srcSel.appendChild(opt);});
   mkF(g1,"Customer source",srcSel,true);
-
-  var g2=mkSec("Contact");
-  mkF(g2,"Telephone",mkI("e_tel",c?c.tel:"","0113 000 0000","tel"));
-  mkF(g2,"Mobile",mkI("e_mob",c?c.mobile:"","07700 000000","tel"));
-  mkF(g2,"Area",mkI("e_addr",c?c.address:"","e.g. Leeds, Sheffield"));
+  var e_tel=mkI("e_tel",c?c.tel:"","0113 000 0000","tel"); e_tel.maxLength=14;
+  var e_mob=mkI("e_mob",c?c.mobile:"","07700 000000","tel"); e_mob.maxLength=14;
+  mkF(g1,"Telephone",e_tel);
+  mkF(g1,"Mobile",e_mob);
+  mkF(g1,"Area",mkI("e_addr",c?c.address:"","e.g. Leeds, Sheffield"));
 
   var g3=mkSec("Intelligence");
   mkF(g3,"Product interest",mkI("e_prod",c?c.product:"","e.g. LVT, SPC, Safety Vinyl"),true);
   mkF(g3,"Est. annual spend",mkI("e_spend",c?c.spend:"","e.g. 8000"));
+  var spendNote=document.createElement("div");spendNote.style.cssText="font-size:9px;color:var(--muted);margin-top:-4px;grid-column:1/-1";spendNote.textContent="Auto-calculated from paid orders (last 12mo) once available \u2014 this manual figure is only shown until then.";
+  g3.appendChild(spendNote);
   var priWrap = document.createElement("div"); priWrap.className = "ff";
   var priLbl = document.createElement("label"); priLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; priLbl.textContent = "Priority rating";
   var priSel = mkS("e_pri",["","\u2605","\u2605\u2605","\u2605\u2605\u2605","\u2605\u2605\u2605\u2605","\u2605\u2605\u2605\u2605\u2605"],c?c.priority:"");
@@ -6210,6 +6213,25 @@ function showChangePassword() {
 
 
 // ── AUTO PRIORITY ─────────────────────────────────────────────────
+function parseUKDate(s){
+  if(!s) return null;
+  var p=String(s).split("/");
+  if(p.length!==3) return null;
+  var d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+  return isNaN(d.getTime())?null:d;
+}
+function calcAnnualSpend(c){
+  var cutoff=new Date(); cutoff.setFullYear(cutoff.getFullYear()-1);
+  var t=0;
+  (c.log||[]).forEach(function(l){
+    if(l.quote&&l.quote.status==="Collected"){
+      var useDate=l.quote.collectedDate||l.date;
+      var dt=parseUKDate(useDate);
+      if(!dt||dt>=cutoff){ t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0); }
+    }
+  });
+  return t;
+}
 function calcAutoPriority(c) {
   var score = 0;
 
