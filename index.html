@@ -1406,6 +1406,53 @@ function renderClientsView(searchTerm){
 }
 
 
+// ── ON THIS DAY (world history, via Wikipedia's public feed API) ────
+var OTD_CACHE_STORE = "spcrm_otd_cache_v1";
+function otdRenderInto(el, text, year) {
+  el.innerHTML = "";
+  var txt = document.createElement("div");
+  txt.style.cssText = "font-size:12px;color:var(--text);line-height:1.5";
+  txt.textContent = year + " \u2014 " + text;
+  var src = document.createElement("div");
+  src.style.cssText = "font-size:9px;color:var(--muted);margin-top:6px";
+  src.textContent = "Source: Wikipedia";
+  el.appendChild(txt);
+  el.appendChild(src);
+}
+function loadOnThisDay(containerId) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  var today = new Date();
+  var mm = String(today.getMonth() + 1).padStart(2, "0");
+  var dd = String(today.getDate()).padStart(2, "0");
+  var cacheKey = today.getFullYear() + "-" + mm + "-" + dd;
+  try {
+    var cached = JSON.parse(localStorage.getItem(OTD_CACHE_STORE) || "null");
+    if (cached && cached.key === cacheKey && cached.text) {
+      otdRenderInto(el, cached.text, cached.year);
+      return;
+    }
+  } catch (e) {}
+  fetch("https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/" + mm + "/" + dd)
+    .then(function (r) { if (!r.ok) throw new Error("bad response"); return r.json(); })
+    .then(function (data) {
+      var events = (data && data.events) ? data.events.filter(function (e) { return e.text && e.year; }) : [];
+      if (!events.length) throw new Error("no events");
+      // Seeded on today's date so it stays the same across re-renders/tabs today, but changes daily.
+      var seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+      var ev = events[seed % events.length];
+      try { localStorage.setItem(OTD_CACHE_STORE, JSON.stringify({ key: cacheKey, text: ev.text, year: ev.year })); } catch (e) {}
+      otdRenderInto(el, ev.text, ev.year);
+    })
+    .catch(function () {
+      el.innerHTML = "";
+      var fail = document.createElement("div");
+      fail.style.cssText = "font-size:11px;color:var(--muted)";
+      fail.textContent = "Couldn't load today's history (check your connection).";
+      el.appendChild(fail);
+    });
+}
+
 function renderDash(){
   var overdue=clients.filter(function(c){return du(c.followup)<0;});
   var today2=clients.filter(function(c){var d=du(c.followup);return d>=0&&d<=1;});
@@ -1829,208 +1876,6 @@ function renderDash(){
     {q:"The trade rewards patience more than speed.",a:"unknown"}
   ];
   QUOTES = QUOTES.concat(QUOTES2);
-  var JOKES=[
-    "Why did the carpet fitter break up with his girlfriend? She kept walking all over him.",
-    "I asked the flooring rep for his best price. He said \u201Cthat floors me too.\u201D",
-    "What do you call a floor that tells jokes? A pun-derlay.",
-    "Why don't carpenters ever get lost? They always follow the grain.",
-    "I tried to sell a customer engineered oak, but the conversation went off-board.",
-    "What did the laminate say to the tiler? Stop grouting about it.",
-    "Why was the vinyl plank always calm? It had a great underlay.",
-    "I wanted to tell a flooring joke but it was too underwhelming \u2014 needed more underlay.",
-    "Why did the herringbone pattern win the argument? It always had an angle.",
-    "What do you call a measuring tape that tells fibs? Untrustworthy \u2014 it's always stretching the truth.",
-    "I'm reading a book on anti-gravity floors. It's impossible to put down.",
-    "Why did the salesman bring a ladder to work? To reach the higher margins.",
-    "What's a flooring fitter's favourite type of music? Anything with a good beat \u2014 keeps the rhythm of the chalk line.",
-    "Why did the quote get rejected? It just didn't measure up.",
-    "I told my colleague a joke about skirting boards. It went right over his head.",
-    "Why do trade counter staff make great detectives? They always follow up on leads.",
-    "What's an LVT plank's favourite holiday? Click-mas.",
-    "Why was the spirit level always so calm? Perfectly balanced.",
-    "I asked the rep if the new range was waterproof. He said \u201Cit holds up under pressure.\u201D",
-    "Why don't floors ever lie? Because the truth always comes to the surface.",
-    "What do you call a carpet that's lazy? Under-laid back.",
-    "Why did the parquet flooring get promoted? It really knew how to fit in.",
-    "I made a joke about sample boards but nobody picked up on it.",
-    "Why did the underlay get an award? It really cushioned the blow during a tough quarter.",
-    "What do you call two floor tiles that are best friends? Grout mates.",
-    "Why was the trade counter always busy on Mondays? Everyone wanted to get the ball rolling.",
-    "I tried explaining VAT to a new starter. It really added up to a long conversation.",
-    "What's a fitter's favourite biscuit? One that doesn't crumble under pressure \u2014 just like a good subfloor.",
-    "Why did the salesman bring string to the job? To keep his measurements in line.",
-    "What do you call an over-confident floor plank? A bit too plank-spoken.",
-    "Why did the herringbone and chevron stop arguing? They finally found common ground.",
-    "I asked if the delivery was on time. They said \u201Cit's coming along nicely.\u201D",
-    "Why don't carpets ever get cold? They're always well covered.",
-    "What did one floorboard say to the other? Stop creaking about it.",
-    "Why was the showroom always tidy? Everything had its proper place \u2014 wall to wall.",
-    "I told the new apprentice a joke about skirting boards. It didn't quite fit.",
-    "Why did the customer trust the quote? It was rock solid.",
-    "What do you call a plank with a great sense of humour? Engineered to entertain.",
-    "Why did the tile installer never lose an argument? He always had the grout-est comebacks.",
-    "I asked for a discount and the rep said \u201Clet's not get ahead of ourselves.\u201D",
-    "Why was the vinyl roll so popular? It really rolled with the punches.",
-    "What's a flooring fitter's least favourite weather? Anything that warps the schedule.",
-    "Why did the price list get a standing ovation? It really added up.",
-    "I told a joke about acoustic underlay. It really fell flat \u2014 too much sound absorption.",
-    "Why don't trade counters ever run out of conversation? There's always something to follow up on.",
-    "What do you call a floor with great manners? Well grounded.",
-    "Why did the spirit level apply for a job? It wanted to be perfectly level-headed.",
-    "I asked the rep about lead times. He said \u201Cgood things come to those who wait \u2014 and chase.\u201D",
-    "Why was the laminate sample so confident? It had been through the wear-test.",
-    "What do you call a carpet that tells the truth? Down to earth."
-  ];
-  var JOKES2=[
-    "Why did the floor fitter bring a calendar to work? To plank ahead.",
-    "What do you call a piece of vinyl that's always on time? Punc-tile.",
-    "Why did the rep refuse to argue about prices? He didn't want things to escalate.",
-    "What's a tiler's favourite dance move? The grout shuffle.",
-    "Why did the customer love the new showroom? It really had a lot of floor appeal.",
-    "What do you call two skirting boards that never agree? A board-er dispute.",
-    "Why did the apprentice bring a pencil to the job? To draw the line somewhere.",
-    "What's an underlay's favourite movie genre? Anything with a soft landing.",
-    "Why did the plank apply for a passport? It wanted to travel in style.",
-    "What do you call a fitter who never finishes on time? Always be-hind schedule.",
-    "Why was the herringbone pattern such a good listener? It always picked up on the angle.",
-    "What's a flooring rep's favourite exercise? Stretching the truth on lead times.",
-    "Why did the chevron pattern break up with the herringbone? Too many mixed signals.",
-    "What do you call a salesperson who never closes? Stuck in the showroom.",
-    "Why did the carpet go to therapy? It had a lot of underlying issues.",
-    "What's a tile's favourite party game? Pin the grout on the gap.",
-    "Why did the trade counter staff start a band? They were great at keeping a steady beat.",
-    "What do you call a floor that's always cheerful? Up-beat flooring.",
-    "Why was the LVT plank such a good employee? It always clicked with the team.",
-    "What did the spirit level say at the party? I'm just here to keep things balanced.",
-    "Why did the customer bring an umbrella to the showroom? In case the prices rained down.",
-    "What do you call a delivery driver who's always early? Ahead of the curve, or the kerb.",
-    "Why did the apprentice fail maths? He kept rounding up his measurements.",
-    "What's a parquet floor's favourite hobby? Putting the pieces together.",
-    "Why did the rep get promoted? He really knew how to lay down the groundwork.",
-    "What do you call a carpet that's great at maths? Well-squared.",
-    "Why did the fitter bring a torch to the job? To shine a light on the small print.",
-    "What's a vinyl roll's favourite type of joke? One that really rolls out well.",
-    "Why did the trade counter never lose customers? They always followed up.",
-    "What do you call an extremely organised tiler? Grout-standing.",
-    "Why was the floor sample shy? It didn't want to be put on the spot.",
-    "What did the laminate say after a long day? I'm feeling a bit worn.",
-    "Why did the manager love the new stock system? It really added up nicely.",
-    "What do you call two floor planks on a date? A perfect match.",
-    "Why did the customer trust the quote so much? It was dead level.",
-    "What's a flooring fitter's favourite breakfast? Anything that sets him up for the day.",
-    "Why did the underlay get a promotion? It really cushioned every setback.",
-    "What do you call a salesperson with a great memory? A follow-up legend.",
-    "Why was the engineered oak plank so popular? It had layers of character.",
-    "What did one tile say to the other during the move? Stick with me.",
-    "Why did the fitter bring a notebook everywhere? To keep a record straight.",
-    "What's a showroom's favourite kind of weather? Anything that brings footfall.",
-    "Why did the carpet fitter never get lost? He always knew the lay of the land.",
-    "What do you call a plank that tells bad jokes? Bored-stiff.",
-    "Why did the salesperson love Mondays? Fresh week, fresh leads.",
-    "What's a tile cutter's favourite saying? Measure twice, cut once, complain never.",
-    "Why did the customer leave a five-star review? The job really stuck the landing.",
-    "What do you call a quote that never changes? Rock solid, just like the subfloor.",
-    "Why did the rep bring snacks to the meeting? To sweeten the deal.",
-    "What's a flooring company's favourite social media post? Before and after shots.",
-    "Why did the new starter love the trade counter? Every day was a different challenge."
-  ];
-  JOKES = JOKES.concat(JOKES2);
-  var JOKES3=[
-    "Why did the fitter break up with the tape measure? It kept stretching the truth.",
-    "What do you call a floor that's always on edge? Beading the worry.",
-    "Why did the carpet apply for a loan? It wanted to expand its coverage.",
-    "What's a flooring rep's favourite excuse? The lorry's stuck in transit \u2014 again.",
-    "Why did the plank refuse to argue? It didn't want to warp the conversation.",
-    "What do you call a tile that's always punctual? Grout-standingly reliable.",
-    "Why did the trade counter staff start yoga? To stay flexible with quotes.",
-    "What's a fitter's favourite type of comedy? Anything with good timing and a clean cut.",
-    "Why did the showroom install mirrors? So customers could see both sides of the deal.",
-    "What do you call a salesperson who never stops talking? A floor-show.",
-    "Why was the herringbone floor so dramatic? Every piece had its own angle on things.",
-    "What did the underlay say to the floorboard? I've got your back.",
-    "Why did the delivery driver get a medal? Showed up right on the dot, every box accounted for.",
-    "What's a tiler's favourite kind of joke? One with a good setup and a clean finish.",
-    "Why did the customer ask for a sample first? Trust, but verify the colour match.",
-    "What do you call a plank that won't stop bragging? A bit too grain-y about itself.",
-    "Why did the laminate floor get an award? Best supporting role in the renovation.",
-    "What's a fitter's least favourite app? Anything that crashes mid-measure.",
-    "Why did the engineer love flooring? Every layer told a story.",
-    "What do you call two tiles arguing over space? A grout dispute, obviously.",
-    "Why did the rep bring a calculator to every meeting? Numbers don't lie, but quotes can wander.",
-    "What's a carpet's favourite kind of weather? Anything that keeps people indoors and shopping.",
-    "Why did the new fitter measure everything twice? Heard the warnings about cutting corners.",
-    "What do you call a floor that never complains? Even-tempered.",
-    "Why did the trade counter manager love spreadsheets? Everything finally added up.",
-    "What's a vinyl tile's favourite hobby? Sticking to the plan.",
-    "Why did the customer choose the matt finish? Didn't want any shiny surprises in the invoice.",
-    "What do you call a fitter who's always early? A head start specialist.",
-    "Why did the floorboards form a band? They really had the right groove.",
-    "What's a showroom's busiest day? Whenever the new brochures land.",
-    "Why did the apprentice carry a spirit level everywhere? Wanted to stay balanced in life too.",
-    "What do you call a plank with excellent manners? Well-mannered, naturally.",
-    "Why did the rep love rainy days? More people stuck inside browsing samples.",
-    "What's a tile cutter's motto? Precision over speed, every single time.",
-    "Why did the carpet get promoted to manager? It really knew how to pull things together.",
-    "What do you call a quote that arrives exactly on time? A rare and beautiful thing.",
-    "Why did the engineered oak plank go to the gym? Wanted to build up more layers of strength.",
-    "What's a fitter's favourite kind of music? Anything with a strong, steady beat.",
-    "Why did the customer trust the showroom display? It really set the standard.",
-    "What do you call a floor with a great sense of humour? Light-hearted, but still solid underfoot.",
-    "Why did the delivery van get nicknamed The Postman? Always two knocks and gone.",
-    "What's a salesperson's favourite season? Whenever the renovation bug bites.",
-    "Why did the tile installer never panic? Years of practice kept things grouted.",
-    "What do you call a floor that's always honest? Straight, level, and to the point.",
-    "Why did the fitter bring biscuits to the job? Every good measure deserves a tea break.",
-    "What's a flooring company's favourite kind of feedback? Five stars, no notes.",
-    "Why did the plank get invited to every party? Always brought the right energy to the room.",
-    "What do you call a carpet that never lets you down? Wall-to-wall reliable.",
-    "Why did the rep love a tidy showroom? First impressions are the strongest sales pitch.",
-    "What's a fitter's favourite proverb? A stitch in time saves a much bigger repair bill.",
-    "Why did the customer ask for a written quote? Wanted everything nailed down properly.",
-    "What do you call a floor that's always improving? On an upward trajectory, one plank at a time.",
-    "Why did the trade counter staff love Fridays? End of the week, start of the weekend projects.",
-    "What's a tile's favourite type of relationship? Tight-fitting and well grouted.",
-    "Why did the apprentice get a gold star? Measured everything before cutting once.",
-    "What do you call a delivery that's never late? A small miracle, gratefully accepted.",
-    "Why did the fitter never lose his cool? Years of practice kept things level.",
-    "What's a showroom's favourite type of customer? One who already knows exactly what they want.",
-    "Why did the plank join the debate team? Always had a strong point to make.",
-    "What do you call a quote with no hidden extras? Refreshingly rare.",
-    "Why did the carpet salesman become a counsellor? Great at smoothing things over.",
-    "What's a fitter's favourite kind of silence? The quiet after a job well done.",
-    "Why did the floorboards never argue? They always found common ground.",
-    "What do you call a rep who remembers every customer's name? A legend in the making.",
-    "Why did the tile cutter love Mondays? Fresh week, fresh stock, fresh start.",
-    "What's a flooring company's favourite kind of review? The kind with photos attached.",
-    "Why did the underlay never complain about pressure? Built for exactly that.",
-    "What do you call a perfectly matched grout colour? A small everyday victory.",
-    "Why did the showroom add comfy chairs? Decisions take time, and so does tea.",
-    "What's a fitter's favourite kind of customer? One who trusts the process.",
-    "Why did the plank always tell the truth? Couldn't bear to warp the facts.",
-    "What do you call a salesperson who under-promises and over-delivers? A keeper.",
-    "Why did the carpet roll get its own parking space? VIP treatment, every delivery.",
-    "What's a tiler's favourite kind of feedback? \u201CIt looks like it was always meant to be there.\u201D",
-    "Why did the trade counter never close early? Someone always needed just one more box.",
-    "What do you call a floor that ages gracefully? A genuinely good investment.",
-    "Why did the rep love a good follow-up call? Half the sale is just staying in touch.",
-    "What's a fitter's favourite kind of weather forecast? Dry enough to crack on with the job.",
-    "Why did the apprentice love the trade counter? Learned something new with every customer.",
-    "What do you call a perfectly level floor? A job worth bragging about, quietly.",
-    "Why did the customer come back a second time? The first job spoke for itself.",
-    "What's a showroom's favourite time of year? Whenever people start dreaming about renovations.",
-    "Why did the plank never get stressed? Years of expansion gaps taught it to relax.",
-    "What do you call a delivery driver who knows every postcode by heart? Worth their weight in gold.",
-    "Why did the fitter measure the doorway twice? Once for the floor, once for peace of mind.",
-    "What's a tile's favourite compliment? \u201CYou really tie the room together.\u201D",
-    "Why did the trade counter manager love the morning rush? Best part of the day, every time.",
-    "What do you call a carpet that's stood the test of time? A genuine classic.",
-    "Why did the rep keep a notebook of every customer's preferences? Personal touch sells.",
-    "What's a fitter's favourite reward after a long job? A proper cup of tea, sat down.",
-    "Why did the plank never lose an argument? Had the grain of truth on its side."
-  ];
-  JOKES = JOKES.concat(JOKES3);
-  // NOTE: once a few years of CRM history have built up, this could be swapped for
-  // an "On this day" card (e.g. sales/clients added on this calendar date in past years).
   function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
   function seededShuffle(len,seed){var arr=[];for(var i=0;i<len;i++)arr.push(i);var rnd=mulberry32(seed);for(var j=arr.length-1;j>0;j--){var k=Math.floor(rnd()*(j+1));var tmp=arr[j];arr[j]=arr[k];arr[k]=tmp;}return arr;}
   function dayOfYear(d){var start=new Date(d.getFullYear(),0,0);return Math.floor((d-start)/86400000);}
@@ -2038,9 +1883,6 @@ function renderDash(){
   var qLap=Math.floor(todayIdx/QUOTES.length);var qPos=todayIdx%QUOTES.length;
   var qOrder=seededShuffle(QUOTES.length,yr*1000+qLap);
   var qod=QUOTES[qOrder[qPos]];
-  var jLap=Math.floor(todayIdx/JOKES.length);var jPos=todayIdx%JOKES.length;
-  var jOrder=seededShuffle(JOKES.length,yr*2000+jLap+17);
-  var jod=JOKES[jOrder[jPos]];
   var coldCard=mkCard("Going cold",cold.slice(0,6),"No active clients going cold \u2713",function(c){
     var s=c.lastContact||"";if(s.indexOf("/")>-1){var p=s.split("/");s=p[2]+"-"+p[1]+"-"+p[0];}
     var dt=new Date(s);var days=!isNaN(dt.getTime())?Math.round((new Date().getTime()-dt.getTime())/86400000):0;
@@ -2062,11 +1904,12 @@ function renderDash(){
   var qAuth=document.createElement("div");qAuth.style.cssText="font-size:11px;color:var(--muted);margin-top:8px;font-weight:700";qAuth.textContent="\u2014 "+qod.a;
   qBody.appendChild(qText);qBody.appendChild(qAuth);quoteCard.appendChild(qBody);
   var jDiv=document.createElement("div");jDiv.style.cssText="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)";
-  var jTitle=document.createElement("div");jTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px";jTitle.textContent="\uD83D\uDE04 Daily Joke";
-  var jText=document.createElement("div");jText.style.cssText="font-size:12px;color:var(--text);line-height:1.5";jText.textContent=jod;
-  jDiv.appendChild(jTitle);jDiv.appendChild(jText);quoteCard.appendChild(jDiv);
+  var jTitle=document.createElement("div");jTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px";jTitle.textContent="\uD83C\uDF0D On This Day";
+  var jBody=document.createElement("div");jBody.id="otdBox";jBody.style.cssText="font-size:12px;color:var(--muted);line-height:1.5";jBody.textContent="Loading\u2026";
+  jDiv.appendChild(jTitle);jDiv.appendChild(jBody);quoteCard.appendChild(jDiv);
   dg.appendChild(quoteCard);
   dv.appendChild(dg);
+  loadOnThisDay("otdBox");
 
   // Diary events - within 5 working days + overdue on dashboard
   function workingDaysFromNow(e) {
