@@ -1080,11 +1080,21 @@ var DEFAULT_PRODUCT_SUBCATS={
 };
 var PRODUCTS_STORE="spcrm_products_v1";
 var PRODUCT_SUBCATS_STORE="spcrm_product_subcats_v1";
+// Sorts product names A-Z (case-insensitive), always pinning "Other" as the last entry.
+function sortProductsList(arr){
+  arr.sort(function(a,b){
+    if(a==="Other") return 1;
+    if(b==="Other") return -1;
+    return a.localeCompare(b, undefined, {sensitivity:"base"});
+  });
+  return arr;
+}
 function loadProducts(){
-  try { var r=localStorage.getItem(PRODUCTS_STORE); if(r) return JSON.parse(r); } catch(e){}
-  return DEFAULT_PRODUCTS.slice();
+  try { var r=localStorage.getItem(PRODUCTS_STORE); if(r) return sortProductsList(JSON.parse(r)); } catch(e){}
+  return sortProductsList(DEFAULT_PRODUCTS.slice());
 }
 function saveProducts(){
+  sortProductsList(PRODUCTS);
   try { localStorage.setItem(PRODUCTS_STORE, JSON.stringify(PRODUCTS)); } catch(e){}
   sbUpsert("settings","products",{key:"products",value:PRODUCTS});
 }
@@ -1095,6 +1105,7 @@ async function syncProductsFromCloud(){
       var row=rows.find(function(r){return r&&r.key==="products";});
       if(row&&Array.isArray(row.value)&&row.value.length){
         PRODUCTS.length=0; row.value.forEach(function(v){PRODUCTS.push(v);});
+        sortProductsList(PRODUCTS);
         try{localStorage.setItem(PRODUCTS_STORE,JSON.stringify(PRODUCTS));}catch(e){}
       }
     }
@@ -7305,8 +7316,8 @@ function showProductManager() {
       var v = addInp.value.trim();
       if (!v) { toast("Enter a product name"); return; }
       if (PRODUCTS.indexOf(v) > -1) { toast("That product already exists"); return; }
-      var otherIdx = PRODUCTS.indexOf("Other");
-      if (otherIdx > -1) { PRODUCTS.splice(otherIdx, 0, v); } else { PRODUCTS.push(v); }
+      PRODUCTS.push(v);
+      sortProductsList(PRODUCTS);
       saveProducts();
       toast("Added");
       pmRenderList();
