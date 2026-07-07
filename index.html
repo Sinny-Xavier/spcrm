@@ -1453,6 +1453,121 @@ function loadOnThisDay(containerId) {
     });
 }
 
+// ── WEATHER (Open-Meteo: free, no key, CORS-open. Uses browser geolocation
+// with a Leeds fallback if location is denied/unavailable) ────────────
+var WEATHER_CACHE_STORE = "spcrm_weather_cache_v1";
+var LEEDS_COORDS = { lat: 53.7997, lon: -1.5492, label: "Leeds" };
+function wmoDescribe(code) {
+  var map = {
+    0: ["Clear sky", "\u2600\uFE0F"], 1: ["Mainly clear", "\uD83C\uDF24\uFE0F"], 2: ["Partly cloudy", "\u26C5"], 3: ["Overcast", "\u2601\uFE0F"],
+    45: ["Fog", "\uD83C\uDF2B\uFE0F"], 48: ["Fog", "\uD83C\uDF2B\uFE0F"],
+    51: ["Light drizzle", "\uD83C\uDF26\uFE0F"], 53: ["Drizzle", "\uD83C\uDF26\uFE0F"], 55: ["Heavy drizzle", "\uD83C\uDF27\uFE0F"],
+    61: ["Light rain", "\uD83C\uDF27\uFE0F"], 63: ["Rain", "\uD83C\uDF27\uFE0F"], 65: ["Heavy rain", "\uD83C\uDF27\uFE0F"],
+    66: ["Freezing rain", "\uD83C\uDF27\uFE0F"], 67: ["Freezing rain", "\uD83C\uDF27\uFE0F"],
+    71: ["Light snow", "\uD83C\uDF28\uFE0F"], 73: ["Snow", "\u2744\uFE0F"], 75: ["Heavy snow", "\u2744\uFE0F"], 77: ["Snow grains", "\u2744\uFE0F"],
+    80: ["Light showers", "\uD83C\uDF26\uFE0F"], 81: ["Showers", "\uD83C\uDF27\uFE0F"], 82: ["Heavy showers", "\u26C8\uFE0F"],
+    85: ["Snow showers", "\uD83C\uDF28\uFE0F"], 86: ["Snow showers", "\u2744\uFE0F"],
+    95: ["Thunderstorm", "\u26C8\uFE0F"], 96: ["Thunderstorm, hail", "\u26C8\uFE0F"], 99: ["Thunderstorm, hail", "\u26C8\uFE0F"]
+  };
+  return map[code] || ["Unsettled", "\uD83C\uDF24\uFE0F"];
+}
+function weatherRenderInto(el, label, temp, code) {
+  var d = wmoDescribe(code);
+  el.innerHTML = "";
+  var line = document.createElement("div");
+  line.style.cssText = "font-size:13px;color:var(--text)";
+  line.textContent = d[1] + " " + Math.round(temp) + "\u00b0C \u2014 " + d[0];
+  var loc = document.createElement("div");
+  loc.style.cssText = "font-size:10px;color:var(--muted);margin-top:4px";
+  loc.textContent = "\uD83D\uDCCD " + label;
+  el.appendChild(line);
+  el.appendChild(loc);
+}
+function fetchAndRenderWeather(containerId, lat, lon, label) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  fetch("https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon + "&current_weather=true")
+    .then(function (r) { if (!r.ok) throw new Error("bad response"); return r.json(); })
+    .then(function (data) {
+      var cw = data && data.current_weather;
+      if (!cw) throw new Error("no current_weather");
+      try {
+        localStorage.setItem(WEATHER_CACHE_STORE, JSON.stringify({
+          ts: Date.now(), label: label, temp: cw.temperature, code: cw.weathercode
+        }));
+      } catch (e) {}
+      weatherRenderInto(el, label, cw.temperature, cw.weathercode);
+    })
+    .catch(function () {
+      el.innerHTML = "";
+      var fail = document.createElement("div");
+      fail.style.cssText = "font-size:11px;color:var(--muted)";
+      fail.textContent = "Couldn't load weather right now.";
+      el.appendChild(fail);
+    });
+}
+function loadWeather(containerId) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  try {
+    var cached = JSON.parse(localStorage.getItem(WEATHER_CACHE_STORE) || "null");
+    if (cached && cached.ts && (Date.now() - cached.ts) < 20 * 60 * 1000) {
+      weatherRenderInto(el, cached.label, cached.temp, cached.code);
+      return;
+    }
+  } catch (e) {}
+  function useFallback() {
+    fetchAndRenderWeather(containerId, LEEDS_COORDS.lat, LEEDS_COORDS.lon, LEEDS_COORDS.label + " (default)");
+  }
+  if (!navigator.geolocation) { useFallback(); return; }
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      var lat = pos.coords.latitude, lon = pos.coords.longitude;
+      fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" + lat + "&longitude=" + lon + "&localityLanguage=en")
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (geo) {
+          var label = (geo && (geo.city || geo.locality)) || "Your location";
+          fetchAndRenderWeather(containerId, lat, lon, label);
+        })
+        .catch(function () { fetchAndRenderWeather(containerId, lat, lon, "Your location"); });
+    },
+    function () { useFallback(); },
+    { timeout: 8000, maximumAge: 600000 }
+  );
+}
+
+// ── FLOORING FACT OF THE DAY (hand-curated & fact-checked, not AI filler) ─
+var FLOORING_FACTS = [
+  "Linoleum was invented by Englishman Frederick Walton, who patented it in 1863 after finding a use for the skin that forms on oxidised linseed oil.",
+  "The herringbone pattern gets its name from its resemblance to a herring fish's skeleton, and the Romans used it to pave roads because the interlocking bricks resisted shifting.",
+  "Herringbone parquet became fashionable after it was laid at the Palace of Versailles in the late 1600s, replacing heavy marble floors.",
+  "Laminate flooring wasn't originally designed as a floor at all \u2014 it came out of a 1977 brainstorming session at Swedish company Perstorp, who were looking for new uses for their laminate worktop material.",
+  "\"Parquet\" comes from the French for \"small compartment\", describing how individual wood pieces are cut and fitted together.",
+  "Bamboo flooring isn't technically wood \u2014 bamboo is a grass, which is part of why it grows and regenerates far faster than hardwood trees.",
+  "Cork flooring is harvested from the bark of the cork oak without felling the tree, and the bark regrows, making it one of the more renewable flooring materials.",
+  "Terrazzo flooring originated with Venetian construction workers, who mixed leftover marble chips with cement to make a hard-wearing, low-cost floor.",
+  "Underfloor heating isn't a modern invention \u2014 the Romans used a hypocaust system, circulating hot air beneath raised floors to heat villas and bathhouses.",
+  "Engineered wood flooring is built from cross-layered wood veneers, which makes it more dimensionally stable than solid wood \u2014 particularly useful over underfloor heating.",
+  "Herringbone-style patterns show up in Ancient Egyptian jewellery, long before the design was ever used for flooring.",
+  "\"Opus spicatum\", Latin for \"spiked work\", is the technical name for the herringbone brick paving used across the Roman Empire.",
+  "Vinyl flooring is typically built in layers \u2014 a backing layer, a printed design layer, and a clear wear layer on top that determines how long it holds up.",
+  "The click-lock joint that makes modern laminate and LVT quick to fit was developed independently in the 1990s by Sweden's V\u00e4linge and Belgium's Unilin (Quick-Step).",
+  "Hardwood floor hardness is measured on the Janka scale, which rates how much force it takes to embed a steel ball halfway into the wood.",
+  "The Mohs hardness scale, originally created for minerals, is often used to compare how scratch-resistant different tile and stone finishes are.",
+  "Solid wood flooring naturally expands and contracts with humidity, which is why fitters leave an expansion gap around the edge of every room.",
+  "The UK's Building Regulations Part E sets minimum sound insulation standards between separate dwellings, which is why acoustic underlay matters in flats and conversions.",
+  "Chevron flooring looks similar to herringbone, but the plank ends are cut at an angle so the pattern forms a continuous \"V\" rather than a staggered zig-zag.",
+  "Grout comes in sanded and unsanded types \u2014 sanded is generally used for wider joints for extra strength, while unsanded suits narrower joints and won't scratch delicate tile surfaces."
+];
+function loadFlooringFact(containerId) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  var today = new Date();
+  var start = new Date(today.getFullYear(), 0, 0);
+  var doy = Math.floor((today - start) / 86400000);
+  el.textContent = FLOORING_FACTS[doy % FLOORING_FACTS.length];
+}
+
 function renderDash(){
   var overdue=clients.filter(function(c){return du(c.followup)<0;});
   var today2=clients.filter(function(c){var d=du(c.followup);return d>=0&&d<=1;});
@@ -1897,6 +2012,12 @@ function renderDash(){
     el.addEventListener("click",(function(id){return function(){openC(id);};})(c.id));return el;
   });
   dg.appendChild(coldCard);
+  var weatherCard=document.createElement("div");weatherCard.className="dash-card";
+  var wTitle=document.createElement("div");wTitle.className="dash-card-title";wTitle.textContent="\uD83C\uDF24\uFE0F Weather";weatherCard.appendChild(wTitle);
+  var wBody=document.createElement("div");wBody.id="wxBox";wBody.style.cssText="padding:6px 2px 2px;font-size:12px;color:var(--muted)";wBody.textContent="Loading\u2026";
+  weatherCard.appendChild(wBody);
+  dg.appendChild(weatherCard);
+  loadWeather("wxBox");
   var quoteCard=document.createElement("div");quoteCard.className="dash-card";
   var qTitle=document.createElement("div");qTitle.className="dash-card-title";qTitle.textContent="\uD83D\uDCAC Quote of the Day";quoteCard.appendChild(qTitle);
   var qBody=document.createElement("div");qBody.style.cssText="padding:6px 2px 2px";
@@ -1907,9 +2028,14 @@ function renderDash(){
   var jTitle=document.createElement("div");jTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px";jTitle.textContent="\uD83C\uDF0D On This Day";
   var jBody=document.createElement("div");jBody.id="otdBox";jBody.style.cssText="font-size:12px;color:var(--muted);line-height:1.5";jBody.textContent="Loading\u2026";
   jDiv.appendChild(jTitle);jDiv.appendChild(jBody);quoteCard.appendChild(jDiv);
+  var fDiv=document.createElement("div");fDiv.style.cssText="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)";
+  var fTitle=document.createElement("div");fTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px";fTitle.textContent="\uD83E\uDEB5 Flooring Fact";
+  var fBody=document.createElement("div");fBody.id="floorFactBox";fBody.style.cssText="font-size:12px;color:var(--text);line-height:1.5";
+  fDiv.appendChild(fTitle);fDiv.appendChild(fBody);quoteCard.appendChild(fDiv);
   dg.appendChild(quoteCard);
   dv.appendChild(dg);
   loadOnThisDay("otdBox");
+  loadFlooringFact("floorFactBox");
 
   // Diary events - within 5 working days + overdue on dashboard
   function workingDaysFromNow(e) {
