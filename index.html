@@ -3388,8 +3388,17 @@ function renderSalesView(){
   var bTitle=document.createElement("div");bTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)";bTitle.textContent="Quarterly sales "+currentSalesYear;
   var bWrap=document.createElement("div");bWrap.style.cssText="position:relative;height:200px";var bCan=document.createElement("canvas");bCan.id="sBarCh";bWrap.appendChild(bCan);barCard.appendChild(bTitle);barCard.appendChild(bWrap);
   var pieCard=document.createElement("div");pieCard.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px";
-  var pTitle=document.createElement("div");pTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)";pTitle.textContent="Product breakdown "+currentSalesYear+" (%)";
-  var pWrap=document.createElement("div");pWrap.style.cssText="position:relative;height:200px";var pCan=document.createElement("canvas");pCan.id="sPieCh";pWrap.appendChild(pCan);pieCard.appendChild(pTitle);pieCard.appendChild(pWrap);
+  var pTitle=document.createElement("div");pTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between";
+  var pTitleTxt=document.createElement("span");pTitleTxt.textContent="Product breakdown "+currentSalesYear+" (%)";
+  var pTitleHint=document.createElement("span");pTitleHint.style.cssText="font-size:9px;font-weight:700;color:var(--muted);text-transform:none;letter-spacing:0;opacity:.7";pTitleHint.textContent="\uD83D\uDD0D enlarge";
+  pTitle.appendChild(pTitleTxt);pTitle.appendChild(pTitleHint);
+  var pWrap=document.createElement("div");pWrap.style.cssText="position:relative;height:200px;cursor:pointer";pWrap.title="Click to enlarge";
+  var pCan=document.createElement("canvas");pCan.id="sPieCh";pWrap.appendChild(pCan);pieCard.appendChild(pTitle);pieCard.appendChild(pWrap);
+  pWrap.addEventListener("click",function(){
+    var ap2=PRODUCTS.filter(function(p){return(data.prodTotals[p]||0)>0;});
+    if(!ap2.length){return;}
+    showChartModal("Product breakdown "+currentSalesYear,ap2,ap2.map(function(p){return data.prodTotals[p]||0;}));
+  });
   cr.appendChild(barCard);cr.appendChild(pieCard);sv.appendChild(cr);
   var activeProd=PRODUCTS.filter(function(p){return(data.prodTotals[p]||0)>0;});
   var tblCard=document.createElement("div");tblCard.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:18px;overflow-x:auto";
@@ -7746,6 +7755,47 @@ function mkPieChart(id, labels, values) {
     }
   };
   chartInstances[id] = new Chart(ctx.getContext("2d"), cfg);
+}
+
+// Opens a full-size overlay version of a pie/doughnut chart so small legends/slices are easier to read.
+function showChartModal(title, labels, values) {
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.75);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px";
+
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;border-top:3px solid var(--navy);overflow:hidden";
+
+  var bh = document.createElement("div");
+  bh.style.cssText = "background:var(--navy);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0";
+  var bht = document.createElement("h2");
+  bht.style.cssText = "font-size:14px;font-weight:700;color:#fff";
+  bht.textContent = title;
+  var cx = document.createElement("button");
+  cx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:28px;height:28px;color:#fff;font-size:18px;cursor:pointer;line-height:1";
+  cx.textContent = "\u00d7";
+  function closeChartModal() {
+    if (chartInstances["modalPieCh"]) { chartInstances["modalPieCh"].destroy(); delete chartInstances["modalPieCh"]; }
+    document.body.removeChild(overlay);
+  }
+  cx.addEventListener("click", closeChartModal);
+  overlay.addEventListener("click", function (e) { if (e.target === overlay) closeChartModal(); });
+  bh.appendChild(bht);
+  bh.appendChild(cx);
+  box.appendChild(bh);
+
+  var bd = document.createElement("div");
+  bd.style.cssText = "padding:22px;flex:1;overflow-y:auto";
+  var wrap = document.createElement("div");
+  wrap.style.cssText = "position:relative;height:min(60vh,460px)";
+  var can = document.createElement("canvas");
+  can.id = "modalPieCh";
+  wrap.appendChild(can);
+  bd.appendChild(wrap);
+  box.appendChild(bd);
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  setTimeout(function () { mkPieChart("modalPieCh", labels, values); }, 50);
 }
 
 
