@@ -1453,89 +1453,6 @@ function loadOnThisDay(containerId) {
     });
 }
 
-// ── WEATHER (Open-Meteo: free, no key, CORS-open. Uses browser geolocation
-// with a Leeds fallback if location is denied/unavailable) ────────────
-var WEATHER_CACHE_STORE = "spcrm_weather_cache_v1";
-var LEEDS_COORDS = { lat: 53.7997, lon: -1.5492, label: "Leeds" };
-function wmoDescribe(code) {
-  var map = {
-    0: ["Clear sky", "\u2600\uFE0F"], 1: ["Mainly clear", "\uD83C\uDF24\uFE0F"], 2: ["Partly cloudy", "\u26C5"], 3: ["Overcast", "\u2601\uFE0F"],
-    45: ["Fog", "\uD83C\uDF2B\uFE0F"], 48: ["Fog", "\uD83C\uDF2B\uFE0F"],
-    51: ["Light drizzle", "\uD83C\uDF26\uFE0F"], 53: ["Drizzle", "\uD83C\uDF26\uFE0F"], 55: ["Heavy drizzle", "\uD83C\uDF27\uFE0F"],
-    61: ["Light rain", "\uD83C\uDF27\uFE0F"], 63: ["Rain", "\uD83C\uDF27\uFE0F"], 65: ["Heavy rain", "\uD83C\uDF27\uFE0F"],
-    66: ["Freezing rain", "\uD83C\uDF27\uFE0F"], 67: ["Freezing rain", "\uD83C\uDF27\uFE0F"],
-    71: ["Light snow", "\uD83C\uDF28\uFE0F"], 73: ["Snow", "\u2744\uFE0F"], 75: ["Heavy snow", "\u2744\uFE0F"], 77: ["Snow grains", "\u2744\uFE0F"],
-    80: ["Light showers", "\uD83C\uDF26\uFE0F"], 81: ["Showers", "\uD83C\uDF27\uFE0F"], 82: ["Heavy showers", "\u26C8\uFE0F"],
-    85: ["Snow showers", "\uD83C\uDF28\uFE0F"], 86: ["Snow showers", "\u2744\uFE0F"],
-    95: ["Thunderstorm", "\u26C8\uFE0F"], 96: ["Thunderstorm, hail", "\u26C8\uFE0F"], 99: ["Thunderstorm, hail", "\u26C8\uFE0F"]
-  };
-  return map[code] || ["Unsettled", "\uD83C\uDF24\uFE0F"];
-}
-function weatherRenderInto(el, label, temp, code) {
-  var d = wmoDescribe(code);
-  el.innerHTML = "";
-  var line = document.createElement("div");
-  line.style.cssText = "font-size:13px;color:var(--text)";
-  line.textContent = d[1] + " " + Math.round(temp) + "\u00b0C \u2014 " + d[0];
-  var loc = document.createElement("div");
-  loc.style.cssText = "font-size:10px;color:var(--muted);margin-top:4px";
-  loc.textContent = "\uD83D\uDCCD " + label;
-  el.appendChild(line);
-  el.appendChild(loc);
-}
-function fetchAndRenderWeather(containerId, lat, lon, label) {
-  var el = document.getElementById(containerId);
-  if (!el) return;
-  fetch("https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon + "&current_weather=true")
-    .then(function (r) { if (!r.ok) throw new Error("bad response"); return r.json(); })
-    .then(function (data) {
-      var cw = data && data.current_weather;
-      if (!cw) throw new Error("no current_weather");
-      try {
-        localStorage.setItem(WEATHER_CACHE_STORE, JSON.stringify({
-          ts: Date.now(), label: label, temp: cw.temperature, code: cw.weathercode
-        }));
-      } catch (e) {}
-      weatherRenderInto(el, label, cw.temperature, cw.weathercode);
-    })
-    .catch(function () {
-      el.innerHTML = "";
-      var fail = document.createElement("div");
-      fail.style.cssText = "font-size:11px;color:var(--muted)";
-      fail.textContent = "Couldn't load weather right now.";
-      el.appendChild(fail);
-    });
-}
-function loadWeather(containerId) {
-  var el = document.getElementById(containerId);
-  if (!el) return;
-  try {
-    var cached = JSON.parse(localStorage.getItem(WEATHER_CACHE_STORE) || "null");
-    if (cached && cached.ts && (Date.now() - cached.ts) < 20 * 60 * 1000) {
-      weatherRenderInto(el, cached.label, cached.temp, cached.code);
-      return;
-    }
-  } catch (e) {}
-  function useFallback() {
-    fetchAndRenderWeather(containerId, LEEDS_COORDS.lat, LEEDS_COORDS.lon, LEEDS_COORDS.label + " (default)");
-  }
-  if (!navigator.geolocation) { useFallback(); return; }
-  navigator.geolocation.getCurrentPosition(
-    function (pos) {
-      var lat = pos.coords.latitude, lon = pos.coords.longitude;
-      fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" + lat + "&longitude=" + lon + "&localityLanguage=en")
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (geo) {
-          var label = (geo && (geo.city || geo.locality)) || "Your location";
-          fetchAndRenderWeather(containerId, lat, lon, label);
-        })
-        .catch(function () { fetchAndRenderWeather(containerId, lat, lon, "Your location"); });
-    },
-    function () { useFallback(); },
-    { timeout: 8000, maximumAge: 600000 }
-  );
-}
-
 // ── FLOORING FACT OF THE DAY (hand-curated & fact-checked, not AI filler) ─
 var FLOORING_FACTS = [
   "Linoleum was invented by Englishman Frederick Walton, who patented it in 1863 after finding a use for the skin that forms on oxidised linseed oil.",
@@ -2012,12 +1929,6 @@ function renderDash(){
     el.addEventListener("click",(function(id){return function(){openC(id);};})(c.id));return el;
   });
   dg.appendChild(coldCard);
-  var weatherCard=document.createElement("div");weatherCard.className="dash-card";
-  var wTitle=document.createElement("div");wTitle.className="dash-card-title";wTitle.textContent="\uD83C\uDF24\uFE0F Weather";weatherCard.appendChild(wTitle);
-  var wBody=document.createElement("div");wBody.id="wxBox";wBody.style.cssText="padding:6px 2px 2px;font-size:12px;color:var(--muted)";wBody.textContent="Loading\u2026";
-  weatherCard.appendChild(wBody);
-  dg.appendChild(weatherCard);
-  loadWeather("wxBox");
   var quoteCard=document.createElement("div");quoteCard.className="dash-card";
   var qTitle=document.createElement("div");qTitle.className="dash-card-title";qTitle.textContent="\uD83D\uDCAC Quote of the Day";quoteCard.appendChild(qTitle);
   var qBody=document.createElement("div");qBody.style.cssText="padding:6px 2px 2px";
