@@ -5096,12 +5096,19 @@ function renderQuotesView() {
 
   // KPI row
   var openVal=0, confirmedVal=0, invoicedVal=0, paidVal=0, collectedVal=0;
+  var nowYearQP = new Date().getFullYear();
+  function qpCollectedYear(q){
+    var ds = q.log.quote.collectedDate || q.log.date;
+    if (!ds) return null;
+    var parts = ds.split("/");
+    return parts.length===3 ? parseInt(parts[2],10) : null;
+  }
   allQuotes.forEach(function(q){
     if(q.log.quote.status==="Quote")openVal+=q.val;
     else if(q.log.quote.status==="Confirmed")confirmedVal+=q.val;
     else if(q.log.quote.status==="Invoiced")invoicedVal+=q.val;
     else if(q.log.quote.status==="Paid")paidVal+=q.val;
-    else if(q.log.quote.status==="Collected")collectedVal+=q.val;
+    else if(q.log.quote.status==="Collected" && qpCollectedYear(q)===nowYearQP)collectedVal+=q.val;
   });
   var lostVal=0,expiredVal=0;
   allQuotes.forEach(function(q){
@@ -5126,7 +5133,7 @@ function renderQuotesView() {
   kpiRow2.style.cssText = "display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px";
   [
     {l:"Invoiced",v:invoicedVal,c:"kv-blue",s:allQuotes.filter(function(q){return q.log.quote.status==="Invoiced";}).length+" quotes"},
-    {l:"Collected",v:collectedVal,c:"kv-blue",s:allQuotes.filter(function(q){return q.log.quote.status==="Collected";}).length+" this period"},
+    {l:"Collected ("+nowYearQP+")",v:collectedVal,c:"kv-blue",s:allQuotes.filter(function(q){return q.log.quote.status==="Collected" && qpCollectedYear(q)===nowYearQP;}).length+" quotes this year"},
     {l:"Lost",v:lostVal,c:"kv-red",s:allQuotes.filter(function(q){return q.log.quote.status==="Lost";}).length+" quotes"},
     {l:"Expired",v:expiredVal,c:"kv-amber",s:allQuotes.filter(function(q){return q.log.quote.status==="Expired";}).length+" quotes"}
   ].forEach(function(k){
