@@ -2586,7 +2586,7 @@ function showQuoteEditForm(clientId, logIdx) {
   var relatedSourcing = q.ref ? (sourcing||[]).filter(function(s){ return s.clientId===c.id && s.quoteRef && s.quoteRef.trim().toLowerCase()===q.ref.trim().toLowerCase(); }) : [];
   if (relatedSourcing.length) {
     var srcDiv = document.createElement("div"); srcDiv.style.cssText = "background:#fff4e8;border:2px solid #e6a15c;border-radius:var(--rs);padding:10px 12px";
-    var srcTitle = document.createElement("div"); srcTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;color:#a5590f;letter-spacing:.4px;margin-bottom:6px"; srcTitle.textContent="\uD83C\uDFED Linked special order enquiry";
+    var srcTitle = document.createElement("div"); srcTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;color:#a5590f;letter-spacing:.4px;margin-bottom:6px"; srcTitle.textContent="\uD83C\uDFED Linked special order "+(relatedSourcing.length>1?"enquiries ("+relatedSourcing.length+")":"enquiry");
     srcDiv.appendChild(srcTitle);
     relatedSourcing.forEach(function(s){
       var line = document.createElement("div"); line.style.cssText="font-size:12px;color:var(--text);margin-bottom:6px";
@@ -5370,6 +5370,7 @@ function openToolInline(t){
 function renderMarginCalcNative(container) {
   var wrap = document.createElement("div");
   wrap.style.cssText = "max-width:520px";
+  var FIELD_W = "150px"; // just enough width for a value like £1234.00 — boxes no longer stretch to fill the row
 
   function mkCard(titleTxt) {
     var card = document.createElement("div");
@@ -5382,50 +5383,49 @@ function renderMarginCalcNative(container) {
     return card;
   }
   function mkFd(lbl, inp, extraCss) {
-    var w = document.createElement("div"); w.style.cssText = "margin-bottom:10px" + (extraCss||"");
-    var l = document.createElement("label"); l.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:4px"; l.textContent = lbl;
+    var w = document.createElement("div"); w.style.cssText = "margin-bottom:10px;width:"+FIELD_W+";flex:0 0 auto" + (extraCss||"");
+    var l = document.createElement("label"); l.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:4px;white-space:nowrap"; l.textContent = lbl;
     w.appendChild(l); w.appendChild(inp);
     return w;
   }
   function mkMoneyInput(id) {
-    var box = document.createElement("div"); box.style.cssText = "display:flex;align-items:center;border:2px solid var(--border);border-radius:var(--rs);background:#fff;overflow:hidden";
-    var pre = document.createElement("span"); pre.style.cssText = "color:var(--muted);font-size:15px;font-weight:600;padding-left:11px"; pre.textContent = "\u00a3";
+    var box = document.createElement("div"); box.style.cssText = "display:flex;align-items:center;border:2px solid var(--border);border-radius:var(--rs);background:#fff;overflow:hidden;width:"+FIELD_W+";box-sizing:border-box";
+    var pre = document.createElement("span"); pre.style.cssText = "color:var(--muted);font-size:14px;font-weight:600;padding-left:9px"; pre.textContent = "\u00a3";
     var inp = document.createElement("input"); inp.id = id; inp.type = "number"; inp.step = "0.01";
-    inp.style.cssText = "border:none;flex:1;min-width:0;padding:9px 9px 9px 4px;font-size:15px;font-family:inherit;outline:none;background:transparent";
+    inp.style.cssText = "border:none;width:0;flex:1;min-width:0;padding:7px 8px 7px 3px;font-size:14px;font-family:inherit;outline:none;background:transparent";
     box.appendChild(pre); box.appendChild(inp);
     return { box: box, inp: inp };
   }
   function mkStat(lblTxt, id, colorVar) {
-    var s = document.createElement("div"); s.style.cssText = "background:var(--alt);border-radius:var(--rs);padding:10px 11px";
-    var l = document.createElement("div"); l.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:4px"; l.textContent = lblTxt;
+    var s = document.createElement("div"); s.style.cssText = "background:var(--alt);border-radius:var(--rs);padding:7px 9px;width:"+FIELD_W+";box-sizing:border-box;flex:0 0 auto";
+    var l = document.createElement("div"); l.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"; l.textContent = lblTxt;
     var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:baseline";
-    var pre = document.createElement("span"); pre.style.cssText = "font-size:15px;font-weight:700;margin-right:2px;flex-shrink:0;color:"+colorVar; pre.textContent = "\u00a3";
+    var pre = document.createElement("span"); pre.style.cssText = "font-size:13px;font-weight:700;margin-right:2px;flex-shrink:0;color:"+colorVar; pre.textContent = "\u00a3";
     var inp = document.createElement("input"); inp.id = id; inp.type = "number"; inp.step = "0.01";
-    inp.style.cssText = "font-size:17px;font-weight:700;font-family:inherit;border:none;background:none;padding:0;outline:none;color:"+colorVar+";flex:1;min-width:0";
+    inp.style.cssText = "font-size:15px;font-weight:700;font-family:inherit;border:none;background:none;padding:0;outline:none;color:"+colorVar+";width:0;flex:1;min-width:0";
     row.appendChild(pre); row.appendChild(inp);
     s.appendChild(l); s.appendChild(row);
     return { el: s, inp: inp };
   }
   function mkStatic(lblTxt) {
-    var s = document.createElement("div"); s.style.cssText = "background:var(--alt);border-radius:var(--rs);padding:10px 11px";
-    var l = document.createElement("div"); l.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:4px"; l.textContent = lblTxt;
-    var v = document.createElement("div"); v.style.cssText = "font-size:15px;font-weight:700;color:var(--navy)"; v.textContent = "\u2014";
+    var s = document.createElement("div"); s.style.cssText = "background:var(--alt);border-radius:var(--rs);padding:7px 9px;width:"+FIELD_W+";box-sizing:border-box;flex:0 0 auto";
+    var l = document.createElement("div"); l.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"; l.textContent = lblTxt;
+    var v = document.createElement("div"); v.style.cssText = "font-size:14px;font-weight:700;color:var(--navy)"; v.textContent = "\u2014";
     s.appendChild(l); s.appendChild(v);
     return { el: s, valEl: v };
   }
 
   // Card 1: inputs
   var c1 = mkCard("Per m\u00b2 (or per unit)");
-  var row1 = document.createElement("div"); row1.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px";
+  var row1 = document.createElement("div"); row1.style.cssText = "display:flex;flex-wrap:wrap;gap:10px";
   var nettEx = mkMoneyInput("mc_nettEx");
   row1.appendChild(mkFd("Our nett price ex VAT", nettEx.box));
-  var marginBox = document.createElement("div"); marginBox.style.cssText = "display:flex;align-items:center;border:2px solid #e6a15c;border-radius:var(--rs);background:#fff;overflow:hidden";
+  var marginBox = document.createElement("div"); marginBox.style.cssText = "display:flex;align-items:center;border:2px solid #e6a15c;border-radius:var(--rs);background:#fff4e8;overflow:hidden;width:"+FIELD_W+";box-sizing:border-box";
   var marginInp = document.createElement("input"); marginInp.id = "mc_margin"; marginInp.type = "number"; marginInp.step = "0.1"; marginInp.placeholder = "40";
-  marginInp.style.cssText = "border:none;flex:1;min-width:0;padding:9px 4px 9px 9px;font-size:15px;font-family:inherit;outline:none;background:transparent";
-  var marginSuf = document.createElement("span"); marginSuf.style.cssText = "color:#CC9400;font-size:15px;font-weight:600;padding-right:11px"; marginSuf.textContent = "%";
+  marginInp.style.cssText = "border:none;width:0;flex:1;min-width:0;padding:7px 4px 7px 8px;font-size:14px;font-family:inherit;outline:none;background:transparent";
+  var marginSuf = document.createElement("span"); marginSuf.style.cssText = "color:#CC9400;font-size:14px;font-weight:600;padding-right:9px"; marginSuf.textContent = "%";
   marginBox.appendChild(marginInp); marginBox.appendChild(marginSuf);
-  var marginFd = mkFd("Margin % (on customer price)", marginBox);
-  marginFd.style.cssText += ";background:#fff4e8;border:2px solid #e6a15c;border-radius:var(--rs);padding:8px 10px";
+  var marginFd = mkFd("Margin % (on cust. price)", marginBox);
   marginFd.querySelector("label").style.color = "#CC9400";
   row1.appendChild(marginFd);
   c1.appendChild(row1);
@@ -5434,11 +5434,10 @@ function renderMarginCalcNative(container) {
 
   // Card 2: results
   var c2 = mkCard("Results");
-  var resGrid = document.createElement("div"); resGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px";
-  var nettInc = mkStat("Our nett price inc VAT", "mc_nettInc", "var(--navy)");
-  var custEx = mkStat("Customer price ex VAT", "mc_custEx", "#e67e22");
-  var custInc = mkStat("Customer price inc VAT", "mc_custInc", "#e67e22");
-  custInc.el.style.gridColumn = "1/-1";
+  var resGrid = document.createElement("div"); resGrid.style.cssText = "display:flex;flex-wrap:wrap;gap:10px";
+  var nettInc = mkStat("Nett inc VAT", "mc_nettInc", "var(--navy)");
+  var custEx = mkStat("Cust. price ex VAT", "mc_custEx", "#e67e22");
+  var custInc = mkStat("Cust. price inc VAT", "mc_custInc", "#e67e22");
   resGrid.appendChild(nettInc.el); resGrid.appendChild(custEx.el); resGrid.appendChild(custInc.el);
   c2.appendChild(resGrid);
   var resHint = document.createElement("div"); resHint.style.cssText = "font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5"; resHint.textContent = "Every box above is editable \u2014 change any of them and the rest recalculate, including the margin %.";
@@ -5447,13 +5446,13 @@ function renderMarginCalcNative(container) {
   // Card 3: box pricing
   var c3 = mkCard("Box price");
   var m2Box = document.createElement("input"); m2Box.id = "mc_m2Box"; m2Box.type = "number"; m2Box.step = "0.01"; m2Box.placeholder = "2.16";
-  m2Box.style.cssText = "width:100%;padding:9px;border:2px solid var(--border);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none";
+  m2Box.style.cssText = "width:100%;box-sizing:border-box;padding:7px 8px;border:2px solid var(--border);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none";
   c3.appendChild(mkFd("m\u00b2 per box", m2Box));
-  var boxGrid = document.createElement("div"); boxGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px";
-  var boxNettEx = mkStatic("Nett box price ex VAT");
-  var boxNettInc = mkStatic("Nett box price inc VAT");
-  var boxCustEx = mkStatic("Customer box price ex VAT"); boxCustEx.valEl.style.color = "#e67e22";
-  var boxCustInc = mkStatic("Customer box price inc VAT"); boxCustInc.valEl.style.color = "#e67e22";
+  var boxGrid = document.createElement("div"); boxGrid.style.cssText = "display:flex;flex-wrap:wrap;gap:10px";
+  var boxNettEx = mkStatic("Nett ex VAT");
+  var boxNettInc = mkStatic("Nett inc VAT");
+  var boxCustEx = mkStatic("Cust. ex VAT"); boxCustEx.valEl.style.color = "#e67e22";
+  var boxCustInc = mkStatic("Cust. inc VAT"); boxCustInc.valEl.style.color = "#e67e22";
   boxGrid.appendChild(boxNettEx.el); boxGrid.appendChild(boxNettInc.el); boxGrid.appendChild(boxCustEx.el); boxGrid.appendChild(boxCustInc.el);
   c3.appendChild(boxGrid);
 
@@ -6240,14 +6239,14 @@ function renderSourcingView() {
     return;
   }
 
-  visible.slice().reverse().forEach(function(s){
+  function buildSourcingCard(s) {
     var card = document.createElement("div"); card.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:10px";
     var topRow = document.createElement("div"); topRow.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap";
     var topLeft = document.createElement("div"); topLeft.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap";
     var statBadge = document.createElement("span"); statBadge.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:20px;background:"+(SOURCING_STATUS_COLORS[s.status]||"#7f8c8d")+";color:#fff"; statBadge.textContent = s.status||"Chasing Price";
     topLeft.appendChild(statBadge);
     if (s.quoteRef) {
-      var refBadge = document.createElement("span"); refBadge.style.cssText = "font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--muted)"; refBadge.textContent = "\uD83D\uDD17 " + s.quoteRef;
+      var refBadge = document.createElement("span"); refBadge.style.cssText = "font-size:13px;font-weight:800;padding:3px 10px;border-radius:20px;background:#fff4e8;border:2px solid #e6a15c;color:#a5590f"; refBadge.textContent = "\uD83D\uDD17 " + s.quoteRef;
       topLeft.appendChild(refBadge);
     }
     topRow.appendChild(topLeft);
@@ -6308,7 +6307,38 @@ function renderSourcingView() {
     if (s.timeline) { var tlLine = document.createElement("div"); tlLine.style.cssText = "font-size:11px;color:var(--muted);margin-bottom:4px"; tlLine.textContent = "\u23F1 " + s.timeline; card.appendChild(tlLine); }
     if (s.notes) { var notesLine = document.createElement("div"); notesLine.style.cssText = "font-size:11px;color:var(--text);font-style:italic;margin-top:2px"; notesLine.textContent = s.notes; card.appendChild(notesLine); }
 
-    sv.appendChild(card);
+    return card;
+  }
+
+  // Group enquiries that share the same "linked client quote ref" so multiple
+  // special orders for one job sit together under a single job header, instead
+  // of being scattered through the list.
+  var newestFirst = visible.slice().reverse();
+  var refCounts = {};
+  visible.forEach(function(s){
+    if (s.quoteRef && s.quoteRef.trim()) {
+      var k = s.quoteRef.trim().toLowerCase();
+      refCounts[k] = (refCounts[k]||0) + 1;
+    }
+  });
+  var renderedRefs = {};
+  newestFirst.forEach(function(s){
+    var refKey = (s.quoteRef && s.quoteRef.trim()) ? s.quoteRef.trim().toLowerCase() : null;
+    if (refKey && refCounts[refKey] > 1) {
+      if (renderedRefs[refKey]) return;
+      renderedRefs[refKey] = true;
+      var groupItems = newestFirst.filter(function(x){ return x.quoteRef && x.quoteRef.trim().toLowerCase()===refKey; });
+      var groupWrap = document.createElement("div"); groupWrap.style.cssText = "border:2px solid #e6a15c;background:#fffaf3;border-radius:var(--r);padding:12px;margin-bottom:14px";
+      var groupHdr = document.createElement("div"); groupHdr.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:10px";
+      var groupRefBadge = document.createElement("span"); groupRefBadge.style.cssText = "font-size:14px;font-weight:800;padding:4px 12px;border-radius:20px;background:#e67e22;color:#fff"; groupRefBadge.textContent = "\uD83D\uDD17 " + s.quoteRef.trim();
+      var groupLbl = document.createElement("span"); groupLbl.style.cssText = "font-size:11px;font-weight:700;color:#a5590f"; groupLbl.textContent = groupItems.length + " linked special order enquiries for this job";
+      groupHdr.appendChild(groupRefBadge); groupHdr.appendChild(groupLbl);
+      groupWrap.appendChild(groupHdr);
+      groupItems.forEach(function(gi){ groupWrap.appendChild(buildSourcingCard(gi)); });
+      sv.appendChild(groupWrap);
+    } else {
+      sv.appendChild(buildSourcingCard(s));
+    }
   });
 }
 
