@@ -716,10 +716,9 @@ function exportWebsitesCSV() {
 
 function exportClientsCSV() {
   if (!clients.length) { toast("No clients to export"); return; }
-  var rows = [["Name","Phone"]];
+  var rows = [["Name","Primary Contact","Primary Phone","Secondary Contact","Secondary Phone"]];
   clients.forEach(function(c){
-    var phone = c.mobile || c.tel || "";
-    rows.push([c.name||"", phone]);
+    rows.push([c.name||"", c.contact||"", c.mobile||"", c.contact2||"", c.mobile2||""]);
   });
   csvDownload(rows, "clients-export");
   toast("Exported " + clients.length + " clients \u2713");
@@ -1239,7 +1238,7 @@ function loadClients(){
   }catch(e){}
   return [];
 }
-function copyC(d){return{id:d.id,binder:d.binder,name:d.name,contact:d.contact||"",manager:d.manager||"Sinbad",tel:d.tel||"",mobile:d.mobile||"",address:d.address||"",product:d.product||"",spend:d.spend||"",priority:d.priority||"",status:d.status||"Prospect",interactionType:d.interactionType||"",lastContact:d.lastContact||"",followup:d.followup||"",notes:d.notes||"",competitorNotes:d.competitorNotes||"",wontBuy:d.wontBuy||"",keyDates:d.keyDates||"",log:[]}}
+function copyC(d){return{id:d.id,binder:d.binder,name:d.name,contact:d.contact||"",manager:d.manager||"Sinbad",mobile:d.mobile||"",contact2:d.contact2||"",mobile2:d.mobile2||"",address:d.address||"",product:d.product||"",spend:d.spend||"",priority:d.priority||"",status:d.status||"Prospect",interactionType:d.interactionType||"",lastContact:d.lastContact||"",followup:d.followup||"",notes:d.notes||"",competitorNotes:d.competitorNotes||"",wontBuy:d.wontBuy||"",keyDates:d.keyDates||"",log:[]}}
 function loadReps(){
   try{var r=localStorage.getItem(RSTORE);if(r){var s=JSON.parse(r);if(s&&s.length>0)return s;}}catch(e){}
   var d=JSON.parse(JSON.stringify(DEFAULT_REPS));try{localStorage.setItem(RSTORE,JSON.stringify(d));}catch(e){}return d;
@@ -1306,12 +1305,12 @@ function setF(btn){document.querySelectorAll(".fb").forEach(function(b){b.classL
 function renderList(){
   var q=document.getElementById("sq").value.toLowerCase();
   var fl=clients.filter(function(c){
-    var mq=!q||[c.name,c.binder,c.tel,c.mobile,c.contact].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
+    var mq=!q||[c.name,c.binder,c.mobile,c.contact,c.mobile2,c.contact2].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
     return mq&&(activeFilter==="All"||c.status===activeFilter);
   }).sort(function(a,b){ return (a.name||"").localeCompare(b.name||"", undefined, {sensitivity:"base"}); });
   var el=document.getElementById("clist");
   if(!fl.length){
-    var archivedMatch=q?archivedClients.filter(function(c){return[c.name,c.binder,c.tel,c.mobile,c.contact].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});}):[];
+    var archivedMatch=q?archivedClients.filter(function(c){return[c.name,c.binder,c.mobile,c.contact,c.mobile2,c.contact2].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});}):[];
     if(archivedMatch.length){
       el.innerHTML="";
       var archNote=document.createElement("div");archNote.style.cssText="padding:10px 12px;background:#f5f0ff;border:2px solid #9b59b6;border-radius:var(--rs);margin:8px;font-size:11px;color:#6c3483;font-weight:700";archNote.textContent="\uD83D\uDDC4\uFE0F "+archivedMatch.length+" archived result"+(archivedMatch.length>1?"s":"")+" found:";el.appendChild(archNote);
@@ -1382,7 +1381,7 @@ function renderClientsView(searchTerm){
   cv.appendChild(fbar);
 
   var filtered=clients.filter(function(c){
-    var mq=!q||[c.name,c.binder,c.tel,c.mobile,c.contact].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
+    var mq=!q||[c.name,c.binder,c.mobile,c.contact,c.mobile2,c.contact2].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
     var ms=clientsActiveStatus==="All"||c.status===clientsActiveStatus;
     return mq&&ms;
   }).sort(function(a,b){return(a.name||"").localeCompare(b.name||"",undefined,{sensitivity:"base"});});
@@ -1420,7 +1419,7 @@ function renderClientsView(searchTerm){
         if(c.priority){var st2=document.createElement("span");st2.className="stars";st2.textContent=c.priority;meta.appendChild(st2);}
         if(dl){var ft=document.createElement("span");ft.className="ftag "+dc;ft.textContent=dl;meta.appendChild(ft);}
         body.appendChild(meta);
-        if(c.tel){var tr=document.createElement("div");tr.style.cssText="font-size:11px;margin-bottom:4px";tr.innerHTML='<span style="color:var(--muted);font-size:9px;font-weight:700;text-transform:uppercase;margin-right:5px">Tel</span>'+c.tel;body.appendChild(tr);}
+        if(c.mobile){var tr=document.createElement("div");tr.style.cssText="font-size:11px;margin-bottom:4px";tr.innerHTML='<span style="color:var(--muted);font-size:9px;font-weight:700;text-transform:uppercase;margin-right:5px">Mobile</span>'+c.mobile;body.appendChild(tr);}
         card.appendChild(body);grid.appendChild(card);
       });
       section.appendChild(grid);cv.appendChild(section);
@@ -2179,7 +2178,7 @@ function renderDet(){
   }
     var sourceColors = {"Existing Customer":"background:#e8edf6;color:#2348b0","Existing Customer (Dormant 12m+)":"background:#f0e6f6;color:#6b2d8b","New - Sinbad's Old Customer":"background:var(--gbg);color:var(--gtxt)","New - Walk In":"background:#e8f5e0;color:#2d6a0f","New - Referral":"background:#fff3e0;color:#854f0b","Fitter":"background:var(--lbg);color:var(--ltxt)"};
   var sourceHtml = c.source ? "<span style=\'font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;"+(sourceColors[c.source]||"background:var(--alt);color:var(--muted)")+"\'>"+c.source+"</span>" : "&mdash;";
-  grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",labelColor:"#2348b0",val:c.binder},{label:"Manager",labelColor:"#9b59b6",val:c.manager},{label:"Account name",labelColor:"#16324D",val:c.name,wide:true},{label:"Contact name",labelColor:"#2d6a0f",val:c.contact,wide:true},{label:"Customer source",labelColor:"#c77800",html:sourceHtml},{label:"Telephone",labelColor:"#b23a2e",val:c.tel},{label:"Mobile",labelColor:"#0f7d5c",val:c.mobile},{label:"Area",labelColor:"#b8860b",val:c.address}],true));
+  grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",labelColor:"#2348b0",val:c.binder},{label:"Manager",labelColor:"#9b59b6",val:c.manager},{label:"Account name",labelColor:"#16324D",val:c.name,wide:true},{label:"Primary contact name",labelColor:"#2d6a0f",val:c.contact},{label:"Primary contact number",labelColor:"#0f7d5c",val:c.mobile},{label:"Secondary contact name",labelColor:"#2d6a0f",val:c.contact2},{label:"Secondary contact number",labelColor:"#0f7d5c",val:c.mobile2},{label:"Customer source",labelColor:"#c77800",html:sourceHtml},{label:"Area",labelColor:"#b8860b",val:c.address}],true));
   grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",labelColor:"#2348b0",val:c.product,wide:true},{label:"Est. annual spend",labelColor:"#2d6a0f",html:(function(){var auto=calcAnnualSpend(c);if(auto>0){return "<span style='color:var(--gtxt);font-weight:700'>\u00a3"+auto.toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>(paid orders, last 12mo)</span>";}return c.spend?("\u00a3"+c.spend+" <span style='font-size:9px;color:var(--muted)'>(manual estimate)</span>"):"\u2014";})()},{label:"Priority",labelColor:"#e8a020",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",labelColor:"#16324D",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",labelColor:"#0f7d5c",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected")t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",labelColor:"#b23a2e",val:c.wontBuy,wide:true},{label:"Who else they buy from",labelColor:"#9b59b6",val:c.competitorNotes,wide:true}],true));
   grid.appendChild(addSec("full","t-tr","Tracking",[{label:"Status",labelColor:"#2348b0",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",labelColor:"#9b59b6",val:c.interactionType},{label:"Last contacted",labelColor:"#2d6a0f",val:c.lastContact},{label:"Follow-up date",labelColor:"#c77800",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Account opened",labelColor:"#16324D",val:c.dateOpened||"—"},{label:"Key dates",labelColor:"#b23a2e",val:c.keyDates,wide:true}],true));
   var notesSec=document.createElement("div");notesSec.className="sec full";
@@ -2758,14 +2757,15 @@ function showForm(id){
   var dupWarnBox = document.createElement("div"); dupWarnBox.style.cssText = "background:#fff4e0;border:2px solid #f0c060;border-radius:var(--rs);padding:9px 11px;font-size:11px;color:#8a5a00";
   dupWarnWrap.appendChild(dupWarnBox);
   g1.appendChild(dupWarnWrap);
-  mkF(g1,"Contact name",mkI("e_contact",c?c.contact:"","Primary contact person"),true);
+  mkF(g1,"Primary contact name",mkI("e_contact",c?c.contact:"","Primary contact person"));
+  var e_mob=mkI("e_mob",c?c.mobile:"","07700 000000","tel"); e_mob.maxLength=14;
+  mkF(g1,"Primary contact number",e_mob);
+  mkF(g1,"Secondary contact name",mkI("e_contact2",c?c.contact2:"","Secondary contact person (optional)"));
+  var e_mob2=mkI("e_mob2",c?c.mobile2:"","07700 000000","tel"); e_mob2.maxLength=14;
+  mkF(g1,"Secondary contact number",e_mob2);
   var srcSel=document.createElement("select");srcSel.id="e_source";srcSel.style.cssText="width:100%;padding:6px 8px;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;color:var(--text);outline:none";
   [""].concat(CLIENT_CATS).forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2||"-- Select source --";if(c&&c.source===s2)opt.selected=true;srcSel.appendChild(opt);});
   mkF(g1,"Customer source",srcSel,true);
-  var e_tel=mkI("e_tel",c?c.tel:"","0113 000 0000","tel"); e_tel.maxLength=14;
-  var e_mob=mkI("e_mob",c?c.mobile:"","07700 000000","tel"); e_mob.maxLength=14;
-  mkF(g1,"Telephone",e_tel);
-  mkF(g1,"Mobile",e_mob);
   mkF(g1,"Area",mkI("e_addr",c?c.address:"","e.g. Leeds, Sheffield"));
 
   var g3=mkSec("Intelligence");
@@ -2859,8 +2859,9 @@ function submitForm(){
     id:editId||binder,binder:binder,name:name,
     contact:document.getElementById("e_contact").value.trim(),
     manager:document.getElementById("e_mgr").value.trim(),
-    tel:document.getElementById("e_tel").value.trim(),
     mobile:document.getElementById("e_mob").value.trim(),
+    contact2:document.getElementById("e_contact2").value.trim(),
+    mobile2:document.getElementById("e_mob2").value.trim(),
     address:document.getElementById("e_addr").value.trim(),
     product:document.getElementById("e_prod").value.trim(),
     spend:document.getElementById("e_spend").value.trim(),
@@ -5287,6 +5288,7 @@ function showWebsites() {
 }
 
 var TOOLS_LIST = [
+  { name: "Margin Calculator", desc: "Nett price + margin % \u2192 customer price ex/inc VAT, plus box pricing.", icon: "\uD83E\uDDEE", native: true },
   { name: "Margin Cutter", desc: "Work out the discount needed to hit a target margin, inc/ex VAT.", icon: "\uD83D\uDCB0", url: "margin-cutter.html" },
   { name: "Roll Planner", desc: "Carpet area & roll-width planner for rectangles, L-shapes, stairs and chimney breasts.", icon: "\uD83D\uDCD0", url: "roll-planner.html" }
 ];
@@ -5341,13 +5343,19 @@ function openToolInline(t){
   label.style.cssText = "font-size:14px;font-weight:700;color:var(--navy)";
   label.textContent = t.icon + " " + t.name;
 
+  barWrap.appendChild(backBtn);
+  barWrap.appendChild(label);
+
+  if (t.native) {
+    tv.appendChild(barWrap);
+    renderMarginCalcNative(tv);
+    return;
+  }
+
   var openNewTab = document.createElement("a");
   openNewTab.href = t.url; openNewTab.target = "_blank"; openNewTab.rel = "noopener";
   openNewTab.style.cssText = "font-size:11px;color:var(--muted);text-decoration:underline";
   openNewTab.textContent = "open in new tab \u2197";
-
-  barWrap.appendChild(backBtn);
-  barWrap.appendChild(label);
   barWrap.appendChild(openNewTab);
   tv.appendChild(barWrap);
 
@@ -5355,6 +5363,137 @@ function openToolInline(t){
   iframe.src = t.url;
   iframe.style.cssText = "width:100%;height:78vh;border:2px solid var(--border);border-radius:var(--r);background:#fff";
   tv.appendChild(iframe);
+}
+
+// Built-in Margin Calculator — nett price + margin % <-> customer price ex/inc VAT,
+// plus box pricing, fully native (no iframe), matching CRM styling.
+function renderMarginCalcNative(container) {
+  var wrap = document.createElement("div");
+  wrap.style.cssText = "max-width:520px";
+
+  function mkCard(titleTxt) {
+    var card = document.createElement("div");
+    card.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+    var h = document.createElement("div");
+    h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)";
+    h.textContent = titleTxt;
+    card.appendChild(h);
+    wrap.appendChild(card);
+    return card;
+  }
+  function mkFd(lbl, inp, extraCss) {
+    var w = document.createElement("div"); w.style.cssText = "margin-bottom:10px" + (extraCss||"");
+    var l = document.createElement("label"); l.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:4px"; l.textContent = lbl;
+    w.appendChild(l); w.appendChild(inp);
+    return w;
+  }
+  function mkMoneyInput(id) {
+    var box = document.createElement("div"); box.style.cssText = "display:flex;align-items:center;border:2px solid var(--border);border-radius:var(--rs);background:#fff;overflow:hidden";
+    var pre = document.createElement("span"); pre.style.cssText = "color:var(--muted);font-size:15px;font-weight:600;padding-left:11px"; pre.textContent = "\u00a3";
+    var inp = document.createElement("input"); inp.id = id; inp.type = "number"; inp.step = "0.01";
+    inp.style.cssText = "border:none;flex:1;min-width:0;padding:9px 9px 9px 4px;font-size:15px;font-family:inherit;outline:none;background:transparent";
+    box.appendChild(pre); box.appendChild(inp);
+    return { box: box, inp: inp };
+  }
+  function mkStat(lblTxt, id, colorVar) {
+    var s = document.createElement("div"); s.style.cssText = "background:var(--alt);border-radius:var(--rs);padding:10px 11px";
+    var l = document.createElement("div"); l.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:4px"; l.textContent = lblTxt;
+    var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:baseline";
+    var pre = document.createElement("span"); pre.style.cssText = "font-size:15px;font-weight:700;margin-right:2px;flex-shrink:0;color:"+colorVar; pre.textContent = "\u00a3";
+    var inp = document.createElement("input"); inp.id = id; inp.type = "number"; inp.step = "0.01";
+    inp.style.cssText = "font-size:17px;font-weight:700;font-family:inherit;border:none;background:none;padding:0;outline:none;color:"+colorVar+";flex:1;min-width:0";
+    row.appendChild(pre); row.appendChild(inp);
+    s.appendChild(l); s.appendChild(row);
+    return { el: s, inp: inp };
+  }
+  function mkStatic(lblTxt) {
+    var s = document.createElement("div"); s.style.cssText = "background:var(--alt);border-radius:var(--rs);padding:10px 11px";
+    var l = document.createElement("div"); l.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:4px"; l.textContent = lblTxt;
+    var v = document.createElement("div"); v.style.cssText = "font-size:15px;font-weight:700;color:var(--navy)"; v.textContent = "\u2014";
+    s.appendChild(l); s.appendChild(v);
+    return { el: s, valEl: v };
+  }
+
+  // Card 1: inputs
+  var c1 = mkCard("Per m\u00b2 (or per unit)");
+  var row1 = document.createElement("div"); row1.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px";
+  var nettEx = mkMoneyInput("mc_nettEx");
+  row1.appendChild(mkFd("Our nett price ex VAT", nettEx.box));
+  var marginBox = document.createElement("div"); marginBox.style.cssText = "display:flex;align-items:center;border:2px solid #e6a15c;border-radius:var(--rs);background:#fff;overflow:hidden";
+  var marginInp = document.createElement("input"); marginInp.id = "mc_margin"; marginInp.type = "number"; marginInp.step = "0.1"; marginInp.placeholder = "40";
+  marginInp.style.cssText = "border:none;flex:1;min-width:0;padding:9px 4px 9px 9px;font-size:15px;font-family:inherit;outline:none;background:transparent";
+  var marginSuf = document.createElement("span"); marginSuf.style.cssText = "color:#CC9400;font-size:15px;font-weight:600;padding-right:11px"; marginSuf.textContent = "%";
+  marginBox.appendChild(marginInp); marginBox.appendChild(marginSuf);
+  var marginFd = mkFd("Margin % (on customer price)", marginBox);
+  marginFd.style.cssText += ";background:#fff4e8;border:2px solid #e6a15c;border-radius:var(--rs);padding:8px 10px";
+  marginFd.querySelector("label").style.color = "#CC9400";
+  row1.appendChild(marginFd);
+  c1.appendChild(row1);
+  var swapHint = document.createElement("div"); swapHint.style.cssText = "font-size:10.5px;color:var(--muted);margin-top:8px"; swapHint.textContent = "Prefer to type the customer price instead? Fill that box below and the margin works itself out.";
+  c1.appendChild(swapHint);
+
+  // Card 2: results
+  var c2 = mkCard("Results");
+  var resGrid = document.createElement("div"); resGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px";
+  var nettInc = mkStat("Our nett price inc VAT", "mc_nettInc", "var(--navy)");
+  var custEx = mkStat("Customer price ex VAT", "mc_custEx", "#e67e22");
+  var custInc = mkStat("Customer price inc VAT", "mc_custInc", "#e67e22");
+  custInc.el.style.gridColumn = "1/-1";
+  resGrid.appendChild(nettInc.el); resGrid.appendChild(custEx.el); resGrid.appendChild(custInc.el);
+  c2.appendChild(resGrid);
+  var resHint = document.createElement("div"); resHint.style.cssText = "font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5"; resHint.textContent = "Every box above is editable \u2014 change any of them and the rest recalculate, including the margin %.";
+  c2.appendChild(resHint);
+
+  // Card 3: box pricing
+  var c3 = mkCard("Box price");
+  var m2Box = document.createElement("input"); m2Box.id = "mc_m2Box"; m2Box.type = "number"; m2Box.step = "0.01"; m2Box.placeholder = "2.16";
+  m2Box.style.cssText = "width:100%;padding:9px;border:2px solid var(--border);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none";
+  c3.appendChild(mkFd("m\u00b2 per box", m2Box));
+  var boxGrid = document.createElement("div"); boxGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px";
+  var boxNettEx = mkStatic("Nett box price ex VAT");
+  var boxNettInc = mkStatic("Nett box price inc VAT");
+  var boxCustEx = mkStatic("Customer box price ex VAT"); boxCustEx.valEl.style.color = "#e67e22";
+  var boxCustInc = mkStatic("Customer box price inc VAT"); boxCustInc.valEl.style.color = "#e67e22";
+  boxGrid.appendChild(boxNettEx.el); boxGrid.appendChild(boxNettInc.el); boxGrid.appendChild(boxCustEx.el); boxGrid.appendChild(boxCustInc.el);
+  c3.appendChild(boxGrid);
+
+  container.appendChild(wrap);
+
+  // Wiring — same bidirectional logic as the standalone tool
+  function fmtMoney(v) { return isFinite(v) ? ("\u00a3" + v.toFixed(2)) : "\u2014"; }
+  function recalcFromNettMargin() {
+    var ne = parseFloat(nettEx.inp.value);
+    var m = parseFloat(marginInp.value);
+    if (!isNaN(ne)) nettInc.inp.value = (ne * 1.2).toFixed(2);
+    if (!isNaN(ne) && !isNaN(m) && m >= 0 && m < 100) {
+      var ce = ne / (1 - m / 100);
+      custEx.inp.value = ce.toFixed(2);
+      custInc.inp.value = (ce * 1.2).toFixed(2);
+    }
+    updateBox();
+  }
+  function recalcMarginFromCust() {
+    var ne = parseFloat(nettEx.inp.value);
+    var ce = parseFloat(custEx.inp.value);
+    if (!isNaN(ne) && !isNaN(ce) && ce > 0) marginInp.value = (((ce - ne) / ce) * 100).toFixed(1);
+    if (!isNaN(ce)) custInc.inp.value = (ce * 1.2).toFixed(2);
+    updateBox();
+  }
+  function updateBox() {
+    var m2 = parseFloat(m2Box.value);
+    var ne = parseFloat(nettEx.inp.value), ni = parseFloat(nettInc.inp.value);
+    var ce = parseFloat(custEx.inp.value), ci = parseFloat(custInc.inp.value);
+    boxNettEx.valEl.textContent = (!isNaN(m2) && !isNaN(ne)) ? fmtMoney(ne * m2) : "\u2014";
+    boxNettInc.valEl.textContent = (!isNaN(m2) && !isNaN(ni)) ? fmtMoney(ni * m2) : "\u2014";
+    boxCustEx.valEl.textContent = (!isNaN(m2) && !isNaN(ce)) ? fmtMoney(ce * m2) : "\u2014";
+    boxCustInc.valEl.textContent = (!isNaN(m2) && !isNaN(ci)) ? fmtMoney(ci * m2) : "\u2014";
+  }
+  nettEx.inp.addEventListener("input", function(){ if (marginInp.value.trim() !== "") recalcFromNettMargin(); else recalcMarginFromCust(); });
+  marginInp.addEventListener("input", recalcFromNettMargin);
+  custEx.inp.addEventListener("input", recalcMarginFromCust);
+  custInc.inp.addEventListener("input", function(){ var v = parseFloat(this.value); if (!isNaN(v)) custEx.inp.value = (v / 1.2).toFixed(2); recalcMarginFromCust(); });
+  nettInc.inp.addEventListener("input", function(){ var v = parseFloat(this.value); if (!isNaN(v)) nettEx.inp.value = (v / 1.2).toFixed(2); if (marginInp.value.trim() !== "") recalcFromNettMargin(); else recalcMarginFromCust(); });
+  m2Box.addEventListener("input", updateBox);
 }
 
 function renderWebsitesView() {
