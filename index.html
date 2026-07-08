@@ -316,6 +316,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
         <button class="nav-btn" onclick="showReps()">&#128101; Rep/ASM</button>
         <button class="nav-btn" onclick="showComplaints()">&#128221; Complaints</button>
         <button class="nav-btn" onclick="showEnquiries()" style="background:rgba(155,89,182,.2);border-color:rgba(155,89,182,.4)">&#128172; Enquiries</button>
+        <button class="nav-btn" onclick="showSourcing()" style="background:rgba(230,126,34,.2);border-color:rgba(230,126,34,.4)">&#127981; Sourcing</button>
         <button class="nav-btn" onclick="showMonthlyReport()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128202; Report</button>
         <button class="nav-btn" onclick="showWebsites()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#127760; Websites</button>
         <button class="nav-btn" onclick="showDocs()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128196; Docs</button>
@@ -368,6 +369,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
     <div id="toolsView" class="page"></div>
     <div id="docsView" class="page"></div>
     <div id="enquiriesView" class="page"></div>
+    <div id="sourcingView" class="page"></div>
     <div id="tasksView" class="page"></div>
     <div id="notesSearchView" class="page"></div>
   </main>
@@ -714,10 +716,9 @@ function exportWebsitesCSV() {
 
 function exportClientsCSV() {
   if (!clients.length) { toast("No clients to export"); return; }
-  var rows = [["Name","Phone"]];
+  var rows = [["Name","Primary Contact","Primary Phone","Secondary Contact","Secondary Phone"]];
   clients.forEach(function(c){
-    var phone = c.mobile || c.tel || "";
-    rows.push([c.name||"", phone]);
+    rows.push([c.name||"", c.contact||"", c.mobile||"", c.contact2||"", c.mobile2||""]);
   });
   csvDownload(rows, "clients-export");
   toast("Exported " + clients.length + " clients \u2713");
@@ -1200,6 +1201,27 @@ var MANUFACTURERS=loadManufacturers();
 syncManufacturersFromCloud();
 var CLIENT_CATS=loadClientCats();
 syncClientCatsFromCloud();
+var SOURCING_STORE="spcrm_sourcing_v1";
+var sourcing=[];
+function loadSourcing(){try{var s=localStorage.getItem(SOURCING_STORE);if(s){var c=JSON.parse(s);if(Array.isArray(c))return c;}}catch(e){}return [];}
+function saveSourcing(){
+  try{localStorage.setItem(SOURCING_STORE,JSON.stringify(sourcing));}catch(e){}
+  sbUpsert("settings","sourcing",{key:"sourcing",value:sourcing});
+}
+async function syncSourcingFromCloud(){
+  try{
+    var rows=await sbGet("settings");
+    if(rows){
+      var row=rows.find(function(r){return r&&r.key==="sourcing";});
+      if(row&&Array.isArray(row.value)){
+        sourcing.length=0; row.value.forEach(function(v){sourcing.push(v);});
+        try{localStorage.setItem(SOURCING_STORE,JSON.stringify(sourcing));}catch(e){}
+        if(document.getElementById("sourcingView")&&document.getElementById("sourcingView").style.display==="block")renderSourcingView();
+      }
+    }
+  }catch(e){ console.warn("sourcing cloud sync failed", e); }
+}
+syncSourcingFromCloud();
 var clients,reps,samples,birthdays,complaints;
 var activeFilter="All",activeId=null,editId=null,showLF=false,pendingDel=null;
 var detLogTab="Interactions";
@@ -1216,7 +1238,7 @@ function loadClients(){
   }catch(e){}
   return [];
 }
-function copyC(d){return{id:d.id,binder:d.binder,name:d.name,contact:d.contact||"",manager:d.manager||"Sinbad",tel:d.tel||"",mobile:d.mobile||"",address:d.address||"",product:d.product||"",spend:d.spend||"",priority:d.priority||"",status:d.status||"Prospect",interactionType:d.interactionType||"",lastContact:d.lastContact||"",followup:d.followup||"",notes:d.notes||"",competitorNotes:d.competitorNotes||"",wontBuy:d.wontBuy||"",keyDates:d.keyDates||"",log:[]}}
+function copyC(d){return{id:d.id,binder:d.binder,name:d.name,contact:d.contact||"",manager:d.manager||"Sinbad",mobile:d.mobile||"",contact2:d.contact2||"",mobile2:d.mobile2||"",address:d.address||"",product:d.product||"",spend:d.spend||"",priority:d.priority||"",status:d.status||"Prospect",interactionType:d.interactionType||"",lastContact:d.lastContact||"",followup:d.followup||"",notes:d.notes||"",competitorNotes:d.competitorNotes||"",wontBuy:d.wontBuy||"",keyDates:d.keyDates||"",log:[]}}
 function loadReps(){
   try{var r=localStorage.getItem(RSTORE);if(r){var s=JSON.parse(r);if(s&&s.length>0)return s;}}catch(e){}
   var d=JSON.parse(JSON.stringify(DEFAULT_REPS));try{localStorage.setItem(RSTORE,JSON.stringify(d));}catch(e){}return d;
@@ -1258,7 +1280,7 @@ function updateStats(){
 
 // ── VIEW MANAGER ──────────────────────────────────────────────────
 function showView(v){
-  ["dashView","detView","clientsView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView","tasksView","toolsView"].forEach(function(id){
+  ["dashView","detView","clientsView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView","sourcingView","tasksView","toolsView"].forEach(function(id){
     var el=document.getElementById(id);
     el.style.display=(id===v+"View"||(v==="det"&&id==="detView")||(v==="form"&&id==="formView"))?"block":"none";
   });
@@ -1283,12 +1305,12 @@ function setF(btn){document.querySelectorAll(".fb").forEach(function(b){b.classL
 function renderList(){
   var q=document.getElementById("sq").value.toLowerCase();
   var fl=clients.filter(function(c){
-    var mq=!q||[c.name,c.binder,c.tel,c.mobile,c.contact].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
+    var mq=!q||[c.name,c.binder,c.mobile,c.contact,c.mobile2,c.contact2].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
     return mq&&(activeFilter==="All"||c.status===activeFilter);
   }).sort(function(a,b){ return (a.name||"").localeCompare(b.name||"", undefined, {sensitivity:"base"}); });
   var el=document.getElementById("clist");
   if(!fl.length){
-    var archivedMatch=q?archivedClients.filter(function(c){return[c.name,c.binder,c.tel,c.mobile,c.contact].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});}):[];
+    var archivedMatch=q?archivedClients.filter(function(c){return[c.name,c.binder,c.mobile,c.contact,c.mobile2,c.contact2].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});}):[];
     if(archivedMatch.length){
       el.innerHTML="";
       var archNote=document.createElement("div");archNote.style.cssText="padding:10px 12px;background:#f5f0ff;border:2px solid #9b59b6;border-radius:var(--rs);margin:8px;font-size:11px;color:#6c3483;font-weight:700";archNote.textContent="\uD83D\uDDC4\uFE0F "+archivedMatch.length+" archived result"+(archivedMatch.length>1?"s":"")+" found:";el.appendChild(archNote);
@@ -1359,7 +1381,7 @@ function renderClientsView(searchTerm){
   cv.appendChild(fbar);
 
   var filtered=clients.filter(function(c){
-    var mq=!q||[c.name,c.binder,c.tel,c.mobile,c.contact].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
+    var mq=!q||[c.name,c.binder,c.mobile,c.contact,c.mobile2,c.contact2].some(function(v){return(v||"").toLowerCase().indexOf(q)>-1;});
     var ms=clientsActiveStatus==="All"||c.status===clientsActiveStatus;
     return mq&&ms;
   }).sort(function(a,b){return(a.name||"").localeCompare(b.name||"",undefined,{sensitivity:"base"});});
@@ -1397,7 +1419,7 @@ function renderClientsView(searchTerm){
         if(c.priority){var st2=document.createElement("span");st2.className="stars";st2.textContent=c.priority;meta.appendChild(st2);}
         if(dl){var ft=document.createElement("span");ft.className="ftag "+dc;ft.textContent=dl;meta.appendChild(ft);}
         body.appendChild(meta);
-        if(c.tel){var tr=document.createElement("div");tr.style.cssText="font-size:11px;margin-bottom:4px";tr.innerHTML='<span style="color:var(--muted);font-size:9px;font-weight:700;text-transform:uppercase;margin-right:5px">Tel</span>'+c.tel;body.appendChild(tr);}
+        if(c.mobile){var tr=document.createElement("div");tr.style.cssText="font-size:11px;margin-bottom:4px";tr.innerHTML='<span style="color:var(--muted);font-size:9px;font-weight:700;text-transform:uppercase;margin-right:5px">Mobile</span>'+c.mobile;body.appendChild(tr);}
         card.appendChild(body);grid.appendChild(card);
       });
       section.appendChild(grid);cv.appendChild(section);
@@ -2156,7 +2178,7 @@ function renderDet(){
   }
     var sourceColors = {"Existing Customer":"background:#e8edf6;color:#2348b0","Existing Customer (Dormant 12m+)":"background:#f0e6f6;color:#6b2d8b","New - Sinbad's Old Customer":"background:var(--gbg);color:var(--gtxt)","New - Walk In":"background:#e8f5e0;color:#2d6a0f","New - Referral":"background:#fff3e0;color:#854f0b","Fitter":"background:var(--lbg);color:var(--ltxt)"};
   var sourceHtml = c.source ? "<span style=\'font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;"+(sourceColors[c.source]||"background:var(--alt);color:var(--muted)")+"\'>"+c.source+"</span>" : "&mdash;";
-  grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",labelColor:"#2348b0",val:c.binder},{label:"Manager",labelColor:"#9b59b6",val:c.manager},{label:"Account name",labelColor:"#16324D",val:c.name,wide:true},{label:"Contact name",labelColor:"#2d6a0f",val:c.contact,wide:true},{label:"Customer source",labelColor:"#c77800",html:sourceHtml},{label:"Telephone",labelColor:"#b23a2e",val:c.tel},{label:"Mobile",labelColor:"#0f7d5c",val:c.mobile},{label:"Area",labelColor:"#b8860b",val:c.address}],true));
+  grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",labelColor:"#2348b0",val:c.binder},{label:"Manager",labelColor:"#9b59b6",val:c.manager},{label:"Account name",labelColor:"#16324D",val:c.name,wide:true},{label:"Primary contact name",labelColor:"#2d6a0f",val:c.contact},{label:"Primary contact number",labelColor:"#0f7d5c",val:c.mobile},{label:"Secondary contact name",labelColor:"#2d6a0f",val:c.contact2},{label:"Secondary contact number",labelColor:"#0f7d5c",val:c.mobile2},{label:"Customer source",labelColor:"#c77800",html:sourceHtml},{label:"Area",labelColor:"#b8860b",val:c.address}],true));
   grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",labelColor:"#2348b0",val:c.product,wide:true},{label:"Est. annual spend",labelColor:"#2d6a0f",html:(function(){var auto=calcAnnualSpend(c);if(auto>0){return "<span style='color:var(--gtxt);font-weight:700'>\u00a3"+auto.toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>(paid orders, last 12mo)</span>";}return c.spend?("\u00a3"+c.spend+" <span style='font-size:9px;color:var(--muted)'>(manual estimate)</span>"):"\u2014";})()},{label:"Priority",labelColor:"#e8a020",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",labelColor:"#16324D",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",labelColor:"#0f7d5c",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected")t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",labelColor:"#b23a2e",val:c.wontBuy,wide:true},{label:"Who else they buy from",labelColor:"#9b59b6",val:c.competitorNotes,wide:true}],true));
   grid.appendChild(addSec("full","t-tr","Tracking",[{label:"Status",labelColor:"#2348b0",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",labelColor:"#9b59b6",val:c.interactionType},{label:"Last contacted",labelColor:"#2d6a0f",val:c.lastContact},{label:"Follow-up date",labelColor:"#c77800",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Account opened",labelColor:"#16324D",val:c.dateOpened||"—"},{label:"Key dates",labelColor:"#b23a2e",val:c.keyDates,wide:true}],true));
   var notesSec=document.createElement("div");notesSec.className="sec full";
@@ -2178,6 +2200,11 @@ function renderDet(){
     tabRow.appendChild(tb);
   });
   logSec.appendChild(tabRow);
+  var srcCount=(sourcing||[]).filter(function(s){return s.clientId===c.id;}).length;
+  var srcBtn=document.createElement("button");srcBtn.style.cssText="margin:8px 0 4px;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #e67e22;"+(srcCount?"background:#fff4e8;color:#a5590f":"background:#e67e22;color:#fff");
+  srcBtn.textContent=srcCount?("\uD83C\uDFED Special order enquiries ("+srcCount+")"):"\uD83C\uDFED + New special order enquiry";
+  srcBtn.addEventListener("click",function(){srcCount?showSourcing(c.id):showSourcingForm(null,c.id);});
+  logSec.appendChild(srcBtn);
 
   if(showLF){logSec.appendChild(buildLogForm(c.id));}
   else{
@@ -2556,12 +2583,23 @@ function showQuoteEditForm(clientId, logIdx) {
     bd.appendChild(mkFd("Lost reason", lostReasonInp));
   }
 
-  box.appendChild(bd);
+  var relatedSourcing = q.ref ? (sourcing||[]).filter(function(s){ return s.clientId===c.id && s.quoteRef && s.quoteRef.trim().toLowerCase()===q.ref.trim().toLowerCase(); }) : [];
+  if (relatedSourcing.length) {
+    var srcDiv = document.createElement("div"); srcDiv.style.cssText = "background:#fff4e8;border:2px solid #e6a15c;border-radius:var(--rs);padding:10px 12px";
+    var srcTitle = document.createElement("div"); srcTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;color:#a5590f;letter-spacing:.4px;margin-bottom:6px"; srcTitle.textContent="\uD83C\uDFED Linked special order enquiry";
+    srcDiv.appendChild(srcTitle);
+    relatedSourcing.forEach(function(s){
+      var line = document.createElement("div"); line.style.cssText="font-size:12px;color:var(--text);margin-bottom:6px";
+      line.textContent = (s.company||"Supplier")+(s.asmRep?" \u2014 "+s.asmRep:"")+" \u00b7 "+(s.status||"Chasing Price");
+      var viewBtn = document.createElement("button"); viewBtn.type="button"; viewBtn.style.cssText="padding:4px 10px;background:#e67e22;border:none;border-radius:var(--rs);color:#fff;font-size:10px;font-weight:700;cursor:pointer";
+      viewBtn.textContent="View enquiry details";
+      viewBtn.addEventListener("click",(function(sid){return function(){ document.body.removeChild(overlay); showSourcingForm(sid); };})(s.id));
+      srcDiv.appendChild(line); srcDiv.appendChild(viewBtn);
+    });
+    bd.appendChild(srcDiv);
+  }
 
-  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px";
-  var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:8px 14px;background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
-  cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
-  var saveB = document.createElement("button"); saveB.style.cssText = "padding:8px 18px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; saveB.textContent = "Save changes";
+  box.appendChild(bd);
   saveB.addEventListener("click", function(){
     var newVal = valInp.value.trim();
     if (!newVal) { toast("Please enter a value"); return; }
@@ -2719,14 +2757,15 @@ function showForm(id){
   var dupWarnBox = document.createElement("div"); dupWarnBox.style.cssText = "background:#fff4e0;border:2px solid #f0c060;border-radius:var(--rs);padding:9px 11px;font-size:11px;color:#8a5a00";
   dupWarnWrap.appendChild(dupWarnBox);
   g1.appendChild(dupWarnWrap);
-  mkF(g1,"Contact name",mkI("e_contact",c?c.contact:"","Primary contact person"),true);
+  mkF(g1,"Primary contact name",mkI("e_contact",c?c.contact:"","Primary contact person"));
+  var e_mob=mkI("e_mob",c?c.mobile:"","07700 000000","tel"); e_mob.maxLength=14;
+  mkF(g1,"Primary contact number",e_mob);
+  mkF(g1,"Secondary contact name",mkI("e_contact2",c?c.contact2:"","Secondary contact person (optional)"));
+  var e_mob2=mkI("e_mob2",c?c.mobile2:"","07700 000000","tel"); e_mob2.maxLength=14;
+  mkF(g1,"Secondary contact number",e_mob2);
   var srcSel=document.createElement("select");srcSel.id="e_source";srcSel.style.cssText="width:100%;padding:6px 8px;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;color:var(--text);outline:none";
   [""].concat(CLIENT_CATS).forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2||"-- Select source --";if(c&&c.source===s2)opt.selected=true;srcSel.appendChild(opt);});
   mkF(g1,"Customer source",srcSel,true);
-  var e_tel=mkI("e_tel",c?c.tel:"","0113 000 0000","tel"); e_tel.maxLength=14;
-  var e_mob=mkI("e_mob",c?c.mobile:"","07700 000000","tel"); e_mob.maxLength=14;
-  mkF(g1,"Telephone",e_tel);
-  mkF(g1,"Mobile",e_mob);
   mkF(g1,"Area",mkI("e_addr",c?c.address:"","e.g. Leeds, Sheffield"));
 
   var g3=mkSec("Intelligence");
@@ -2820,8 +2859,9 @@ function submitForm(){
     id:editId||binder,binder:binder,name:name,
     contact:document.getElementById("e_contact").value.trim(),
     manager:document.getElementById("e_mgr").value.trim(),
-    tel:document.getElementById("e_tel").value.trim(),
     mobile:document.getElementById("e_mob").value.trim(),
+    contact2:document.getElementById("e_contact2").value.trim(),
+    mobile2:document.getElementById("e_mob2").value.trim(),
     address:document.getElementById("e_addr").value.trim(),
     product:document.getElementById("e_prod").value.trim(),
     spend:document.getElementById("e_spend").value.trim(),
@@ -2983,6 +3023,12 @@ function showRepDetail(id) {
       detField("Next visit",r.nextVisit?r.nextVisit.split("-").reverse().join("/"):"");
     }
     bd.appendChild(detRow);
+
+    var srcRepCount=(sourcing||[]).filter(function(s){return sourcingMatchesRep(s, r);}).length;
+    var srcRepBtn=document.createElement("button");srcRepBtn.style.cssText="margin-bottom:4px;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #e67e22;"+(srcRepCount?"background:#fff4e8;color:#a5590f":"background:#e67e22;color:#fff");
+    srcRepBtn.textContent=srcRepCount?("\uD83C\uDFED Special order enquiries ("+srcRepCount+")"):"\uD83C\uDFED + New special order enquiry";
+    srcRepBtn.addEventListener("click",function(){document.body.removeChild(overlay);srcRepCount?showSourcing(null,r.id):showSourcingForm(null,null,r.id);});
+    bd.appendChild(srcRepBtn);
 
     // Interaction log section
     var logSec = document.createElement("div");
@@ -5242,6 +5288,7 @@ function showWebsites() {
 }
 
 var TOOLS_LIST = [
+  { name: "Margin Calculator", desc: "Nett price + margin % \u2192 customer price ex/inc VAT, plus box pricing.", icon: "\uD83E\uDDEE", url: "margin-calculator.html" },
   { name: "Margin Cutter", desc: "Work out the discount needed to hit a target margin, inc/ex VAT.", icon: "\uD83D\uDCB0", url: "margin-cutter.html" },
   { name: "Roll Planner", desc: "Carpet area & roll-width planner for rectangles, L-shapes, stairs and chimney breasts.", icon: "\uD83D\uDCD0", url: "roll-planner.html" }
 ];
@@ -5957,6 +6004,372 @@ function showEnquiryForm() {
   foot.appendChild(cancelB); foot.appendChild(saveB);
   box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
   setTimeout(function(){ nameInp.focus(); }, 100);
+}
+
+// ── SOURCING (special order / manufacturer price-chase sheet) ─────
+var sourcingFilter = "Open";
+var sourcingClientFilter = null; // set to a client id to pre-filter the list
+var sourcingRepFilter = null; // set to a rep id to pre-filter the list (used when no client filter is set)
+var SOURCING_STATUSES = ["Chasing Price","Priced","Quoted to Client","Ordered","Received","Cancelled"];
+var SOURCING_STATUS_COLORS = {"Chasing Price":"#e67e22","Priced":"#f0c060","Quoted to Client":"#305CDE","Ordered":"#9b59b6","Received":"#2ecc71","Cancelled":"#7f8c8d"};
+
+function showSourcing(clientId, repId) {
+  sourcingClientFilter = clientId || null;
+  sourcingRepFilter = (!clientId && repId) ? repId : null;
+  sourcingFilter = "Open";
+  activeId = null; renderList(); showView("sourcing"); renderSourcingView();
+}
+
+function sourcingMatchesRep(s, repObj) {
+  if (!repObj) return false;
+  if (s.repId) return s.repId === repObj.id;
+  return !!(s.asmRep && s.asmRep.toLowerCase().indexOf(repObj.name.toLowerCase()) > -1);
+}
+
+function findClientLogIdxByRef(clientId, ref) {
+  var c = clients.find(function(x){ return x.id===clientId; });
+  if (!c || !c.log || !ref) return -1;
+  for (var i=0;i<c.log.length;i++) {
+    if (c.log[i].quote && c.log[i].quote.ref && c.log[i].quote.ref.trim().toLowerCase()===String(ref).trim().toLowerCase()) return i;
+  }
+  return -1;
+}
+function jumpToClientQuote(clientId, ref) {
+  openC(clientId);
+  setTimeout(function(){
+    var idx = findClientLogIdxByRef(clientId, ref);
+    if (idx > -1) { showQuoteEditForm(clientId, idx); } else { toast("Quote ref not found on this client \u2014 showing client instead"); }
+  }, 200);
+}
+
+function renderSourcingView() {
+  var sv = document.getElementById("sourcingView");
+  sv.innerHTML = "";
+
+  var hdr = document.createElement("div"); hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:8px";
+  var title = document.createElement("h2"); title.style.cssText = "font-size:18px;font-weight:700"; title.textContent = "\uD83C\uDFED Sourcing";
+  var addBtn = document.createElement("button"); addBtn.style.cssText = "padding:8px 16px;background:#e67e22;border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer"; addBtn.textContent = "+ New special order enquiry";
+  addBtn.addEventListener("click", function(){ showSourcingForm(null, sourcingClientFilter, sourcingRepFilter); });
+  hdr.appendChild(title); hdr.appendChild(addBtn); sv.appendChild(hdr);
+
+  var sub = document.createElement("div"); sub.style.cssText = "font-size:12px;color:var(--muted);margin-bottom:12px"; sub.textContent = "Chase sheet for manufacturer/supplier prices \u2014 keeps your cost price and margin separate from what the client sees on their quote.";
+  sv.appendChild(sub);
+
+  var repFilterObj = sourcingRepFilter ? reps.find(function(x){ return x.id===sourcingRepFilter; }) : null;
+
+  if (sourcingClientFilter) {
+    var fc = clients.find(function(x){ return x.id===sourcingClientFilter; });
+    var banner = document.createElement("div"); banner.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#fff4e8;border:2px solid #e6a15c;border-radius:var(--rs);padding:8px 12px;margin-bottom:14px;font-size:12px;color:#a5590f";
+    var bt = document.createElement("span"); bt.textContent = "Showing special order enquiries for " + (fc ? fc.name : "this client");
+    var clearB = document.createElement("button"); clearB.style.cssText = "padding:3px 10px;background:none;border:1px solid #e6a15c;border-radius:20px;color:#a5590f;font-size:10px;font-weight:700;cursor:pointer"; clearB.textContent = "Show all";
+    clearB.addEventListener("click", function(){ sourcingClientFilter = null; renderSourcingView(); });
+    banner.appendChild(bt); banner.appendChild(clearB); sv.appendChild(banner);
+  } else if (sourcingRepFilter) {
+    var banner2 = document.createElement("div"); banner2.style.cssText = "display:flex;align-items:center;justify-content:space-between;background:#fff4e8;border:2px solid #e6a15c;border-radius:var(--rs);padding:8px 12px;margin-bottom:14px;font-size:12px;color:#a5590f";
+    var bt2 = document.createElement("span"); bt2.textContent = "Showing special order enquiries chased with " + (repFilterObj ? repFilterObj.name : "this rep");
+    var clearB2 = document.createElement("button"); clearB2.style.cssText = "padding:3px 10px;background:none;border:1px solid #e6a15c;border-radius:20px;color:#a5590f;font-size:10px;font-weight:700;cursor:pointer"; clearB2.textContent = "Show all";
+    clearB2.addEventListener("click", function(){ sourcingRepFilter = null; renderSourcingView(); });
+    banner2.appendChild(bt2); banner2.appendChild(clearB2); sv.appendChild(banner2);
+  }
+
+  // Filter tabs
+  var filterRow = document.createElement("div"); filterRow.style.cssText = "display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap";
+  var baseList = sourcing;
+  if (sourcingClientFilter) baseList = baseList.filter(function(s){ return s.clientId===sourcingClientFilter; });
+  else if (sourcingRepFilter) baseList = baseList.filter(function(s){ return sourcingMatchesRep(s, repFilterObj); });
+  ["Open","All"].concat(SOURCING_STATUSES).forEach(function(f){
+    var count;
+    if (f==="All") count = baseList.length;
+    else if (f==="Open") count = baseList.filter(function(s){ return s.status!=="Received" && s.status!=="Cancelled"; }).length;
+    else count = baseList.filter(function(s){ return s.status===f; }).length;
+    if (f!=="Open" && f!=="All" && count===0) return;
+    var btn = document.createElement("button");
+    btn.textContent = f + " (" + count + ")";
+    btn.style.cssText = "padding:5px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid "+(sourcingFilter===f?"#e67e22":"var(--border)")+";background:"+(sourcingFilter===f?"#e67e22":"var(--surface)")+";color:"+(sourcingFilter===f?"#fff":"var(--muted)");
+    btn.addEventListener("click", function(){ sourcingFilter = f; renderSourcingView(); });
+    filterRow.appendChild(btn);
+  });
+  sv.appendChild(filterRow);
+
+  var visible = baseList.filter(function(s){
+    if (sourcingFilter === "All") return true;
+    if (sourcingFilter === "Open") return s.status!=="Received" && s.status!=="Cancelled";
+    return s.status === sourcingFilter;
+  });
+
+  if (!visible.length) {
+    var empty = document.createElement("div"); empty.style.cssText = "text-align:center;padding:40px 20px;color:var(--muted);font-size:13px"; empty.textContent = sourcing.length ? "Nothing here." : "No special order enquiries logged yet.";
+    sv.appendChild(empty);
+    return;
+  }
+
+  visible.slice().reverse().forEach(function(s){
+    var card = document.createElement("div"); card.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:10px";
+    var topRow = document.createElement("div"); topRow.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap";
+    var topLeft = document.createElement("div"); topLeft.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap";
+    var statBadge = document.createElement("span"); statBadge.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 8px;border-radius:20px;background:"+(SOURCING_STATUS_COLORS[s.status]||"#7f8c8d")+";color:#fff"; statBadge.textContent = s.status||"Chasing Price";
+    topLeft.appendChild(statBadge);
+    if (s.quoteRef) {
+      var refBadge = document.createElement("span"); refBadge.style.cssText = "font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--muted)"; refBadge.textContent = "\uD83D\uDD17 " + s.quoteRef;
+      topLeft.appendChild(refBadge);
+    }
+    topRow.appendChild(topLeft);
+    var btnCol = document.createElement("div"); btnCol.style.cssText = "display:flex;gap:5px;flex-shrink:0";
+    var editBtn = document.createElement("button"); editBtn.style.cssText = "padding:4px 9px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:10px;font-weight:700;cursor:pointer"; editBtn.textContent = "\u270E Edit";
+    editBtn.addEventListener("click", (function(id){ return function(){ showSourcingForm(id); }; })(s.id));
+    var delBtn = document.createElement("button"); delBtn.style.cssText = "padding:4px 9px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);color:var(--rtxt);font-size:10px;font-weight:700;cursor:pointer"; delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", (function(id){ return function(){
+      if (confirm("Delete this special order enquiry?")) {
+        sourcing = sourcing.filter(function(x){ return x.id!==id; });
+        saveSourcing(); renderSourcingView(); toast("Deleted \u2713");
+      }
+    }; })(s.id));
+    btnCol.appendChild(editBtn); btnCol.appendChild(delBtn);
+    topRow.appendChild(btnCol);
+    card.appendChild(topRow);
+
+    var clientLine = document.createElement("div"); clientLine.style.cssText = "font-weight:700;font-size:14px;margin-bottom:2px;display:flex;align-items:center;gap:8px";
+    var clientNameSpan = document.createElement("span"); clientNameSpan.textContent = s.client || "\u2014";
+    clientLine.appendChild(clientNameSpan);
+    if (s.clientId) {
+      var viewClientBtn = document.createElement("button"); viewClientBtn.style.cssText = "padding:2px 8px;background:none;border:1px solid var(--navy);border-radius:20px;color:var(--navy);font-size:9px;font-weight:700;cursor:pointer"; viewClientBtn.textContent = "View client";
+      viewClientBtn.addEventListener("click", (function(cid){ return function(){ openC(cid); }; })(s.clientId));
+      clientLine.appendChild(viewClientBtn);
+      if (s.quoteRef) {
+        var idxCheck = findClientLogIdxByRef(s.clientId, s.quoteRef);
+        if (idxCheck > -1) {
+          var jumpBtn = document.createElement("button"); jumpBtn.style.cssText = "padding:2px 8px;background:#e67e22;border:none;border-radius:20px;color:#fff;font-size:9px;font-weight:700;cursor:pointer"; jumpBtn.textContent = "\u2713 View client quote";
+          jumpBtn.addEventListener("click", (function(cid,ref){ return function(){ jumpToClientQuote(cid,ref); }; })(s.clientId, s.quoteRef));
+          clientLine.appendChild(jumpBtn);
+        }
+      }
+    }
+    card.appendChild(clientLine);
+
+    var colourDisplay = s.colour ? (s.colour + (s.colourNo ? " (" + s.colourNo + ")" : "")) : (s.colourNo || "");
+    var prodBits = [s.product, s.productName, colourDisplay, s.qty].filter(function(x){ return x; });
+    if (prodBits.length) { var prodLine = document.createElement("div"); prodLine.style.cssText = "font-size:12px;color:var(--text);margin-bottom:3px"; prodLine.textContent = prodBits.join(" \u00b7 "); card.appendChild(prodLine); }
+
+    if (s.company || s.asmRep) {
+      var compLine = document.createElement("div"); compLine.style.cssText = "font-size:11px;color:var(--muted);margin-bottom:6px";
+      compLine.textContent = "Chasing: " + (s.company||"\u2014") + (s.asmRep ? " \u00b7 ASM/Rep: "+s.asmRep : "");
+      card.appendChild(compLine);
+    }
+
+    var hasPricing = s.priceEx || s.priceInc || s.sellEx || s.sellInc;
+    if (hasPricing) {
+      var priceGrid = document.createElement("div"); priceGrid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#f7f8fa;border-radius:var(--rs);padding:8px 10px;margin-bottom:6px;font-size:11px";
+      function pf(lbl,val){ var d=document.createElement("div"); var l=document.createElement("div"); l.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.3px"; l.textContent=lbl; var v=document.createElement("div"); v.style.cssText="font-weight:700;color:var(--text)"; v.textContent=val?("\u00a3"+val):"\u2014"; d.appendChild(l); d.appendChild(v); return d; }
+      priceGrid.appendChild(pf("Our (nett) ex VAT", s.priceEx));
+      priceGrid.appendChild(pf("Our (nett) inc VAT", s.priceInc));
+      priceGrid.appendChild(pf("Customer price ex VAT", s.sellEx));
+      priceGrid.appendChild(pf("Customer price inc VAT", s.sellInc));
+      card.appendChild(priceGrid);
+      if (s.margin) { var marginLine = document.createElement("div"); marginLine.style.cssText = "font-size:11px;font-weight:700;color:#a5590f;margin-bottom:4px"; marginLine.textContent = "Margin: " + s.margin + "%"; card.appendChild(marginLine); }
+    }
+
+    if (s.timeline) { var tlLine = document.createElement("div"); tlLine.style.cssText = "font-size:11px;color:var(--muted);margin-bottom:4px"; tlLine.textContent = "\u23F1 " + s.timeline; card.appendChild(tlLine); }
+    if (s.notes) { var notesLine = document.createElement("div"); notesLine.style.cssText = "font-size:11px;color:var(--text);font-style:italic;margin-top:2px"; notesLine.textContent = s.notes; card.appendChild(notesLine); }
+
+    sv.appendChild(card);
+  });
+}
+
+function showSourcingForm(existingId, prefillClientId, prefillRepId) {
+  var existing = existingId ? sourcing.find(function(x){ return x.id===existingId; }) : null;
+  var prefillClient = null;
+  if (!existing && prefillClientId) prefillClient = clients.find(function(x){ return x.id===prefillClientId; });
+  var prefillRep = null;
+  if (!existing && prefillRepId) prefillRep = reps.find(function(x){ return x.id===prefillRepId; });
+
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:460px;max-height:92vh;overflow-y:auto";
+
+  var bh = document.createElement("div"); bh.style.cssText = "background:#e67e22;padding:14px 18px";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:15px;font-weight:700;color:#fff"; bht.textContent = existing ? "\u270E Edit special order enquiry" : "\uD83C\uDFED New special order enquiry";
+  bh.appendChild(bht); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:18px;display:flex;flex-direction:column;gap:12px";
+  function mkFd(lbl, inp) { var w=document.createElement("div"); var l=document.createElement("label"); l.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; l.textContent=lbl; w.appendChild(l); w.appendChild(inp); return w; }
+  var inpCss = "width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+
+  // Client (with autocomplete against existing clients). If opened directly from a
+  // client's card, lock it so the record can't accidentally end up linked to the wrong client.
+  var clientInp = document.createElement("input"); clientInp.id="src_client"; clientInp.setAttribute("list","src_client_list"); clientInp.style.cssText=inpCss;
+  clientInp.value = existing ? (existing.client||"") : (prefillClient ? prefillClient.name : "");
+  clientInp.placeholder = "Client name";
+  var clientList = document.createElement("datalist"); clientList.id="src_client_list";
+  clients.forEach(function(c){ var o=document.createElement("option"); o.value=c.name; clientList.appendChild(o); });
+  var clientFd = mkFd("Client", clientInp);
+  if (prefillClient && !existing) {
+    clientInp.readOnly = true;
+    clientInp.style.background = "#f2f2f2";
+    clientInp.style.color = "var(--muted)";
+    var unlockRow = document.createElement("div"); unlockRow.style.cssText = "font-size:10px;color:var(--muted);margin-top:3px";
+    var unlockBtn = document.createElement("button"); unlockBtn.type="button"; unlockBtn.style.cssText = "background:none;border:none;color:var(--navy);font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0";
+    unlockBtn.textContent = "Wrong client? Change it";
+    unlockBtn.addEventListener("click", function(){ clientInp.readOnly=false; clientInp.style.background=""; clientInp.style.color=""; unlockRow.style.display="none"; clientInp.focus(); });
+    unlockRow.appendChild(document.createTextNode("\uD83D\uDD12 Auto-filled from this client's card \u2014 "));
+    unlockRow.appendChild(unlockBtn);
+    clientFd.appendChild(unlockRow);
+  }
+  bd.appendChild(clientFd); bd.appendChild(clientList);
+
+  var productInp = document.createElement("input"); productInp.id="src_product"; productInp.setAttribute("list","src_product_list"); productInp.style.cssText=inpCss; productInp.value = existing ? (existing.product||"") : "";
+  var productList = document.createElement("datalist"); productList.id="src_product_list";
+  PRODUCTS.forEach(function(p){ var o=document.createElement("option"); o.value=p; productList.appendChild(o); });
+  bd.appendChild(mkFd("Product", productInp)); bd.appendChild(productList);
+
+  var productNameInp = document.createElement("input"); productNameInp.id="src_productname"; productNameInp.placeholder="e.g. Krono Supernatural Wide Plank"; productNameInp.style.cssText=inpCss; productNameInp.value = existing ? (existing.productName||"") : "";
+  bd.appendChild(mkFd("Product name", productNameInp));
+
+  var colourInp = document.createElement("input"); colourInp.id="src_colour"; colourInp.style.cssText=inpCss; colourInp.value = existing ? (existing.colour||"") : "";
+  var colourNoInp = document.createElement("input"); colourNoInp.id="src_colour_no"; colourNoInp.placeholder="e.g. 8842"; colourNoInp.style.cssText=inpCss; colourNoInp.value = existing ? (existing.colourNo||"") : "";
+  var colourRow = document.createElement("div"); colourRow.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:8px";
+  colourRow.appendChild(mkFd("Colour", colourInp)); colourRow.appendChild(mkFd("Colour number", colourNoInp));
+  bd.appendChild(colourRow);
+
+  var qtyInp = document.createElement("input"); qtyInp.id="src_qty"; qtyInp.placeholder="e.g. 45m\u00b2 / 3 boxes"; qtyInp.style.cssText=inpCss; qtyInp.value = existing ? (existing.qty||"") : "";
+  bd.appendChild(mkFd("Quantity needed", qtyInp));
+
+  var companyInp = document.createElement("input"); companyInp.id="src_company"; companyInp.setAttribute("list","src_company_list"); companyInp.style.cssText=inpCss; companyInp.value = existing ? (existing.company||"") : "";
+  var companyList = document.createElement("datalist"); companyList.id="src_company_list";
+  MANUFACTURERS.forEach(function(m){ var o=document.createElement("option"); o.value=m; companyList.appendChild(o); });
+  bd.appendChild(mkFd("Company chasing (manufacturer/supplier)", companyInp)); bd.appendChild(companyList);
+
+  var asmInp = document.createElement("input"); asmInp.id="src_asm"; asmInp.setAttribute("list","src_asm_list"); asmInp.placeholder="Name of ASM/rep at that company"; asmInp.style.cssText=inpCss; asmInp.value = existing ? (existing.asmRep||"") : (prefillRep ? prefillRep.name : "");
+  var asmList = document.createElement("datalist"); asmList.id="src_asm_list";
+  reps.forEach(function(r){ var o=document.createElement("option"); o.value=r.name+(r.manufacturer?" ("+r.manufacturer+")":""); asmList.appendChild(o); });
+  var asmFd = mkFd("ASM / Rep", asmInp);
+  if (prefillRep && !existing) {
+    asmInp.readOnly = true;
+    asmInp.style.background = "#f2f2f2";
+    asmInp.style.color = "var(--muted)";
+    var asmUnlockRow = document.createElement("div"); asmUnlockRow.style.cssText = "font-size:10px;color:var(--muted);margin-top:3px";
+    var asmUnlockBtn = document.createElement("button"); asmUnlockBtn.type="button"; asmUnlockBtn.style.cssText = "background:none;border:none;color:var(--navy);font-size:10px;font-weight:700;cursor:pointer;text-decoration:underline;padding:0";
+    asmUnlockBtn.textContent = "Wrong rep? Change it";
+    asmUnlockBtn.addEventListener("click", function(){ asmInp.readOnly=false; asmInp.style.background=""; asmInp.style.color=""; asmUnlockRow.style.display="none"; asmInp.focus(); });
+    asmUnlockRow.appendChild(document.createTextNode("\uD83D\uDD12 Auto-filled from this rep's card \u2014 "));
+    asmUnlockRow.appendChild(asmUnlockBtn);
+    asmFd.appendChild(asmUnlockRow);
+  }
+  bd.appendChild(asmFd); bd.appendChild(asmList);
+
+  // Pricing / margin calculator — type the nett (our) price and a margin %, and the
+  // customer sell price (ex + inc VAT) calculates itself. Works the other way too:
+  // typing a sell price back-calculates the margin. Every box stays editable so you
+  // can still round numbers by hand.
+  var priceExInp = document.createElement("input"); priceExInp.id="src_price_ex"; priceExInp.type="number"; priceExInp.step="0.01"; priceExInp.style.cssText=inpCss; priceExInp.value = existing ? (existing.priceEx||"") : "";
+  var priceIncInp = document.createElement("input"); priceIncInp.id="src_price_inc"; priceIncInp.type="number"; priceIncInp.step="0.01"; priceIncInp.style.cssText=inpCss; priceIncInp.value = existing ? (existing.priceInc||"") : "";
+  var priceRow = document.createElement("div"); priceRow.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:8px";
+  priceRow.appendChild(mkFd("Our (nett) price ex VAT", priceExInp)); priceRow.appendChild(mkFd("Our (nett) price inc VAT", priceIncInp));
+  bd.appendChild(priceRow);
+
+  var marginInp = document.createElement("input"); marginInp.id="src_margin"; marginInp.type="number"; marginInp.step="0.1"; marginInp.placeholder="e.g. 40"; marginInp.style.cssText=inpCss; marginInp.value = existing ? (existing.margin||"") : "";
+  var marginWrap = mkFd("Margin % (on customer sell price)", marginInp);
+  marginWrap.style.cssText = "background:#fff4e8;border:2px solid #e6a15c;border-radius:var(--rs);padding:8px 10px";
+  bd.appendChild(marginWrap);
+
+  var sellExInp = document.createElement("input"); sellExInp.id="src_sell_ex"; sellExInp.type="number"; sellExInp.step="0.01"; sellExInp.style.cssText=inpCss; sellExInp.value = existing ? (existing.sellEx||"") : "";
+  var sellIncInp = document.createElement("input"); sellIncInp.id="src_sell_inc"; sellIncInp.type="number"; sellIncInp.step="0.01"; sellIncInp.style.cssText=inpCss; sellIncInp.value = existing ? (existing.sellInc||"") : "";
+  var sellRow = document.createElement("div"); sellRow.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:8px";
+  sellRow.appendChild(mkFd("Customer price ex VAT", sellExInp)); sellRow.appendChild(mkFd("Customer price inc VAT", sellIncInp));
+  bd.appendChild(sellRow);
+
+  function recalcSellFromMargin() {
+    var nettEx = parseFloat(priceExInp.value);
+    var m = parseFloat(marginInp.value);
+    if (!isNaN(nettEx) && !isNaN(m) && m >= 0 && m < 100) {
+      var sellEx = nettEx / (1 - m / 100);
+      sellExInp.value = sellEx.toFixed(2);
+      sellIncInp.value = (sellEx * 1.2).toFixed(2);
+    }
+  }
+  function recalcMarginFromSell() {
+    var nettEx = parseFloat(priceExInp.value);
+    var sellEx = parseFloat(sellExInp.value);
+    if (!isNaN(nettEx) && !isNaN(sellEx) && sellEx > 0) {
+      marginInp.value = (((sellEx - nettEx) / sellEx) * 100).toFixed(1);
+    }
+  }
+  priceExInp.addEventListener("input", function(){
+    var v = parseFloat(this.value);
+    if (!isNaN(v)) priceIncInp.value = (v * 1.2).toFixed(2);
+    if (marginInp.value.trim() !== "") { recalcSellFromMargin(); } else { recalcMarginFromSell(); }
+  });
+  marginInp.addEventListener("input", recalcSellFromMargin);
+  sellExInp.addEventListener("input", function(){
+    var v = parseFloat(this.value);
+    if (!isNaN(v)) sellIncInp.value = (v * 1.2).toFixed(2);
+    recalcMarginFromSell();
+  });
+  sellIncInp.addEventListener("input", function(){
+    var v = parseFloat(this.value);
+    if (!isNaN(v)) sellExInp.value = (v / 1.2).toFixed(2);
+    recalcMarginFromSell();
+  });
+
+  var timelineInp = document.createElement("input"); timelineInp.id="src_timeline"; timelineInp.placeholder="e.g. 5-7 working days"; timelineInp.style.cssText=inpCss; timelineInp.value = existing ? (existing.timeline||"") : "";
+  bd.appendChild(mkFd("Timeline / how long to get", timelineInp));
+
+  var statusSel = document.createElement("select"); statusSel.id="src_status"; statusSel.style.cssText=inpCss;
+  SOURCING_STATUSES.forEach(function(s){ var o=document.createElement("option"); o.value=s; o.textContent=s; if(existing?existing.status===s:s==="Chasing Price") o.selected=true; statusSel.appendChild(o); });
+  bd.appendChild(mkFd("Status", statusSel));
+
+  var refInp = document.createElement("input"); refInp.id="src_quoteref"; refInp.placeholder="Match this to the ref on the client's quote to link them"; refInp.style.cssText=inpCss; refInp.value = existing ? (existing.quoteRef||"") : "";
+  bd.appendChild(mkFd("Linked client quote ref", refInp));
+
+  var notesInp = document.createElement("textarea"); notesInp.id="src_notes"; notesInp.style.cssText=inpCss+";min-height:60px;resize:vertical"; notesInp.value = existing ? (existing.notes||"") : "";
+  bd.appendChild(mkFd("Notes (internal only \u2014 not shown to client)", notesInp));
+
+  box.appendChild(bd);
+
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px";
+  var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:8px 14px;background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
+  cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  var saveB = document.createElement("button"); saveB.style.cssText = "padding:8px 18px;background:#e67e22;border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; saveB.textContent = existing ? "Save changes" : "Save";
+  saveB.addEventListener("click", function(){
+    var clientName = clientInp.value.trim();
+    var product = productInp.value.trim();
+    if (!clientName && !product) { toast("Please enter at least a client or product"); return; }
+    var matchedClient = clients.find(function(c){ return c.name.trim().toLowerCase()===clientName.toLowerCase(); });
+    var today = new Date();
+    var rec = existing || { id: "SRC-"+Date.now(), createdDate: String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+today.getFullYear() };
+    rec.client = clientName;
+    rec.clientId = matchedClient ? matchedClient.id : (existing ? existing.clientId : null);
+    rec.product = product;
+    rec.productName = productNameInp.value.trim();
+    rec.colour = colourInp.value.trim();
+    rec.colourNo = colourNoInp.value.trim();
+    rec.qty = qtyInp.value.trim();
+    rec.company = companyInp.value.trim();
+    var asmText = asmInp.value.trim();
+    var matchedRep = reps.find(function(r){
+      var full = r.name + (r.manufacturer ? " (" + r.manufacturer + ")" : "");
+      return full.toLowerCase()===asmText.toLowerCase() || r.name.toLowerCase()===asmText.toLowerCase();
+    });
+    rec.asmRep = asmText;
+    rec.repId = matchedRep ? matchedRep.id : (existing ? existing.repId : null);
+    rec.priceEx = priceExInp.value.trim();
+    rec.priceInc = priceIncInp.value.trim();
+    rec.margin = marginInp.value.trim();
+    rec.sellEx = sellExInp.value.trim();
+    rec.sellInc = sellIncInp.value.trim();
+    rec.timeline = timelineInp.value.trim();
+    rec.status = statusSel.value;
+    rec.quoteRef = refInp.value.trim();
+    rec.notes = notesInp.value.trim();
+    if (!existing) sourcing.push(rec);
+    saveSourcing();
+    document.body.removeChild(overlay);
+    renderSourcingView();
+    toast(existing ? "Special order enquiry updated \u2713" : "Special order enquiry saved \u2713");
+  });
+  foot.appendChild(cancelB); foot.appendChild(saveB);
+  box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
+  setTimeout(function(){ clientInp.focus(); }, 100);
 }
 
 function renderDocsView() {
@@ -7058,7 +7471,7 @@ function showAdminPanel() {
       birthdays: birthdays, complaints: complaints,
       diaryEvents: diaryEvents, websites: websites,
       docs: docs, archivedClients: archivedClients,
-      tasks: tasks, enquiries: enquiries
+      tasks: tasks, enquiries: enquiries, sourcing: sourcing
     };
     var blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
     var url = URL.createObjectURL(blob);
@@ -7090,6 +7503,7 @@ function showAdminPanel() {
           if(data.archivedClients) { archivedClients = data.archivedClients; saveArchive(); }
           if(data.tasks) { tasks = data.tasks; saveTasks(); }
           if(data.enquiries) { enquiries = data.enquiries; saveEnquiries(); }
+          if(data.sourcing) { sourcing = data.sourcing; saveSourcing(); }
           renderList(); renderDash(); updateStats();
           toast("\u2713 Backup restored successfully!");
         } catch(err) { toast("\u26A0\uFE0F Error reading backup file"); }
@@ -7727,7 +8141,7 @@ openC = function(id) {
 };
 
 // Close sidebar when nav buttons clicked on mobile
-var navFns = ["showReps","showSales","showSamples","showBirthdays","showComplaints","showDiary","showQuotes","showDash","showEnquiries","showTasks","showClients"];
+var navFns = ["showReps","showSales","showSamples","showBirthdays","showComplaints","showDiary","showQuotes","showDash","showEnquiries","showSourcing","showTasks","showClients"];
 navFns.forEach(function(fn) {
   var orig = window[fn];
   window[fn] = function() { closeMobSidebar(); orig(); };
@@ -7741,6 +8155,7 @@ function init(){
   archivedClients=loadArchive();
   docs=loadDocs();
   enquiries=loadEnquiries();
+  sourcing=loadSourcing();
   tasks=loadTasks();
   diaryEvents=loadDiary();
   activeFilter="All";activeId=null;editId=null;showLF=false;pendingDel=null;
