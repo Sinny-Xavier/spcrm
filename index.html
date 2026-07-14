@@ -443,6 +443,108 @@ async function sbDelete(table, id) {
   } catch(e) { console.warn("Supabase delete error:", e); toast("\u26a0\ufe0f Cloud delete failed \u2014 this may reappear until it syncs. Check your connection.", true); return false; }
 }
 
+// ── COLOUR THEMES ────────────────────────────────────────────────
+var THEME_STORE = "spcrm_theme_v1";
+var THEMES = {
+  default:      {name:"Theme 1",  sub:"Default (Navy & Amber)",       emoji:"\uD83D\uDD37", navy:"#0033A0", accent:"#FFB900", alt:"#f7f9fc"},
+  leeds:        {name:"Theme 2",  sub:"Leeds Rhinos",                  emoji:"\uD83E\uDD8F", navy:"#0C64A3", accent:"#F1BE17", alt:"#E6F0FA"},
+  wigan:        {name:"Theme 3",  sub:"Wigan Warriors",                emoji:"\uD83C\uDF52", navy:"#D31718", accent:"#212121", alt:"#FAFAFA"},
+  sthelens:     {name:"Theme 4",  sub:"St Helens",                     emoji:"\uD83D\uDD34", navy:"#F0082E", accent:"#1E1E1E", alt:"#F9F9F9"},
+  warrington:   {name:"Theme 5",  sub:"Warrington Wolves",              emoji:"\uD83D\uDC3A", navy:"#00529C", accent:"#FFF300", alt:"#EAF2F8"},
+  castleford:   {name:"Theme 6",  sub:"Castleford Tigers",              emoji:"\uD83D\uDC05", navy:"#FF6820", accent:"#000000", alt:"#FFF2EC"},
+  hullkr:       {name:"Theme 7",  sub:"Hull Kingston Rovers",           emoji:"\uD83E\uDD85", navy:"#D01F26", accent:"#A0A0A0", alt:"#FCF8F8"},
+  hullfc:       {name:"Theme 8",  sub:"Hull FC",                        emoji:"\uD83C\uDF11", navy:"#000000", accent:"#7F8C8D", alt:"#F5F5F5"},
+  leigh:        {name:"Theme 9",  sub:"Leigh Leopards",                 emoji:"\uD83D\uDC06", navy:"#C2185B", accent:"#E0A96D", alt:"#FAF4EF"},
+  york:         {name:"Theme 10", sub:"York Knights",                   emoji:"\uD83D\uDEE1\uFE0F", navy:"#111111", accent:"#D4AF37", alt:"#F5F5F7"},
+  bradford:     {name:"Theme 11", sub:"Bradford Bulls",                 emoji:"\uD83D\uDC02", navy:"#D2232A", accent:"#FFC20E", alt:"#FAFAFA"},
+  toulouse:     {name:"Theme 12", sub:"Toulouse Olympique",             emoji:"\u2694\uFE0F", navy:"#0F4C81", accent:"#A3C1AD", alt:"#F0F4F8"},
+  catalans:     {name:"Theme 13", sub:"Catalans Dragons",                emoji:"\uD83D\uDC09", navy:"#E30613", accent:"#FFED00", alt:"#FFFBEA"},
+  wakefield:    {name:"Theme 14", sub:"Wakefield Trinity",               emoji:"\u2694\uFE0F", navy:"#0F2C59", accent:"#E21E26", alt:"#F4F6F9"},
+  huddersfield: {name:"Theme 15", sub:"Huddersfield Giants",             emoji:"\uD83E\uDDF1", navy:"#7A263A", accent:"#F1C40F", alt:"#FDF3F5"},
+  cb1:          {name:"Theme 16", sub:"Colourblind-safe \u2014 Blue & Orange",       emoji:"\uD83D\uDD35", navy:"#0072B2", accent:"#E69F00", alt:"#EAF4FB"},
+  cb2:          {name:"Theme 17", sub:"Colourblind-safe \u2014 Teal & Vermillion",   emoji:"\uD83D\uDFE2", navy:"#009E73", accent:"#D55E00", alt:"#EAFAF4"},
+  cb3:          {name:"Theme 18", sub:"Colourblind-safe \u2014 Black & Yellow (max contrast)", emoji:"\u26AB", navy:"#1A1A1A", accent:"#F0E442", alt:"#F7F7F7"}
+};
+function hex2hsl(hex){
+  hex = hex.replace("#","");
+  if(hex.length===3) hex = hex.split("").map(function(c){return c+c;}).join("");
+  var r=parseInt(hex.substr(0,2),16)/255, g=parseInt(hex.substr(2,2),16)/255, b=parseInt(hex.substr(4,2),16)/255;
+  var max=Math.max(r,g,b), min=Math.min(r,g,b), h,s,l=(max+min)/2;
+  if(max===min){ h=0; s=0; }
+  else{
+    var d=max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    if(max===r) h=(g-b)/d+(g<b?6:0);
+    else if(max===g) h=(b-r)/d+2;
+    else h=(r-g)/d+4;
+    h/=6;
+  }
+  return {h:h*360, s:s*100, l:l*100};
+}
+function hsl2hex(h,s,l){
+  h/=360; s/=100; l/=100;
+  var r,g,b;
+  if(s===0){ r=g=b=l; }
+  else{
+    var hue2rgb=function(p,q,t){ if(t<0)t+=1; if(t>1)t-=1; if(t<1/6)return p+(q-p)*6*t; if(t<1/2)return q; if(t<2/3)return p+(q-p)*(2/3-t)*6; return p; };
+    var q = l<0.5 ? l*(1+s) : l+s-l*s;
+    var p = 2*l-q;
+    r=hue2rgb(p,q,h+1/3); g=hue2rgb(p,q,h); b=hue2rgb(p,q,h-1/3);
+  }
+  var toHex=function(x){ var v=Math.round(x*255).toString(16); return v.length===1?"0"+v:v; };
+  return "#"+toHex(r)+toHex(g)+toHex(b);
+}
+function themeShade(hex, targetL){ var c=hex2hsl(hex); return hsl2hex(c.h, c.s, targetL); }
+function themeRgbShift(hex, delta){
+  hex = hex.replace("#","");
+  var num = parseInt(hex,16);
+  var r=Math.min(255,Math.max(0,((num>>16)&255)+delta));
+  var g=Math.min(255,Math.max(0,((num>>8)&255)+delta));
+  var b=Math.min(255,Math.max(0,(num&255)+delta));
+  return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+function applyThemeVars(key){
+  var t = THEMES[key] || THEMES.default;
+  var root = document.documentElement.style;
+  // Header/brand colour — lightness is normalised so white text (used throughout on --navy)
+  // always stays readable, whatever brand colour is picked.
+  root.setProperty("--navy",  themeShade(t.navy, 33));
+  root.setProperty("--navy2", themeShade(t.navy, 26));
+  root.setProperty("--navy3", themeShade(t.navy, 20));
+  // Accent colour — same normalisation trick for the avatar/border fills that use it.
+  root.setProperty("--red",  themeShade(t.accent, 50));
+  root.setProperty("--red2", themeShade(t.accent, 62));
+  root.setProperty("--red3", themeShade(t.accent, 32));
+  // Backgrounds — used only behind normal text, so no contrast risk here.
+  root.setProperty("--alt", t.alt);
+  root.setProperty("--bg", themeRgbShift(t.alt, -8));
+  // Note: --border/--muted/--surface/--text and the green/amber/red/blue status-badge
+  // colours (--gbg/--gtxt/--abg/--atxt/--rbg/--rtxt/--lbg/--ltxt/--grbg/--grtxt) are left
+  // untouched by every theme, so the colourblind-safe indicators stay consistent.
+}
+function loadThemeKey(){
+  try{ var s=localStorage.getItem(THEME_STORE); if(s && THEMES[s]) return s; }catch(e){}
+  return "default";
+}
+function saveThemeKey(key){
+  try{ localStorage.setItem(THEME_STORE, key); }catch(e){}
+  sbUpsert("settings","theme",{key:"theme",value:key});
+}
+async function syncThemeFromCloud(){
+  try{
+    var rows = await sbGet("settings");
+    if(rows){
+      var row = rows.find(function(r){ return r && r.key==="theme"; });
+      if(row && row.value && THEMES[row.value]){
+        applyThemeVars(row.value);
+        try{ localStorage.setItem(THEME_STORE, row.value); }catch(e){}
+      }
+    }
+  }catch(e){ console.warn("theme cloud sync failed", e); }
+}
+applyThemeVars(loadThemeKey());
+syncThemeFromCloud();
+
 async function sbSaveAll(table, items, idField) {
   if (!items || !items.length) return;
   try {
@@ -5295,7 +5397,8 @@ function showWebsites() {
 }
 
 var TOOLS_LIST = [
-  { name: "Margin Calculator", desc: "Nett price + margin % \u2192 customer price ex/inc VAT, plus box pricing.", icon: "\uD83E\uDDEE", native: true },
+  { name: "Margin Calculator", desc: "Nett price + margin % \u2192 customer price ex/inc VAT, plus box pricing.", icon: "\uD83E\uDDEE", native: true, renderFn: renderMarginCalcNative },
+  { name: "Measurement Converter", desc: "Feet & inches \u2194 metres/yards/cm, plus room area in m\u00b2, ft\u00b2 and yd\u00b2.", icon: "\uD83D\uDCD0", native: true, renderFn: renderMeasureConverterNative },
   { name: "Margin Cutter", desc: "Work out the discount needed to hit a target margin, inc/ex VAT.", icon: "\uD83D\uDCB0", url: "margin-cutter.html" },
   { name: "Roll Planner", desc: "Carpet area & roll-width planner for rectangles, L-shapes, stairs and chimney breasts.", icon: "\uD83D\uDCD0", url: "roll-planner.html" }
 ];
@@ -5355,7 +5458,7 @@ function openToolInline(t){
 
   if (t.native) {
     tv.appendChild(barWrap);
-    renderMarginCalcNative(tv);
+    t.renderFn(tv);
     return;
   }
 
@@ -5500,6 +5603,149 @@ function renderMarginCalcNative(container) {
   custInc.inp.addEventListener("input", function(){ var v = parseFloat(this.value); if (!isNaN(v)) custEx.inp.value = (v / 1.2).toFixed(2); recalcMarginFromCust(); });
   nettInc.inp.addEventListener("input", function(){ var v = parseFloat(this.value); if (!isNaN(v)) nettEx.inp.value = (v / 1.2).toFixed(2); if (marginInp.value.trim() !== "") recalcFromNettMargin(); else recalcMarginFromCust(); });
   m2Box.addEventListener("input", updateBox);
+}
+
+// Built-in Measurement Converter — feet & inches <-> metres/yards/cm, live,
+// plus a room-area calculator giving m² / ft² / yd² for ordering flooring.
+function renderMeasureConverterNative(container) {
+  var wrap = document.createElement("div");
+  wrap.style.cssText = "max-width:560px";
+
+  function mkCard(titleTxt) {
+    var card = document.createElement("div");
+    card.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+    var h = document.createElement("div");
+    h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)";
+    h.textContent = titleTxt;
+    card.appendChild(h);
+    wrap.appendChild(card);
+    return card;
+  }
+  function mkNumBox(id, placeholder, w) {
+    var inp = document.createElement("input"); inp.id = id; inp.type = "number"; inp.step = "any"; inp.placeholder = placeholder||"";
+    inp.style.cssText = "border:2px solid var(--border);border-radius:var(--rs);width:"+(w||"84px")+";box-sizing:border-box;padding:7px 8px;font-size:14px;font-family:inherit;outline:none;background:#fff";
+    return inp;
+  }
+  function mkFd(lbl, el) {
+    var w = document.createElement("div"); w.style.cssText = "display:flex;flex-direction:column;gap:4px";
+    var l = document.createElement("label"); l.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;white-space:nowrap"; l.textContent = lbl;
+    w.appendChild(l); w.appendChild(el);
+    return w;
+  }
+  function mkStat(lblTxt) {
+    var s = document.createElement("div"); s.style.cssText = "background:var(--alt);border-radius:var(--rs);padding:8px 10px;flex:1;min-width:100px";
+    var l = document.createElement("div"); l.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:3px;white-space:nowrap"; l.textContent = lblTxt;
+    var v = document.createElement("div"); v.style.cssText = "font-size:15px;font-weight:700;color:var(--navy)"; v.textContent = "\u2014";
+    s.appendChild(l); s.appendChild(v);
+    return { el: s, valEl: v };
+  }
+
+  // ── Card 1: Length converter ──────────────────────────────────
+  var c1 = mkCard("Length converter — type into any box");
+  var row1 = document.createElement("div"); row1.style.cssText = "display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end";
+  var feetInp = mkNumBox("mv_feet", "0", "70px");
+  var inchInp = mkNumBox("mv_inch", "0", "70px");
+  var metresInp = mkNumBox("mv_metres", "0", "90px");
+  var yardsInp = mkNumBox("mv_yards", "0", "90px");
+  var cmInp = mkNumBox("mv_cm", "0", "90px");
+  row1.appendChild(mkFd("Feet", feetInp));
+  row1.appendChild(mkFd("Inches", inchInp));
+  row1.appendChild(mkFd("Metres", metresInp));
+  row1.appendChild(mkFd("Yards", yardsInp));
+  row1.appendChild(mkFd("Centimetres", cmInp));
+  c1.appendChild(row1);
+
+  var FT_TO_M = 0.3048, IN_TO_M = 0.0254, YD_TO_M = 0.9144;
+  function pushLength(m, skip) {
+    if (skip !== "fi") {
+      var totalIn = m / IN_TO_M;
+      var ft = Math.floor(totalIn / 12 + 1e-9);
+      var inch = Math.round((totalIn - ft * 12) * 100) / 100;
+      feetInp.value = ft; inchInp.value = inch;
+    }
+    if (skip !== "m") metresInp.value = m.toFixed(3);
+    if (skip !== "y") yardsInp.value = (m / YD_TO_M).toFixed(3);
+    if (skip !== "cm") cmInp.value = (m * 100).toFixed(1);
+  }
+  feetInp.addEventListener("input", function(){ pushLength(((parseFloat(feetInp.value)||0)*12 + (parseFloat(inchInp.value)||0)) * IN_TO_M, "fi"); });
+  inchInp.addEventListener("input", function(){ pushLength(((parseFloat(feetInp.value)||0)*12 + (parseFloat(inchInp.value)||0)) * IN_TO_M, "fi"); });
+  metresInp.addEventListener("input", function(){ pushLength(parseFloat(metresInp.value)||0, "m"); });
+  yardsInp.addEventListener("input", function(){ pushLength((parseFloat(yardsInp.value)||0) * YD_TO_M, "y"); });
+  cmInp.addEventListener("input", function(){ pushLength((parseFloat(cmInp.value)||0) / 100, "cm"); });
+
+  // ── Card 2: Room area calculator ────────────────────────────────
+  var c2 = mkCard("Room area — length \u00d7 width");
+  var modeRow = document.createElement("div"); modeRow.style.cssText = "display:flex;gap:8px;margin-bottom:12px";
+  var modeFi = document.createElement("button"); modeFi.type = "button"; modeFi.textContent = "Feet & inches";
+  var modeM = document.createElement("button"); modeM.type = "button"; modeM.textContent = "Metres";
+  [modeFi, modeM].forEach(function(b){ b.style.cssText = "padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--border);background:#fff;color:var(--muted)"; });
+  modeRow.appendChild(modeFi); modeRow.appendChild(modeM);
+  c2.appendChild(modeRow);
+
+  var dimsRow = document.createElement("div"); dimsRow.style.cssText = "display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:12px";
+  c2.appendChild(dimsRow);
+
+  var resultsRow = document.createElement("div"); resultsRow.style.cssText = "display:flex;flex-wrap:wrap;gap:10px";
+  var statM2 = mkStat("Area (m\u00b2)"), statFt2 = mkStat("Area (ft\u00b2)"), statYd2 = mkStat("Area (yd\u00b2)");
+  resultsRow.appendChild(statM2.el); resultsRow.appendChild(statFt2.el); resultsRow.appendChild(statYd2.el);
+  c2.appendChild(resultsRow);
+
+  var wasteRow = document.createElement("div"); wasteRow.style.cssText = "display:flex;align-items:flex-end;gap:10px;margin-top:12px";
+  var wasteInp = mkNumBox("mv_waste", "10", "70px");
+  wasteRow.appendChild(mkFd("+ Waste %", wasteInp));
+  var statGross = mkStat("Gross area (m\u00b2, inc. waste)");
+  wasteRow.appendChild(statGross.el);
+  c2.appendChild(wasteRow);
+
+  var areaMode = "fi";
+  function setAreaMode(m) {
+    areaMode = m;
+    modeFi.style.cssText += (m==="fi" ? ";background:var(--navy);color:#fff;border-color:var(--navy)" : ";background:#fff;color:var(--muted);border-color:var(--border)");
+    modeM.style.cssText += (m==="m" ? ";background:var(--navy);color:#fff;border-color:var(--navy)" : ";background:#fff;color:var(--muted);border-color:var(--border)");
+    dimsRow.innerHTML = "";
+    if (m === "fi") {
+      var lf = mkNumBox("mv_lf","0","60px"), li = mkNumBox("mv_li","0","60px");
+      var wf = mkNumBox("mv_wf","0","60px"), wi = mkNumBox("mv_wi","0","60px");
+      dimsRow.appendChild(mkFd("Length ft", lf)); dimsRow.appendChild(mkFd("in", li));
+      dimsRow.appendChild(mkFd("Width ft", wf)); dimsRow.appendChild(mkFd("in", wi));
+      [lf,li,wf,wi].forEach(function(inp){ inp.addEventListener("input", recalcArea); });
+    } else {
+      var lm = mkNumBox("mv_lm","0","90px"), wm = mkNumBox("mv_wm","0","90px");
+      dimsRow.appendChild(mkFd("Length (m)", lm)); dimsRow.appendChild(mkFd("Width (m)", wm));
+      [lm,wm].forEach(function(inp){ inp.addEventListener("input", recalcArea); });
+    }
+    recalcArea();
+  }
+  function recalcArea() {
+    var lenM, widM;
+    if (areaMode === "fi") {
+      var lf = parseFloat(document.getElementById("mv_lf") && document.getElementById("mv_lf").value) || 0;
+      var li = parseFloat(document.getElementById("mv_li") && document.getElementById("mv_li").value) || 0;
+      var wf = parseFloat(document.getElementById("mv_wf") && document.getElementById("mv_wf").value) || 0;
+      var wi = parseFloat(document.getElementById("mv_wi") && document.getElementById("mv_wi").value) || 0;
+      lenM = (lf*12 + li) * IN_TO_M;
+      widM = (wf*12 + wi) * IN_TO_M;
+    } else {
+      lenM = parseFloat(document.getElementById("mv_lm") && document.getElementById("mv_lm").value) || 0;
+      widM = parseFloat(document.getElementById("mv_wm") && document.getElementById("mv_wm").value) || 0;
+    }
+    var m2 = lenM * widM;
+    if (m2 > 0) {
+      statM2.valEl.textContent = m2.toFixed(2);
+      statFt2.valEl.textContent = (m2 / (FT_TO_M*FT_TO_M)).toFixed(2);
+      statYd2.valEl.textContent = (m2 / (YD_TO_M*YD_TO_M)).toFixed(2);
+      var waste = parseFloat(wasteInp.value) || 0;
+      statGross.valEl.textContent = (m2 * (1 + waste/100)).toFixed(2);
+    } else {
+      statM2.valEl.textContent = statFt2.valEl.textContent = statYd2.valEl.textContent = statGross.valEl.textContent = "\u2014";
+    }
+  }
+  wasteInp.addEventListener("input", recalcArea);
+  modeFi.addEventListener("click", function(){ setAreaMode("fi"); });
+  modeM.addEventListener("click", function(){ setAreaMode("m"); });
+  setAreaMode("fi");
+
+  container.appendChild(wrap);
 }
 
 function renderWebsitesView() {
@@ -7427,6 +7673,69 @@ function showListEditor(opts) {
   setTimeout(function(){ newInp.focus(); }, 100);
 }
 
+// ── COLOUR THEME PICKER (Admin) ─────────────────────────────────
+function showThemePicker(parentOverlay) {
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:210;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:480px;max-height:88vh;overflow-y:auto;border-top:3px solid #e8a020";
+
+  var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:14px;font-weight:700;color:#fff"; bht.textContent = "\uD83C\uDFA8 Colour theme";
+  var cx = document.createElement("button"); cx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:28px;height:28px;color:#fff;font-size:18px;cursor:pointer;line-height:1"; cx.textContent = "\u00d7";
+  cx.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  bh.appendChild(bht); bh.appendChild(cx); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:16px;display:flex;flex-direction:column;gap:10px";
+
+  var note = document.createElement("div");
+  note.style.cssText = "font-size:11px;color:var(--muted);background:var(--alt);border-radius:var(--rs);padding:8px 12px;border-left:3px solid var(--navy);line-height:1.4";
+  note.textContent = "Pick a colour scheme any time you fancy a change \u2014 it saves automatically and applies everywhere. The green/amber/red/blue status colours you use for badges stay exactly as they are, so nothing you rely on for colour-blind-safe reading is affected.";
+  bd.appendChild(note);
+
+  var grid = document.createElement("div");
+  grid.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:10px";
+
+  var current = loadThemeKey();
+
+  function renderGrid() {
+    grid.innerHTML = "";
+    Object.keys(THEMES).forEach(function(key){
+      var t = THEMES[key];
+      var card = document.createElement("button");
+      var isOn = (key === current);
+      card.style.cssText = "text-align:left;cursor:pointer;padding:10px;border-radius:var(--rs);background:var(--surface);border:2px solid "+(isOn?"var(--navy)":"var(--border)")+";display:flex;flex-direction:column;gap:7px;font-family:inherit";
+      var swatches = document.createElement("div");
+      swatches.style.cssText = "display:flex;height:20px;border-radius:4px;overflow:hidden;border:1px solid var(--border)";
+      [t.navy, t.accent, t.alt].forEach(function(c){
+        var sw = document.createElement("div"); sw.style.cssText = "flex:1;background:"+c;
+        swatches.appendChild(sw);
+      });
+      var lbl = document.createElement("div");
+      lbl.style.cssText = "font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:5px";
+      lbl.textContent = t.name+(isOn?"  \u2713":"");
+      card.appendChild(swatches); card.appendChild(lbl);
+      card.addEventListener("click", function(){
+        applyThemeVars(key);
+        saveThemeKey(key);
+        current = key;
+        renderGrid();
+        toast("\u2713 "+t.name+" applied");
+      });
+      grid.appendChild(card);
+    });
+  }
+  renderGrid();
+  bd.appendChild(grid);
+
+  box.appendChild(bd);
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 16px;border-top:2px solid var(--border);display:flex;justify-content:flex-end";
+  var doneB = document.createElement("button"); doneB.style.cssText = "padding:8px 20px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; doneB.textContent = "Done";
+  doneB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  foot.appendChild(doneB); box.appendChild(foot);
+  overlay.appendChild(box); document.body.appendChild(overlay);
+}
+
 // ── ADMIN ─────────────────────────────────────────────────────────
 
 function loadArchive() {
@@ -7717,6 +8026,11 @@ function showAdminPanel() {
       }
     }
   }));
+  bd.appendChild(divider("Personalisation"));
+  bd.appendChild(adminSection("\uD83C\uDFA8", "Colour theme", "Change the CRM's colour scheme any time you get bored of the current look. Your status badges stay colour-blind-safe whichever theme you pick.", "Change theme", "var(--navy)", function(ov){
+    showThemePicker(ov);
+  }));
+
   bd.appendChild(adminSection("\uD83D\uDD12", "Change password", "Update your CRM login password", "Change", "var(--navy)", function(ov){
     document.body.removeChild(ov);
     showChangePassword();
