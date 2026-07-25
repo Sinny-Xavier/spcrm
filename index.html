@@ -271,7 +271,12 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   .main { width:100% !important; margin:0 !important; padding:0 !important; overflow:visible !important; }
   body, .app, .layout { overflow:visible !important; height:auto !important; }
   .page { color:#000 !important; }
+  .log-entry.tab-hidden { display:block !important; }
+  .log-del, .log-trigger, .dbtn, .qbox select, .qbox button { display:none !important; }
 }
+#printSandbox { display:none; }
+body.print-sandbox-mode > *:not(#printSandbox) { display:none !important; }
+body.print-sandbox-mode #printSandbox { display:block !important; padding:24px; color:#000; font-family:inherit; }
 </style>
 </head>
 <body>
@@ -2299,7 +2304,7 @@ function renderDet(){
 
   var quoteCount=(c.log||[]).filter(function(l){return !!l.quote;}).length;
   var interactionCount=(c.log||[]).filter(function(l){return !l.quote;}).length;
-  var tabRow=document.createElement("div");tabRow.style.cssText="display:flex;gap:6px;margin:10px 0 4px";
+  var tabRow=document.createElement("div");tabRow.className="no-print";tabRow.style.cssText="display:flex;gap:6px;margin:10px 0 4px";
   [["Interactions",interactionCount],["Quotes",quoteCount]].forEach(function(pair){
     var tabName=pair[0],tabCount=pair[1];
     var tb=document.createElement("button");
@@ -2310,7 +2315,7 @@ function renderDet(){
   });
   logSec.appendChild(tabRow);
   var srcCount=(sourcing||[]).filter(function(s){return s.clientId===c.id;}).length;
-  var srcBtn=document.createElement("button");srcBtn.style.cssText="margin:8px 0 4px;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #e67e22;"+(srcCount?"background:#fff4e8;color:#a5590f":"background:#e67e22;color:#fff");
+  var srcBtn=document.createElement("button");srcBtn.className="no-print";srcBtn.style.cssText="margin:8px 0 4px;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #e67e22;"+(srcCount?"background:#fff4e8;color:#a5590f":"background:#e67e22;color:#fff");
   srcBtn.textContent=srcCount?("\uD83C\uDFED Special order enquiries ("+srcCount+")"):"\uD83C\uDFED + New special order enquiry";
   srcBtn.addEventListener("click",function(){srcCount?showSourcing(c.id):showSourcingForm(null,c.id);});
   logSec.appendChild(srcBtn);
@@ -2326,9 +2331,9 @@ function renderDet(){
   }
   (c.log||[]).forEach(function(l,idx){
     var isQuoteEntry = !!l.quote;
-    if(detLogTab==="Interactions" && isQuoteEntry) return;
-    if(detLogTab==="Quotes" && !isQuoteEntry) return;
-    var entry=document.createElement("div");entry.className="log-entry";
+    var hideForTab = (detLogTab==="Interactions" && isQuoteEntry) || (detLogTab==="Quotes" && !isQuoteEntry);
+    var entry=document.createElement("div");entry.className="log-entry"+(hideForTab?" tab-hidden":"");
+    if(hideForTab) entry.style.display="none";
     var meta=document.createElement("div");meta.className="log-meta";
     var ltype=document.createElement("span");ltype.className="ltype";ltype.textContent=l.type;
     var ldate=document.createElement("span");ldate.className="ldate";ldate.textContent=l.date;
@@ -4091,7 +4096,11 @@ function renderComplaintsView() {
   addBtn.style.cssText = "padding:7px 16px;background:var(--red);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer";
   addBtn.textContent = "+ Log complaint";
   addBtn.addEventListener("click", function(){ showComplaintForm(); });
-  hdr.appendChild(title); hdr.appendChild(addBtn); sv.appendChild(hdr);
+  var cmpPrintBtn = document.createElement("button"); cmpPrintBtn.className = "no-print";
+  cmpPrintBtn.style.cssText = "padding:7px 16px;background:var(--navy);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer";
+  cmpPrintBtn.textContent = "\uD83D\uDDA8\uFE0F Print all";
+  cmpPrintBtn.addEventListener("click", function(){ window.print(); });
+  hdr.appendChild(title); hdr.appendChild(cmpPrintBtn); hdr.appendChild(addBtn); sv.appendChild(hdr);
 
   var sr = document.createElement("div"); sr.className = "stat-row cols4";
   [{l:"Total logged",v:complaints.length,c:"kv-blue"},
@@ -4128,7 +4137,9 @@ function renderComplaintsView() {
       sel.addEventListener("change",(function(cid){return function(e){var comp=complaints.find(function(x){return x.id===cid;});if(comp){comp.status=e.target.value;saveComplaints();renderComplaintsView();toast("Updated");}};})(c.id));
       var delBtn=document.createElement("button");delBtn.style.cssText="padding:4px 7px;background:none;border:2px solid var(--border);border-radius:var(--rs);font-size:10px;color:var(--muted);cursor:pointer";delBtn.textContent="Delete";
       delBtn.addEventListener("click",(function(cid){return function(){if(confirm("Delete?")){complaints=complaints.filter(function(x){return x.id!==cid;});saveComplaints();renderComplaintsView();toast("Deleted");}};})(c.id));
-      right.appendChild(pill);right.appendChild(sel);right.appendChild(delBtn);
+      var cmpCardPrintBtn=document.createElement("button");cmpCardPrintBtn.className="no-print";cmpCardPrintBtn.style.cssText="padding:4px 7px;background:none;border:2px solid var(--navy);border-radius:var(--rs);font-size:10px;color:var(--navy);cursor:pointer";cmpCardPrintBtn.textContent="\uD83D\uDDA8\uFE0F Print";
+      cmpCardPrintBtn.addEventListener("click",(function(cardEl){return function(){ isolatePrintEl(cardEl, null); };})(card));
+      right.appendChild(pill);right.appendChild(sel);right.appendChild(cmpCardPrintBtn);right.appendChild(delBtn);
       top.appendChild(left);top.appendChild(right);card.appendChild(top);
       if(c.description){var desc=document.createElement("div");desc.style.cssText="background:var(--alt);border-radius:var(--rs);padding:7px 9px;font-size:11px;color:var(--text);line-height:1.5;margin-bottom:7px";desc.textContent=c.description;card.appendChild(desc);}
       if(c.resolution){var res=document.createElement("div");res.style.cssText="background:var(--gbg);border-radius:var(--rs);padding:7px 9px;font-size:11px;color:var(--gtxt);line-height:1.5";res.innerHTML="<strong>Resolution:</strong> "+c.resolution;card.appendChild(res);}
@@ -5860,6 +5871,10 @@ function renderWebsitesView() {
         } else {
           card.appendChild(top);
         }
+        if (w.notes) {
+          var noteDiv = document.createElement("div"); noteDiv.style.cssText = "font-size:11px;color:var(--text);font-style:italic;background:var(--alt);border-radius:var(--rs);padding:6px 8px;line-height:1.4"; noteDiv.textContent = w.notes;
+          card.appendChild(noteDiv);
+        }
 
         var btns = document.createElement("div"); btns.style.cssText = "display:flex;gap:6px;margin-top:4px";
         var openBtn = document.createElement("button");
@@ -5870,11 +5885,15 @@ function renderWebsitesView() {
         editBtn2.style.cssText = "padding:6px 10px;background:none;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;cursor:pointer;color:var(--muted)";
         editBtn2.textContent = "\u270E";
         editBtn2.addEventListener("click", (function(idx2){ return function(){ showAddWebsite(idx2); }; })(realIdx));
+        var webPrintBtn = document.createElement("button"); webPrintBtn.className = "no-print";
+        webPrintBtn.style.cssText = "padding:6px 10px;background:none;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;cursor:pointer;color:var(--navy)";
+        webPrintBtn.textContent = "\uD83D\uDDA8\uFE0F";
+        webPrintBtn.addEventListener("click", (function(site){ return function(){ printWebsiteSlip(site); }; })(w));
         var delBtn2 = document.createElement("button");
         delBtn2.style.cssText = "padding:6px 10px;background:none;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;cursor:pointer;color:var(--rtxt)";
         delBtn2.textContent = "\u00d7";
         delBtn2.addEventListener("click", (function(idx2){ return async function(){ if(confirm("Remove this website?")){ var siteToDelete=websites[idx2]; websites.splice(idx2,1); if(siteToDelete&&siteToDelete.id){ await sbDelete("websites", siteToDelete.id); } saveWebsites(); renderWebsitesView(); toast("Removed"); } }; })(realIdx));
-        btns.appendChild(openBtn); btns.appendChild(editBtn2); btns.appendChild(delBtn2);
+        btns.appendChild(openBtn); btns.appendChild(editBtn2); btns.appendChild(webPrintBtn); btns.appendChild(delBtn2);
         card.appendChild(btns); grid.appendChild(card);
       });
       listWrap.appendChild(grid);
@@ -5904,6 +5923,7 @@ function showAddWebsite(editIdx) {
   var nameInp3 = mkIw("w_name", w?w.name:"", "e.g. Karndean Trade Portal");
   var urlInp = mkIw("w_url", w?w.url:"", "e.g. trade.karndean.com");
   var descInp2 = document.createElement("textarea"); descInp2.id="w_desc"; descInp2.value=w?w.description||"":""; descInp2.placeholder="What is this site for? e.g. Karndean trade pricing and sample orders"; descInp2.style.cssText="width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none;resize:vertical;min-height:60px";
+  var notesInp2 = document.createElement("textarea"); notesInp2.id="w_notes"; notesInp2.value=w?w.notes||"":""; notesInp2.placeholder="Any personal notes \u2014 login reminders, account numbers, quirks of the site, etc."; notesInp2.style.cssText="width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none;resize:vertical;min-height:60px";
 
   // Category
   var catInp = mkIw("w_cat", w?w.category||"":"", "e.g. Suppliers, Pricing, Reference, Trade");
@@ -5927,6 +5947,7 @@ function showAddWebsite(editIdx) {
   bd.appendChild(mkFw("Site name *", nameInp3));
   bd.appendChild(mkFw("Web address *", urlInp));
   bd.appendChild(mkFw("Description", descInp2));
+  bd.appendChild(mkFw("Notes", notesInp2));
   bd.appendChild(mkFw("Category", catInp));
   bd.appendChild(iconWrap);
   box.appendChild(bd);
@@ -5939,7 +5960,7 @@ function showAddWebsite(editIdx) {
     var name = document.getElementById("w_name").value.trim();
     var url2 = document.getElementById("w_url").value.trim();
     if (!name || !url2) { toast("Please add a name and web address"); return; }
-    var data = { name:name, url:url2, description:document.getElementById("w_desc").value.trim(), category:document.getElementById("w_cat").value.trim()||"General", icon:selIcon };
+    var data = { name:name, url:url2, description:document.getElementById("w_desc").value.trim(), notes:document.getElementById("w_notes").value.trim(), category:document.getElementById("w_cat").value.trim()||"General", icon:selIcon };
     if (w && editIdx!==undefined) { data.id = w.id || ("WEB-"+Date.now()); websites[editIdx]=data; }
     else { data.id = "WEB-"+Date.now(); websites.push(data); }
     saveWebsites(); document.body.removeChild(overlay); renderWebsitesView();
@@ -6207,7 +6228,9 @@ function renderEnquiriesView() {
   var title = document.createElement("h2"); title.style.cssText = "font-size:18px;font-weight:700"; title.textContent = "Enquiries";
   var addBtn = document.createElement("button"); addBtn.style.cssText = "padding:8px 16px;background:#9b59b6;border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer"; addBtn.textContent = "+ Log enquiry";
   addBtn.addEventListener("click", showEnquiryForm);
-  hdr.appendChild(title); hdr.appendChild(addBtn); ev.appendChild(hdr);
+  var enqPrintBtn = document.createElement("button"); enqPrintBtn.className = "no-print"; enqPrintBtn.style.cssText = "padding:8px 16px;background:var(--navy);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer"; enqPrintBtn.textContent = "\uD83D\uDDA8\uFE0F Print all visible";
+  enqPrintBtn.addEventListener("click", function(){ window.print(); });
+  hdr.appendChild(title); hdr.appendChild(enqPrintBtn); hdr.appendChild(addBtn); ev.appendChild(hdr);
 
   var sub = document.createElement("div"); sub.style.cssText = "font-size:12px;color:var(--muted);margin-bottom:14px"; sub.textContent = "Things people have asked for that we don't currently stock.";
   ev.appendChild(sub);
@@ -6340,6 +6363,9 @@ function renderEnquiriesView() {
         toast("Deleted \u2713");
       }
     };})(en.id));
+    var enqCardPrintBtn = document.createElement("button"); enqCardPrintBtn.className = "no-print"; enqCardPrintBtn.style.cssText = "padding:4px 9px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:10px;font-weight:700;cursor:pointer"; enqCardPrintBtn.textContent = "\uD83D\uDDA8\uFE0F Print";
+    enqCardPrintBtn.addEventListener("click", (function(cardEl){ return function(){ isolatePrintEl(cardEl, null); }; })(card));
+    btnCol.appendChild(enqCardPrintBtn);
     btnCol.appendChild(delBtn);
 
     card.appendChild(left); card.appendChild(btnCol);
@@ -6447,10 +6473,40 @@ function jumpToClientQuote(clientId, ref) {
 // Temporarily hides everything in the Sourcing view except the given element(s)
 // so Print produces just that one enquiry (or one linked group), then restores
 // the normal view once the print dialog closes.
+function escHtml(s) {
+  return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// Builds a standalone printable document in the hidden sandbox, prints it,
+// then restores the normal app view once the print dialog closes.
+function printSandboxDoc(bodyHtml) {
+  var ps = document.getElementById("printSandbox");
+  ps.innerHTML = bodyHtml;
+  document.body.classList.add("print-sandbox-mode");
+  function restore() {
+    document.body.classList.remove("print-sandbox-mode");
+    ps.innerHTML = "";
+    window.removeEventListener("afterprint", restore);
+  }
+  window.addEventListener("afterprint", restore);
+  setTimeout(restore, 60000);
+  setTimeout(function(){ window.print(); }, 30);
+}
+
+function printWebsiteSlip(site) {
+  var html = "<h1 style='font-size:20px;margin-bottom:4px'>" + escHtml(site.name) + "</h1>" +
+    "<div style='font-size:14px;color:#333;margin-bottom:14px'>" + escHtml(site.url) + "</div>";
+  if (site.category) html += "<div style='font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px'>" + escHtml(site.category) + "</div>";
+  if (site.description) html += "<div style='font-size:13px;color:#222;margin-bottom:10px'>" + escHtml(site.description) + "</div>";
+  if (site.notes) html += "<div style='font-size:13px;color:#222;border-top:1px solid #ccc;padding-top:10px;margin-top:10px'><strong>Notes:</strong><br>" + escHtml(site.notes) + "</div>";
+  printSandboxDoc(html);
+}
+
 function isolatePrintEl(topEl, onlyChildEl) {
-  var svEl = document.getElementById("sourcingView");
+  var container = topEl.parentElement;
+  if (!container) return;
   var restoreList = [];
-  Array.from(svEl.children).forEach(function(el){
+  Array.from(container.children).forEach(function(el){
     if (el !== topEl) { restoreList.push({el:el, prev:el.style.display}); el.style.display = "none"; }
   });
   if (onlyChildEl) {
@@ -8702,5 +8758,7 @@ function init(){
 if(typeof Notification!=="undefined"&&Notification.permission==="default"){Notification.requestPermission();}
 init();
 </script>
+
+<div id="printSandbox"></div>
 </body>
 </html>
