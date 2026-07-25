@@ -273,10 +273,12 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   .page { color:#000 !important; }
   .log-entry.tab-hidden { display:block !important; }
   .log-del, .log-trigger, .dbtn, .qbox select, .qbox button { display:none !important; }
+  .diary-cell, .diary-cell * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
 }
 #printSandbox { display:none; }
 body.print-sandbox-mode > *:not(#printSandbox) { display:none !important; }
 body.print-sandbox-mode #printSandbox { display:block !important; padding:24px; color:#000; font-family:inherit; }
+body.print-overview-mode .not-in-overview { display:none !important; }
 </style>
 </head>
 <body>
@@ -2281,7 +2283,8 @@ function renderDet(){
   });
   var db2=document.createElement("button");db2.className="dbtn danger";db2.textContent="\uD83D\uDDD1 Delete";db2.addEventListener("click",function(){askDel(c.id,c.name);});
   var printB2=document.createElement("button");printB2.className="dbtn no-print";printB2.textContent="\uD83D\uDDA8\uFE0F Print";printB2.addEventListener("click",function(){window.print();});
-  dbtns.appendChild(printB2);dbtns.appendChild(eb);dbtns.appendChild(archB2);dbtns.appendChild(db2);hdr.appendChild(dtop);hdr.appendChild(dbtns);dv.appendChild(hdr);
+  var printOvB=document.createElement("button");printOvB.className="dbtn no-print";printOvB.textContent="\uD83D\uDDA8\uFE0F Print overview";printOvB.addEventListener("click",function(){printClientOverview();});
+  dbtns.appendChild(printOvB);dbtns.appendChild(printB2);dbtns.appendChild(eb);dbtns.appendChild(archB2);dbtns.appendChild(db2);hdr.appendChild(dtop);hdr.appendChild(dbtns);dv.appendChild(hdr);
   var grid=document.createElement("div");grid.className="sec-grid";
   function addSec(extra,tagCls,tagTxt,fields,compact){
     var sec=document.createElement("div");sec.className="sec"+(extra?" "+extra:"");
@@ -2294,12 +2297,13 @@ function renderDet(){
   var sourceHtml = c.source ? "<span style=\'font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;"+(sourceColors[c.source]||"background:var(--alt);color:var(--muted)")+"\'>"+c.source+"</span>" : "&mdash;";
   grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",labelColor:"#2348b0",val:c.binder},{label:"Manager",labelColor:"#9b59b6",val:c.manager},{label:"Account name",labelColor:"#16324D",val:c.name,wide:true},{label:"Primary contact name",labelColor:"#2d6a0f",val:c.contact},{label:"Primary contact number",labelColor:"#0f7d5c",val:c.mobile},{label:"Secondary contact name",labelColor:"#2d6a0f",val:c.contact2},{label:"Secondary contact number",labelColor:"#0f7d5c",val:c.mobile2},{label:"Customer source",labelColor:"#c77800",html:sourceHtml},{label:"Area",labelColor:"#b8860b",val:c.address}],true));
   grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",labelColor:"#2348b0",val:c.product,wide:true},{label:"Est. annual spend",labelColor:"#2d6a0f",html:(function(){var auto=calcAnnualSpend(c);if(auto>0){return "<span style='color:var(--gtxt);font-weight:700'>\u00a3"+auto.toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>(paid orders, last 12mo)</span>";}return c.spend?("\u00a3"+c.spend+" <span style='font-size:9px;color:var(--muted)'>(manual estimate)</span>"):"\u2014";})()},{label:"Priority",labelColor:"#e8a020",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",labelColor:"#16324D",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",labelColor:"#0f7d5c",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected")t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",labelColor:"#b23a2e",val:c.wontBuy,wide:true},{label:"Who else they buy from",labelColor:"#9b59b6",val:c.competitorNotes,wide:true}],true));
-  grid.appendChild(addSec("full","t-tr","Tracking",[{label:"Status",labelColor:"#2348b0",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",labelColor:"#9b59b6",val:c.interactionType},{label:"Last contacted",labelColor:"#2d6a0f",val:c.lastContact},{label:"Follow-up date",labelColor:"#c77800",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Account opened",labelColor:"#16324D",val:c.dateOpened||"—"},{label:"Key dates",labelColor:"#b23a2e",val:c.keyDates,wide:true}],true));
-  var notesSec=document.createElement("div");notesSec.className="sec full";
+  var trackingSec=addSec("full","t-tr","Tracking",[{label:"Status",labelColor:"#2348b0",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",labelColor:"#9b59b6",val:c.interactionType},{label:"Last contacted",labelColor:"#2d6a0f",val:c.lastContact},{label:"Follow-up date",labelColor:"#c77800",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Account opened",labelColor:"#16324D",val:c.dateOpened||"—"},{label:"Key dates",labelColor:"#b23a2e",val:c.keyDates,wide:true}],true);
+  trackingSec.className+=" not-in-overview"; grid.appendChild(trackingSec);
+  var notesSec=document.createElement("div");notesSec.className="sec full not-in-overview";
   var nt=document.createElement("span");nt.className="stag t-tr";nt.textContent="Last interaction notes";notesSec.appendChild(nt);
   var nb=document.createElement("div");nb.className="nbox";nb.textContent=c.notes||"No notes yet.";notesSec.appendChild(nb);
   grid.appendChild(notesSec);
-  var logSec=document.createElement("div");logSec.className="sec full";
+  var logSec=document.createElement("div");logSec.className="sec full not-in-overview";
   var lt=document.createElement("span");lt.className="stag t-lg";lt.textContent="Interaction log";logSec.appendChild(lt);
 
   var quoteCount=(c.log||[]).filter(function(l){return !!l.quote;}).length;
@@ -2398,7 +2402,7 @@ function renderDet(){
   // Birthday on client record
   var clientBday = birthdays.find(function(b){ return b.linkedType==="client" && b.name===c.name; });
   if (clientBday) {
-    var bdSec = document.createElement("div"); bdSec.className = "sec full";
+    var bdSec = document.createElement("div"); bdSec.className = "sec full not-in-overview";
     var bdTag = document.createElement("span"); bdTag.className = "stag"; bdTag.style.cssText = "display:inline-block;font-size:9px;font-weight:700;padding:2px 9px;border-radius:20px;margin-bottom:11px;letter-spacing:.5px;text-transform:uppercase;background:#fff3e0;color:#854f0b"; bdTag.textContent = "Birthday";
     bdSec.appendChild(bdTag);
     var bdRow = document.createElement("div"); bdRow.style.cssText = "display:flex;align-items:center;gap:12px;padding:9px 12px;background:#fff8f0;border:2px solid #ffd699;border-radius:var(--rs)";
@@ -2416,7 +2420,7 @@ function renderDet(){
   // Samples given to this client
   var clientSamples = samples.filter(function(s){ return s.clientName === c.name; });
   if (clientSamples.length) {
-    var sSec = document.createElement("div"); sSec.className = "sec full";
+    var sSec = document.createElement("div"); sSec.className = "sec full not-in-overview";
     var sTag = document.createElement("span"); sTag.className = "stag t-lg"; sTag.textContent = "Samples ("+ clientSamples.length +")";
     sSec.appendChild(sTag);
     var sTbl = document.createElement("div"); sTbl.style.cssText = "display:flex;flex-direction:column;gap:6px";
@@ -2457,7 +2461,7 @@ function renderDet(){
   var cDE=diaryEvents.filter(function(e){return !e.completed&&e.withType==="client"&&e.withName===c.name;}).sort(function(a,b){return new Date(a.year,a.month,a.day)-new Date(b.year,b.month,b.day);});
   var cDEpast=diaryEvents.filter(function(e){return e.completed&&e.withType==="client"&&e.withName===c.name;}).slice(0,3);
   if(cDE.length||cDEpast.length){
-    var dSec=document.createElement("div");dSec.className="sec full";
+    var dSec=document.createElement("div");dSec.className="sec full not-in-overview";
     var dTag=document.createElement("span");dTag.className="stag";dTag.style.cssText="display:inline-block;font-size:9px;font-weight:700;padding:2px 9px;border-radius:20px;margin-bottom:11px;letter-spacing:.5px;text-transform:uppercase;background:#fff3e0;color:#854f0b";dTag.textContent="Diary events";dSec.appendChild(dTag);
     var tC3={"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Anniversary":"#c0392b","Holiday":"#16a085","Other":"#7f8c8d"};
     cDE.forEach(function(e){
@@ -2486,7 +2490,7 @@ function renderDet(){
   }
   dv.appendChild(grid);
   
-  var bk=document.createElement("button");bk.className="bkl";bk.textContent="\u2190 Back to dashboard";bk.addEventListener("click",showDash);dv.appendChild(bk);
+  var bk=document.createElement("button");bk.className="bkl no-print";bk.textContent="\u2190 Back to dashboard";bk.addEventListener("click",showDash);dv.appendChild(bk);
   if(hasProd){setTimeout(function(){mkPieChart("pieCh",Object.keys(prodMap),Object.values(prodMap));},100);}
   if(hasQtr){setTimeout(function(){mkBarChart("barCh",[qtrMap.Q1,qtrMap.Q2,qtrMap.Q3,qtrMap.Q4]);},100);}
 }
@@ -4671,6 +4675,12 @@ function renderDiaryView() {
   }
   cal.appendChild(grid); dv.appendChild(cal);
 
+  var diaryPrintBtn = document.createElement("button"); diaryPrintBtn.className = "no-print";
+  diaryPrintBtn.style.cssText = "padding:4px 12px;border:1px solid var(--navy);border-radius:var(--rs);background:var(--navy);color:#fff;cursor:pointer;font-size:11px;font-weight:700;margin-left:6px";
+  diaryPrintBtn.textContent = "\uD83D\uDDA8\uFE0F Print month";
+  diaryPrintBtn.addEventListener("click", function(){ isolatePrintEl(cal, null); });
+  nav.appendChild(diaryPrintBtn);
+
   // Upcoming events list (next 14 days only, keeps this section manageable)
   // Build day-by-day so live-calculated birthdays/anniversaries are correctly included
   // even when their next occurrence falls in a different year than any stored copy.
@@ -6500,6 +6510,17 @@ function printWebsiteSlip(site) {
   if (site.description) html += "<div style='font-size:13px;color:#222;margin-bottom:10px'>" + escHtml(site.description) + "</div>";
   if (site.notes) html += "<div style='font-size:13px;color:#222;border-top:1px solid #ccc;padding-top:10px;margin-top:10px'><strong>Notes:</strong><br>" + escHtml(site.notes) + "</div>";
   printSandboxDoc(html);
+}
+
+function printClientOverview() {
+  document.body.classList.add("print-overview-mode");
+  function restore() {
+    document.body.classList.remove("print-overview-mode");
+    window.removeEventListener("afterprint", restore);
+  }
+  window.addEventListener("afterprint", restore);
+  setTimeout(restore, 60000);
+  setTimeout(function(){ window.print(); }, 30);
 }
 
 function isolatePrintEl(topEl, onlyChildEl) {
