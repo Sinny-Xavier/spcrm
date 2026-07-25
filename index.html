@@ -266,6 +266,12 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   .dash-card { padding:10px; }
   .fu-name { font-size:12px; }
 }
+@media print {
+  #gateOverlay, .hdr, #sidebar, .no-print, .conf-overlay { display:none !important; }
+  .main { width:100% !important; margin:0 !important; padding:0 !important; overflow:visible !important; }
+  body, .app, .layout { overflow:visible !important; height:auto !important; }
+  .page { color:#000 !important; }
+}
 </style>
 </head>
 <body>
@@ -2269,7 +2275,8 @@ function renderDet(){
     }
   });
   var db2=document.createElement("button");db2.className="dbtn danger";db2.textContent="\uD83D\uDDD1 Delete";db2.addEventListener("click",function(){askDel(c.id,c.name);});
-  dbtns.appendChild(eb);dbtns.appendChild(archB2);dbtns.appendChild(db2);hdr.appendChild(dtop);hdr.appendChild(dbtns);dv.appendChild(hdr);
+  var printB2=document.createElement("button");printB2.className="dbtn no-print";printB2.textContent="\uD83D\uDDA8\uFE0F Print";printB2.addEventListener("click",function(){window.print();});
+  dbtns.appendChild(printB2);dbtns.appendChild(eb);dbtns.appendChild(archB2);dbtns.appendChild(db2);hdr.appendChild(dtop);hdr.appendChild(dbtns);dv.appendChild(hdr);
   var grid=document.createElement("div");grid.className="sec-grid";
   function addSec(extra,tagCls,tagTxt,fields,compact){
     var sec=document.createElement("div");sec.className="sec"+(extra?" "+extra:"");
@@ -2598,9 +2605,11 @@ function showQuoteEditForm(clientId, logIdx) {
   var box = document.createElement("div");
   box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:440px;max-height:90vh;overflow-y:auto";
 
-  var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy);padding:14px 18px";
+  var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy);padding:14px 18px;display:flex;align-items:center;justify-content:space-between";
   var bht = document.createElement("h2"); bht.style.cssText = "font-size:15px;font-weight:700;color:#fff"; bht.textContent = "\u270E Edit quote";
-  bh.appendChild(bht); box.appendChild(bh);
+  var qeCx = document.createElement("button"); qeCx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:26px;height:26px;color:#fff;font-size:17px;cursor:pointer;line-height:1"; qeCx.textContent = "\u00d7";
+  qeCx.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  bh.appendChild(bht); bh.appendChild(qeCx); box.appendChild(bh);
 
   var bd = document.createElement("div"); bd.style.cssText = "padding:18px;display:flex;flex-direction:column;gap:12px";
 
@@ -2702,6 +2711,10 @@ function showQuoteEditForm(clientId, logIdx) {
   }
 
   box.appendChild(bd);
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
+  var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:7px 12px;background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
+  cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  var saveB = document.createElement("button"); saveB.style.cssText = "padding:7px 16px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; saveB.textContent = "Save changes";
   saveB.addEventListener("click", function(){
     var newVal = valInp.value.trim();
     if (!newVal) { toast("Please enter a value"); return; }
@@ -6439,7 +6452,9 @@ function renderSourcingView() {
   var title = document.createElement("h2"); title.style.cssText = "font-size:18px;font-weight:700"; title.textContent = "\uD83C\uDFED Sourcing";
   var addBtn = document.createElement("button"); addBtn.style.cssText = "padding:8px 16px;background:#e67e22;border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer"; addBtn.textContent = "+ New special order enquiry";
   addBtn.addEventListener("click", function(){ showSourcingForm(null, sourcingClientFilter, sourcingRepFilter); });
-  hdr.appendChild(title); hdr.appendChild(addBtn); sv.appendChild(hdr);
+  var srcPrintBtn = document.createElement("button"); srcPrintBtn.className = "no-print"; srcPrintBtn.style.cssText = "padding:8px 16px;background:var(--navy);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer"; srcPrintBtn.textContent = "\uD83D\uDDA8\uFE0F Print";
+  srcPrintBtn.addEventListener("click", function(){ window.print(); });
+  hdr.appendChild(title); hdr.appendChild(srcPrintBtn); hdr.appendChild(addBtn); sv.appendChild(hdr);
 
   var sub = document.createElement("div"); sub.style.cssText = "font-size:12px;color:var(--muted);margin-bottom:12px"; sub.textContent = "Chase sheet for manufacturer/supplier prices \u2014 keeps your cost price and margin separate from what the client sees on their quote.";
   sv.appendChild(sub);
