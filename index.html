@@ -6444,6 +6444,29 @@ function jumpToClientQuote(clientId, ref) {
   }, 200);
 }
 
+// Temporarily hides everything in the Sourcing view except the given element(s)
+// so Print produces just that one enquiry (or one linked group), then restores
+// the normal view once the print dialog closes.
+function isolatePrintEl(topEl, onlyChildEl) {
+  var svEl = document.getElementById("sourcingView");
+  var restoreList = [];
+  Array.from(svEl.children).forEach(function(el){
+    if (el !== topEl) { restoreList.push({el:el, prev:el.style.display}); el.style.display = "none"; }
+  });
+  if (onlyChildEl) {
+    Array.from(topEl.children).forEach(function(child){
+      if (child !== onlyChildEl) { restoreList.push({el:child, prev:child.style.display}); child.style.display = "none"; }
+    });
+  }
+  function restore() {
+    restoreList.forEach(function(r){ r.el.style.display = r.prev; });
+    window.removeEventListener("afterprint", restore);
+  }
+  window.addEventListener("afterprint", restore);
+  setTimeout(restore, 60000); // safety net in case afterprint never fires
+  setTimeout(function(){ window.print(); }, 30);
+}
+
 function renderSourcingView() {
   var sv = document.getElementById("sourcingView");
   sv.innerHTML = "";
@@ -6452,7 +6475,7 @@ function renderSourcingView() {
   var title = document.createElement("h2"); title.style.cssText = "font-size:18px;font-weight:700"; title.textContent = "\uD83C\uDFED Sourcing";
   var addBtn = document.createElement("button"); addBtn.style.cssText = "padding:8px 16px;background:#e67e22;border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer"; addBtn.textContent = "+ New special order enquiry";
   addBtn.addEventListener("click", function(){ showSourcingForm(null, sourcingClientFilter, sourcingRepFilter); });
-  var srcPrintBtn = document.createElement("button"); srcPrintBtn.className = "no-print"; srcPrintBtn.style.cssText = "padding:8px 16px;background:var(--navy);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer"; srcPrintBtn.textContent = "\uD83D\uDDA8\uFE0F Print";
+  var srcPrintBtn = document.createElement("button"); srcPrintBtn.className = "no-print"; srcPrintBtn.style.cssText = "padding:8px 16px;background:var(--navy);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer"; srcPrintBtn.textContent = "\uD83D\uDDA8\uFE0F Print all visible";
   srcPrintBtn.addEventListener("click", function(){ window.print(); });
   hdr.appendChild(title); hdr.appendChild(srcPrintBtn); hdr.appendChild(addBtn); sv.appendChild(hdr);
 
@@ -6528,7 +6551,15 @@ function renderSourcingView() {
         saveSourcing(); renderSourcingView(); toast("Deleted \u2713");
       }
     }; })(s.id));
-    btnCol.appendChild(editBtn); btnCol.appendChild(delBtn);
+    btnCol.appendChild(editBtn);
+    var cardPrintBtn = document.createElement("button"); cardPrintBtn.className = "no-print"; cardPrintBtn.style.cssText = "padding:4px 9px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:10px;font-weight:700;cursor:pointer"; cardPrintBtn.textContent = "\uD83D\uDDA8\uFE0F Print";
+    cardPrintBtn.addEventListener("click", function(){
+      var parent = card.parentElement;
+      if (parent && parent.classList.contains("group-wrap")) { isolatePrintEl(parent, card); }
+      else { isolatePrintEl(card, null); }
+    });
+    btnCol.appendChild(cardPrintBtn);
+    btnCol.appendChild(delBtn);
     topRow.appendChild(btnCol);
     card.appendChild(topRow);
 
@@ -6596,11 +6627,13 @@ function renderSourcingView() {
       if (renderedRefs[refKey]) return;
       renderedRefs[refKey] = true;
       var groupItems = newestFirst.filter(function(x){ return x.quoteRef && x.quoteRef.trim().toLowerCase()===refKey; });
-      var groupWrap = document.createElement("div"); groupWrap.style.cssText = "border:2px solid #e6a15c;background:#fffaf3;border-radius:var(--r);padding:12px;margin-bottom:14px";
-      var groupHdr = document.createElement("div"); groupHdr.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:10px";
+      var groupWrap = document.createElement("div"); groupWrap.className = "group-wrap"; groupWrap.style.cssText = "border:2px solid #e6a15c;background:#fffaf3;border-radius:var(--r);padding:12px;margin-bottom:14px";
+      var groupHdr = document.createElement("div"); groupHdr.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap";
       var groupRefBadge = document.createElement("span"); groupRefBadge.style.cssText = "font-size:14px;font-weight:800;padding:4px 12px;border-radius:20px;background:#e67e22;color:#fff"; groupRefBadge.textContent = "\uD83D\uDD17 " + s.quoteRef.trim();
       var groupLbl = document.createElement("span"); groupLbl.style.cssText = "font-size:11px;font-weight:700;color:#a5590f"; groupLbl.textContent = groupItems.length + " linked special order enquiries for this job";
-      groupHdr.appendChild(groupRefBadge); groupHdr.appendChild(groupLbl);
+      var groupPrintBtn = document.createElement("button"); groupPrintBtn.className = "no-print"; groupPrintBtn.style.cssText = "padding:3px 10px;background:none;border:1px solid #e67e22;border-radius:20px;color:#a5590f;font-size:9px;font-weight:700;cursor:pointer;margin-left:auto"; groupPrintBtn.textContent = "\uD83D\uDDA8\uFE0F Print whole group";
+      groupPrintBtn.addEventListener("click", (function(gw){ return function(){ isolatePrintEl(gw, null); }; })(groupWrap));
+      groupHdr.appendChild(groupRefBadge); groupHdr.appendChild(groupLbl); groupHdr.appendChild(groupPrintBtn);
       groupWrap.appendChild(groupHdr);
       groupItems.forEach(function(gi){ groupWrap.appendChild(buildSourcingCard(gi)); });
       sv.appendChild(groupWrap);
