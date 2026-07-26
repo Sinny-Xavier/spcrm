@@ -280,6 +280,9 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 body.print-sandbox-mode > *:not(#printSandbox) { display:none !important; }
 body.print-sandbox-mode #printSandbox { display:block !important; padding:24px; color:#000; font-family:inherit; }
 body.print-overview-mode .not-in-overview { display:none !important; }
+body.print-sales-summary-mode .not-in-sales-summary { display:none !important; }
+body.print-sales-summary-mode #salesChartsRow { grid-template-columns:1fr !important; }
+body.print-sales-summary-mode #salesChartsRow > div > div[style*="height:200px"] { height:340px !important; }
 </style>
 </head>
 <body>
@@ -3388,25 +3391,117 @@ function getSalesData(year){
   return{qtrs:qtrs,prodTotals:prodTotals,qtrProd:qtrProd,yearTotal:yearTotal,subProd:subProd};
 }
 function getYears(){var y={};y[new Date().getFullYear()]=1;clients.forEach(function(c){(c.log||[]).forEach(function(l){if(l.quote&&l.date){var dp=l.date.split("/");if(dp.length===3)y[parseInt(dp[2])]=1;}});});return Object.keys(y).map(Number).sort();}
+
+var QUARTER_MONTHS = {Q1:[1,2,3], Q2:[4,5,6], Q3:[7,8,9], Q4:[10,11,12]};
+var QUARTER_MONTH_NAMES = {Q1:["January","February","March"], Q2:["April","May","June"], Q3:["July","August","September"], Q4:["October","November","December"]};
+
+function getQuarterMonthlyBreakdown(year, quarter) {
+  var months = QUARTER_MONTHS[quarter];
+  var totals = {}; months.forEach(function(m){ totals[m] = 0; });
+  clients.forEach(function(c){ (c.log||[]).forEach(function(l){
+    if (!l.quote || l.quote.status!=="Collected") return;
+    var useDate = l.quote.collectedDate || l.date;
+    if (!useDate) return;
+    var dp = useDate.split("/"); if (dp.length!==3 || parseInt(dp[2])!==year) return;
+    var m = parseInt(dp[1]); if (months.indexOf(m)===-1) return;
+    var v = (parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
+    totals[m] = (totals[m]||0) + v;
+  });});
+  return totals;
+}
+
+function showQuarterDetail(year, quarter) {
+  var data = getSalesData(year);
+  var qTotal = data.qtrs[quarter] || 0;
+  var qProd = data.qtrProd[quarter] || {};
+  var topProducts = Object.keys(qProd).map(function(p){ return {name:p, value:qProd[p]}; }).filter(function(p){ return p.value>0; }).sort(function(a,b){ return b.value-a.value; });
+  var monthly = getQuarterMonthlyBreakdown(year, quarter);
+  var months = QUARTER_MONTHS[quarter];
+  var monthNamesFull = QUARTER_MONTH_NAMES[quarter];
+  var qLabels = {Q1:"Q1 (Jan\u2013Mar)", Q2:"Q2 (Apr\u2013Jun)", Q3:"Q3 (Jul\u2013Sep)", Q4:"Q4 (Oct\u2013Dec)"};
+
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:560px;max-height:90vh;overflow-y:auto";
+
+  var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy);padding:14px 18px;display:flex;align-items:center;justify-content:space-between";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:15px;font-weight:700;color:#fff"; bht.textContent = qLabels[quarter] + " " + year + " \u2014 \u00a3" + qTotal.toLocaleString("en-GB");
+  var cx = document.createElement("button"); cx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:26px;height:26px;color:#fff;font-size:17px;cursor:pointer;line-height:1"; cx.textContent = "\u00d7";
+  cx.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  bh.appendChild(bht); bh.appendChild(cx); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:18px;display:flex;flex-direction:column;gap:16px";
+
+  // Sales per month in the quarter
+  var moSec = document.createElement("div");
+  var moTitle = document.createElement("div"); moTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:9px;padding-bottom:6px;border-top:1px solid var(--border);padding-top:2px"; moTitle.textContent = "Sales per month";
+  moSec.appendChild(moTitle);
+  var maxMo = Math.max.apply(null, months.map(function(m){ return monthly[m]||0; }).concat([1]));
+  months.forEach(function(m, mi){
+    var v = monthly[m]||0;
+    var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:10px;margin-bottom:7px";
+    var mLbl = document.createElement("div"); mLbl.style.cssText = "font-size:11px;color:var(--muted);width:70px;flex-shrink:0"; mLbl.textContent = monthNamesFull[mi];
+    var barOuter = document.createElement("div"); barOuter.style.cssText = "flex:1;background:var(--alt);border-radius:20px;height:16px;overflow:hidden";
+    var barInner = document.createElement("div"); barInner.style.cssText = "height:100%;background:var(--navy);border-radius:20px;width:"+(maxMo>0?Math.max(2,(v/maxMo)*100):0)+"%";
+    barOuter.appendChild(barInner);
+    var mVal = document.createElement("div"); mVal.style.cssText = "font-size:12px;font-weight:700;color:var(--text);width:80px;text-align:right;flex-shrink:0"; mVal.textContent = "\u00a3"+v.toLocaleString("en-GB");
+    row.appendChild(mLbl); row.appendChild(barOuter); row.appendChild(mVal);
+    moSec.appendChild(row);
+  });
+  bd.appendChild(moSec);
+
+  // Top products for the quarter
+  var prodSec = document.createElement("div");
+  var prodTitle = document.createElement("div"); prodTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:9px;padding-bottom:6px;border-top:1px solid var(--border);padding-top:12px"; prodTitle.textContent = "Top products this quarter";
+  prodSec.appendChild(prodTitle);
+  if (!topProducts.length) {
+    var noProd = document.createElement("div"); noProd.style.cssText = "font-size:12px;color:var(--muted)"; noProd.textContent = "No collected sales in this quarter."; prodSec.appendChild(noProd);
+  } else {
+    topProducts.forEach(function(p, pi){
+      var pct = qTotal>0 ? ((p.value/qTotal)*100).toFixed(1) : "0.0";
+      var prow = document.createElement("div"); prow.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)";
+      var pLeft = document.createElement("div"); pLeft.style.cssText = "font-size:12px;font-weight:700;color:var(--text)"; pLeft.textContent = (pi+1)+". "+p.name;
+      var pRight = document.createElement("div"); pRight.style.cssText = "text-align:right";
+      var pVal = document.createElement("div"); pVal.style.cssText = "font-size:12px;font-weight:700;color:var(--gtxt)"; pVal.textContent = "\u00a3"+p.value.toLocaleString("en-GB");
+      var pPct = document.createElement("div"); pPct.style.cssText = "font-size:9px;color:var(--muted)"; pPct.textContent = pct+"% of quarter";
+      pRight.appendChild(pVal); pRight.appendChild(pPct);
+      prow.appendChild(pLeft); prow.appendChild(pRight);
+      prodSec.appendChild(prow);
+    });
+  }
+  bd.appendChild(prodSec);
+
+  box.appendChild(bd);
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end";
+  var closeB = document.createElement("button"); closeB.style.cssText = "padding:7px 14px;background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; closeB.textContent = "Close";
+  closeB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  foot.appendChild(closeB); box.appendChild(foot);
+  overlay.appendChild(box); document.body.appendChild(overlay);
+}
+
 function renderSalesView(){
   var sv=document.getElementById("salesView");sv.innerHTML="";
   var years=getYears();var data=getSalesData(currentSalesYear);
   var hdr=document.createElement("div");hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px";
   var title=document.createElement("div");title.className="page-title";title.textContent="Sales Intelligence";
-  var ysel=document.createElement("div");ysel.style.cssText="display:flex;gap:5px;align-items:center";
+  var ysel=document.createElement("div");ysel.className="no-print";ysel.style.cssText="display:flex;gap:5px;align-items:center";
   var yl=document.createElement("span");yl.style.cssText="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px";yl.textContent="Year:";ysel.appendChild(yl);
   years.forEach(function(y){var btn=document.createElement("button");btn.style.cssText="padding:4px 12px;border-radius:20px;border:2px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;"+(y===currentSalesYear?"background:var(--navy);color:#fff;border-color:var(--navy)":"background:var(--surface);color:var(--muted)");btn.textContent=y;btn.addEventListener("click",function(){currentSalesYear=y;renderSalesView();});ysel.appendChild(btn);});
-  hdr.appendChild(title);hdr.appendChild(ysel);sv.appendChild(hdr);
-  var kr=document.createElement("div");kr.style.cssText="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px";
-  [{l:currentSalesYear+" total",v:"\u00a3"+data.yearTotal.toLocaleString("en-GB"),c:"kv-blue",hi:true},{l:"Q1 Jan-Mar",v:"\u00a3"+data.qtrs.Q1.toLocaleString("en-GB"),c:""},{l:"Q2 Apr-Jun",v:"\u00a3"+data.qtrs.Q2.toLocaleString("en-GB"),c:""},{l:"Q3 Jul-Sep",v:"\u00a3"+data.qtrs.Q3.toLocaleString("en-GB"),c:""},{l:"Q4 Oct-Dec",v:"\u00a3"+data.qtrs.Q4.toLocaleString("en-GB"),c:""}].forEach(function(k){
+  var salesPrintBtn=document.createElement("button");salesPrintBtn.className="no-print";salesPrintBtn.style.cssText="padding:4px 12px;border-radius:20px;border:none;background:var(--navy);color:#fff;font-size:11px;font-weight:700;cursor:pointer";salesPrintBtn.textContent="\uD83D\uDDA8\uFE0F Print summary";
+  salesPrintBtn.addEventListener("click",function(){ printSalesSummary(); });
+  hdr.appendChild(title);hdr.appendChild(salesPrintBtn);hdr.appendChild(ysel);sv.appendChild(hdr);
+  var kr=document.createElement("div");kr.style.cssText="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px";kr.id="salesKpiRow";
+  [{l:currentSalesYear+" total",v:"\u00a3"+data.yearTotal.toLocaleString("en-GB"),c:"kv-blue",hi:true},{l:"Q1 Jan-Mar",v:"\u00a3"+data.qtrs.Q1.toLocaleString("en-GB"),c:"",q:"Q1"},{l:"Q2 Apr-Jun",v:"\u00a3"+data.qtrs.Q2.toLocaleString("en-GB"),c:"",q:"Q2"},{l:"Q3 Jul-Sep",v:"\u00a3"+data.qtrs.Q3.toLocaleString("en-GB"),c:"",q:"Q3"},{l:"Q4 Oct-Dec",v:"\u00a3"+data.qtrs.Q4.toLocaleString("en-GB"),c:"",q:"Q4"}].forEach(function(k){
     var card=document.createElement("div");card.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:13px 15px"+(k.hi?";border-top:3px solid var(--navy)":"");
-    var lbl=document.createElement("div");lbl.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px";lbl.textContent=k.l;
+    if(k.q){ card.style.cursor="pointer"; card.addEventListener("click",(function(qq){return function(){ showQuarterDetail(currentSalesYear, qq); }; })(k.q)); }
+    var lbl=document.createElement("div");lbl.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px";lbl.textContent=k.l+(k.q?" \u203a":"");
     var val=document.createElement("div");val.style.cssText="font-size:"+(k.hi?"22":"18")+"px;font-weight:700;color:"+(k.hi?"var(--navy)":"var(--text)");val.textContent=k.v;
     card.appendChild(lbl);card.appendChild(val);kr.appendChild(card);
   });sv.appendChild(kr);
   var monthNames=["January","February","March","April","May","June","July","August","September","October","November","December"];
   var dailyData=getDailySalesData(currentSalesYear,currentSalesMonth);
-  var dailyCard=document.createElement("div");dailyCard.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+  var dailyCard=document.createElement("div");dailyCard.className="not-in-sales-summary";dailyCard.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
   var dHdr=document.createElement("div");dHdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px";
   var dTitle=document.createElement("div");dTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";dTitle.textContent="Daily sales \u2014 "+monthNames[currentSalesMonth]+" "+currentSalesYear+" (\u00a3"+dailyData.monthTotal.toLocaleString("en-GB")+")";
   var dNav=document.createElement("div");dNav.style.cssText="display:flex;align-items:center;gap:8px";
@@ -3434,8 +3529,8 @@ function renderSalesView(){
   });}
   dBody.appendChild(dChartWrap);dBody.appendChild(dListWrap);dailyCard.appendChild(dBody);
   sv.appendChild(dailyCard);
-  var cr=document.createElement("div");cr.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px";
-  var barCard=document.createElement("div");barCard.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px";
+  var cr=document.createElement("div");cr.id="salesChartsRow";cr.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px";
+  var barCard=document.createElement("div");barCard.className="not-in-sales-summary";barCard.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px";
   var bTitle=document.createElement("div");bTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)";bTitle.textContent="Quarterly sales "+currentSalesYear;
   var bWrap=document.createElement("div");bWrap.style.cssText="position:relative;height:200px";var bCan=document.createElement("canvas");bCan.id="sBarCh";bWrap.appendChild(bCan);barCard.appendChild(bTitle);barCard.appendChild(bWrap);
   var pieCard=document.createElement("div");pieCard.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px";
@@ -3452,7 +3547,7 @@ function renderSalesView(){
   });
   cr.appendChild(barCard);cr.appendChild(pieCard);sv.appendChild(cr);
   var activeProd=PRODUCTS.filter(function(p){return(data.prodTotals[p]||0)>0;});
-  var tblCard=document.createElement("div");tblCard.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:18px;overflow-x:auto";
+  var tblCard=document.createElement("div");tblCard.className="not-in-sales-summary";tblCard.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:18px;overflow-x:auto";
   var tTitle=document.createElement("div");tTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)";tTitle.textContent="Product sales by quarter "+currentSalesYear;
   tblCard.appendChild(tTitle);
   if(!activeProd.length){var nd=document.createElement("div");nd.className="empty-state";nd.innerHTML="<div>&#128200;</div><div class='es-title'>No paid sales for "+currentSalesYear+" yet</div><div class='es-sub'>Mark quotes as Paid in client interaction logs to see data here</div>";tblCard.appendChild(nd);}
@@ -3505,7 +3600,7 @@ function renderSalesView(){
     tbody.appendChild(totRow);tbl.appendChild(tbody);tblCard.appendChild(tbl);
   }
   sv.appendChild(tblCard);
-  var bk=document.createElement("button");bk.className="bkl";bk.textContent="\u2190 Back to dashboard";bk.addEventListener("click",showDash);sv.appendChild(bk);
+  var bk=document.createElement("button");bk.className="bkl no-print";bk.textContent="\u2190 Back to dashboard";bk.addEventListener("click",showDash);sv.appendChild(bk);
   setTimeout(function(){
     mkDailyBarChart("sDailyCh",dailyData.days,currentSalesYear,currentSalesMonth);
     mkBarChart("sBarCh",[data.qtrs.Q1,data.qtrs.Q2,data.qtrs.Q3,data.qtrs.Q4]);
@@ -6521,6 +6616,17 @@ function printClientOverview() {
   document.body.classList.add("print-overview-mode");
   function restore() {
     document.body.classList.remove("print-overview-mode");
+    window.removeEventListener("afterprint", restore);
+  }
+  window.addEventListener("afterprint", restore);
+  setTimeout(restore, 60000);
+  setTimeout(function(){ window.print(); }, 30);
+}
+
+function printSalesSummary() {
+  document.body.classList.add("print-sales-summary-mode");
+  function restore() {
+    document.body.classList.remove("print-sales-summary-mode");
     window.removeEventListener("afterprint", restore);
   }
   window.addEventListener("afterprint", restore);
