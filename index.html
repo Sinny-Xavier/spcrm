@@ -3427,7 +3427,7 @@ function showQuarterDetail(year, quarter) {
 
   var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy);padding:14px 18px;display:flex;align-items:center;justify-content:space-between";
   var bht = document.createElement("h2"); bht.style.cssText = "font-size:15px;font-weight:700;color:#fff"; bht.textContent = qLabels[quarter] + " " + year + " \u2014 \u00a3" + qTotal.toLocaleString("en-GB");
-  var cx = document.createElement("button"); cx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:26px;height:26px;color:#fff;font-size:17px;cursor:pointer;line-height:1"; cx.textContent = "\u00d7";
+  var cx = document.createElement("button"); cx.className = "no-print"; cx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:26px;height:26px;color:#fff;font-size:17px;cursor:pointer;line-height:1"; cx.textContent = "\u00d7";
   cx.addEventListener("click", function(){ document.body.removeChild(overlay); });
   bh.appendChild(bht); bh.appendChild(cx); box.appendChild(bh);
 
@@ -3451,33 +3451,31 @@ function showQuarterDetail(year, quarter) {
   });
   bd.appendChild(moSec);
 
-  // Top products for the quarter
+  // Product breakdown for the quarter
   var prodSec = document.createElement("div");
-  var prodTitle = document.createElement("div"); prodTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:9px;padding-bottom:6px;border-top:1px solid var(--border);padding-top:12px"; prodTitle.textContent = "Top products this quarter";
+  var prodTitle = document.createElement("div"); prodTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:9px;padding-bottom:6px;border-top:1px solid var(--border);padding-top:12px"; prodTitle.textContent = "Product breakdown this quarter";
   prodSec.appendChild(prodTitle);
   if (!topProducts.length) {
     var noProd = document.createElement("div"); noProd.style.cssText = "font-size:12px;color:var(--muted)"; noProd.textContent = "No collected sales in this quarter."; prodSec.appendChild(noProd);
   } else {
-    topProducts.forEach(function(p, pi){
-      var pct = qTotal>0 ? ((p.value/qTotal)*100).toFixed(1) : "0.0";
-      var prow = document.createElement("div"); prow.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border)";
-      var pLeft = document.createElement("div"); pLeft.style.cssText = "font-size:12px;font-weight:700;color:var(--text)"; pLeft.textContent = (pi+1)+". "+p.name;
-      var pRight = document.createElement("div"); pRight.style.cssText = "text-align:right";
-      var pVal = document.createElement("div"); pVal.style.cssText = "font-size:12px;font-weight:700;color:var(--gtxt)"; pVal.textContent = "\u00a3"+p.value.toLocaleString("en-GB");
-      var pPct = document.createElement("div"); pPct.style.cssText = "font-size:9px;color:var(--muted)"; pPct.textContent = pct+"% of quarter";
-      pRight.appendChild(pVal); pRight.appendChild(pPct);
-      prow.appendChild(pLeft); prow.appendChild(pRight);
-      prodSec.appendChild(prow);
-    });
+    var pieWrap = document.createElement("div"); pieWrap.style.cssText = "height:220px;position:relative";
+    var pieCan = document.createElement("canvas"); pieCan.id = "qtrPieCh";
+    pieWrap.appendChild(pieCan);
+    prodSec.appendChild(pieWrap);
   }
   bd.appendChild(prodSec);
 
   box.appendChild(bd);
-  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end";
-  var closeB = document.createElement("button"); closeB.style.cssText = "padding:7px 14px;background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; closeB.textContent = "Close";
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
+  var qtrPrintB = document.createElement("button"); qtrPrintB.className = "no-print"; qtrPrintB.style.cssText = "padding:7px 14px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; qtrPrintB.textContent = "\uD83D\uDDA8\uFE0F Print";
+  qtrPrintB.addEventListener("click", function(){ printBodyOverlay(overlay); });
+  var closeB = document.createElement("button"); closeB.className = "no-print"; closeB.style.cssText = "padding:7px 14px;background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; closeB.textContent = "Close";
   closeB.addEventListener("click", function(){ document.body.removeChild(overlay); });
-  foot.appendChild(closeB); box.appendChild(foot);
+  foot.appendChild(qtrPrintB); foot.appendChild(closeB); box.appendChild(foot);
   overlay.appendChild(box); document.body.appendChild(overlay);
+  if (topProducts.length) {
+    setTimeout(function(){ mkPieChart("qtrPieCh", topProducts.map(function(p){return p.name;}), topProducts.map(function(p){return p.value;})); }, 60);
+  }
 }
 
 function renderSalesView(){
@@ -6616,6 +6614,30 @@ function printClientOverview() {
   document.body.classList.add("print-overview-mode");
   function restore() {
     document.body.classList.remove("print-overview-mode");
+    window.removeEventListener("afterprint", restore);
+  }
+  window.addEventListener("afterprint", restore);
+  setTimeout(restore, 60000);
+  setTimeout(function(){ window.print(); }, 30);
+}
+
+// Prints the content of a modal overlay on its own, hiding the rest of the
+// app and relaxing the overlay's fixed/scroll positioning so it flows onto
+// the printed page properly, then restores everything once done.
+function printBodyOverlay(overlayEl) {
+  var restoreList = [];
+  Array.from(document.body.children).forEach(function(el){
+    if (el !== overlayEl) { restoreList.push({el:el, prev:el.style.display}); el.style.display = "none"; }
+  });
+  var prevOverlayCss = overlayEl.style.cssText;
+  overlayEl.style.cssText = "position:static;background:#fff;padding:0;margin:0;display:block;";
+  var boxEl = overlayEl.firstElementChild;
+  var prevBoxCss = boxEl ? boxEl.style.cssText : null;
+  if (boxEl) boxEl.style.cssText = "max-width:100%;max-height:none;overflow:visible;background:#fff;";
+  function restore() {
+    restoreList.forEach(function(r){ r.el.style.display = r.prev; });
+    overlayEl.style.cssText = prevOverlayCss;
+    if (boxEl) boxEl.style.cssText = prevBoxCss;
     window.removeEventListener("afterprint", restore);
   }
   window.addEventListener("afterprint", restore);
