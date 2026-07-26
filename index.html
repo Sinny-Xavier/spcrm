@@ -6418,6 +6418,41 @@ function renderFootfallView() {
       r4.appendChild(wdWrap);
       analysisResults.appendChild(r4);
 
+      // Per-category weekday breakdown table
+      var catWdTotals = FOOTFALL_CATS.map(function(){ return [0,0,0,0,0,0,0]; });
+      var catWdCounts = [0,0,0,0,0,0,0];
+      filtered.forEach(function(e){
+        var d = new Date(e.date+"T00:00:00"); var dow=(d.getDay()+6)%7;
+        catWdCounts[dow]++;
+        FOOTFALL_CATS.forEach(function(cat,ci){ catWdTotals[ci][dow] += (e.counts&&e.counts[cat])||0; });
+      });
+      var r4b = document.createElement("div"); r4b.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px;overflow-x:auto";
+      var r4bh = document.createElement("div"); r4bh.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r4bh.textContent = "Average footfall by day \u2014 per category";
+      r4b.appendChild(r4bh);
+      var wdTbl = document.createElement("table"); wdTbl.style.cssText = "border-collapse:collapse;width:100%;font-size:11px";
+      var wdThead = document.createElement("thead"); var wdHtr = document.createElement("tr");
+      ["Category"].concat(wdLabels).concat(["Busiest day"]).forEach(function(h){
+        var th = document.createElement("th"); th.style.cssText = "padding:6px 8px;text-align:"+(h==="Category"?"left":"center")+";font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap"; th.textContent = h; wdHtr.appendChild(th);
+      });
+      wdThead.appendChild(wdHtr); wdTbl.appendChild(wdThead);
+      var wdTbody = document.createElement("tbody");
+      FOOTFALL_CATS.forEach(function(cat,ci){
+        var tr = document.createElement("tr"); tr.style.cssText = "border-bottom:1px solid var(--border)";
+        var tdName = document.createElement("td"); tdName.style.cssText = "padding:5px 8px;font-weight:700"; tdName.textContent = FOOTFALL_CATS_SHORT[ci]; tr.appendChild(tdName);
+        var rowAvgs = wdLabels.map(function(_,di){ return catWdCounts[di]>0 ? Math.round((catWdTotals[ci][di]/catWdCounts[di])*10)/10 : 0; });
+        var maxAvg = Math.max.apply(null, rowAvgs);
+        rowAvgs.forEach(function(v){
+          var td = document.createElement("td"); td.style.cssText = "padding:5px 8px;text-align:center"+(v===maxAvg && maxAvg>0 ? ";font-weight:700;color:var(--navy);background:var(--alt)" : "");
+          td.textContent = v; tr.appendChild(td);
+        });
+        var tdBusy = document.createElement("td"); tdBusy.style.cssText = "padding:5px 8px;text-align:center;font-weight:700";
+        tdBusy.textContent = maxAvg>0 ? wdLabels[rowAvgs.indexOf(maxAvg)] : "\u2014";
+        tr.appendChild(tdBusy);
+        wdTbody.appendChild(tr);
+      });
+      wdTbl.appendChild(wdTbody); r4b.appendChild(wdTbl);
+      analysisResults.appendChild(r4b);
+
       // Patterns spotted (correlation)
       var r5 = document.createElement("div"); r5.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
       var r5h = document.createElement("div"); r5h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r5h.textContent = "Patterns between categories";
@@ -6447,6 +6482,40 @@ function renderFootfallView() {
         }
       }
       analysisResults.appendChild(r5);
+
+      // Full correlation matrix (heat-map style)
+      if (filtered.length >= 3) {
+        var r5b = document.createElement("div"); r5b.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px;overflow-x:auto";
+        var r5bh = document.createElement("div"); r5bh.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r5bh.textContent = "Full correlation matrix";
+        r5b.appendChild(r5bh);
+        var mHint = document.createElement("div"); mHint.style.cssText = "font-size:10px;color:var(--muted);margin-bottom:10px"; mHint.textContent = "Blue = rise and fall together. Orange = move in opposite directions. Deeper colour = stronger relationship.";
+        r5b.appendChild(mHint);
+        var mTbl = document.createElement("table"); mTbl.style.cssText = "border-collapse:collapse;font-size:10px";
+        var mThead = document.createElement("tr");
+        var blankTh = document.createElement("th"); blankTh.style.cssText = "padding:5px"; mThead.appendChild(blankTh);
+        FOOTFALL_CATS_SHORT.forEach(function(s){ var th=document.createElement("th"); th.style.cssText="padding:5px 7px;font-size:9px;font-weight:700;color:var(--muted);white-space:nowrap;writing-mode:vertical-rl;text-orientation:mixed;max-height:90px"; th.textContent=s; mThead.appendChild(th); });
+        mTbl.appendChild(mThead);
+        FOOTFALL_CATS.forEach(function(catA, ia){
+          var tr = document.createElement("tr");
+          var rowTh = document.createElement("th"); rowTh.style.cssText = "padding:5px 8px;font-size:9px;font-weight:700;color:var(--muted);text-align:left;white-space:nowrap"; rowTh.textContent = FOOTFALL_CATS_SHORT[ia];
+          tr.appendChild(rowTh);
+          FOOTFALL_CATS.forEach(function(catB, ib){
+            var td = document.createElement("td"); td.style.cssText = "padding:6px 9px;text-align:center;font-weight:700";
+            var rVal = ia===ib ? 1 : pearsonCorr(catSeries[ia], catSeries[ib]);
+            if (rVal===null) { td.textContent = "\u2014"; td.style.color = "var(--muted)"; }
+            else {
+              td.textContent = rVal.toFixed(2);
+              var alpha = Math.min(1, Math.abs(rVal)) * 0.75;
+              td.style.background = rVal>=0 ? "rgba(31,119,180,"+alpha+")" : "rgba(213,94,0,"+alpha+")";
+              td.style.color = Math.abs(rVal)>0.5 ? "#fff" : "var(--text)";
+            }
+            tr.appendChild(td);
+          });
+          mTbl.appendChild(tr);
+        });
+        r5b.appendChild(mTbl);
+        analysisResults.appendChild(r5b);
+      }
 
       // Weather pattern
       var withWeather = filtered.filter(function(e){ return e.weather; });
@@ -6479,6 +6548,35 @@ function renderFootfallView() {
         setTimeout(function(){ mkFootfallWeatherChart("ffLogWeatherCh", wxLabels, wxAvgs); }, 30);
       }
       analysisResults.appendChild(r6);
+
+      // Best & worst day per category
+      var r7 = document.createElement("div"); r7.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px;overflow-x:auto";
+      var r7h = document.createElement("div"); r7h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r7h.textContent = "Best & worst day per category";
+      r7.appendChild(r7h);
+      var bwTbl = document.createElement("table"); bwTbl.style.cssText = "border-collapse:collapse;width:100%;font-size:11px";
+      var bwThead = document.createElement("tr");
+      ["Category","Best day","Best total","Worst day","Worst total"].forEach(function(h){
+        var th = document.createElement("th"); th.style.cssText = "padding:6px 8px;text-align:"+(h==="Category"?"left":"center")+";font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap"; th.textContent = h; bwThead.appendChild(th);
+      });
+      bwTbl.appendChild(bwThead);
+      FOOTFALL_CATS.forEach(function(cat,ci){
+        var series = catSeries[ci];
+        var maxV = Math.max.apply(null, series); var minV = Math.min.apply(null, series);
+        var maxIdx = series.indexOf(maxV); var minIdx = series.indexOf(minV);
+        var tr = document.createElement("tr"); tr.style.cssText = "border-bottom:1px solid var(--border)";
+        var tdName = document.createElement("td"); tdName.style.cssText = "padding:5px 8px;font-weight:700"; tdName.textContent = FOOTFALL_CATS_SHORT[ci]; tr.appendChild(tdName);
+        if (maxV<=0) {
+          var tdNone = document.createElement("td"); tdNone.colSpan=4; tdNone.style.cssText="padding:5px 8px;text-align:center;color:var(--muted)"; tdNone.textContent="No data yet"; tr.appendChild(tdNone);
+        } else {
+          var tdBD = document.createElement("td"); tdBD.style.cssText="padding:5px 8px;text-align:center"; tdBD.textContent = ffToUKDate(filtered[maxIdx].date); tr.appendChild(tdBD);
+          var tdBT = document.createElement("td"); tdBT.style.cssText="padding:5px 8px;text-align:center;font-weight:700;color:var(--gtxt)"; tdBT.textContent = maxV; tr.appendChild(tdBT);
+          var tdWD = document.createElement("td"); tdWD.style.cssText="padding:5px 8px;text-align:center"; tdWD.textContent = ffToUKDate(filtered[minIdx].date); tr.appendChild(tdWD);
+          var tdWT = document.createElement("td"); tdWT.style.cssText="padding:5px 8px;text-align:center;font-weight:700;color:#b23a2e"; tdWT.textContent = minV; tr.appendChild(tdWT);
+        }
+        bwTbl.appendChild(tr);
+      });
+      r7.appendChild(bwTbl);
+      analysisResults.appendChild(r7);
 
       setTimeout(function(){
         if (grandTotal>0) mkFootfallPieChart("ffLogPieCh", FOOTFALL_CATS, catTotals);
