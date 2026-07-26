@@ -335,6 +335,7 @@ body.print-sales-summary-mode #salesChartsRow > div > div[style*="height:200px"]
         <button class="nav-btn" onclick="showEnquiries()" style="background:rgba(155,89,182,.2);border-color:rgba(155,89,182,.4)">&#128172; Enquiries</button>
         <button class="nav-btn" onclick="showSourcing()" style="background:rgba(230,126,34,.2);border-color:rgba(230,126,34,.4)">&#127981; Sourcing</button>
         <button class="nav-btn" onclick="showMonthlyReport()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128202; Report</button>
+        <button class="nav-btn" onclick="showFootfall()" style="background:rgba(31,119,180,.2);border-color:rgba(31,119,180,.4)">&#128100; Footfall</button>
         <button class="nav-btn" onclick="showWebsites()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#127760; Websites</button>
         <button class="nav-btn" onclick="showDocs()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128196; Docs</button>
         <button class="nav-btn" onclick="showNotesSearch()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128269; Search Notes</button>
@@ -388,6 +389,7 @@ body.print-sales-summary-mode #salesChartsRow > div > div[style*="height:200px"]
     <div id="enquiriesView" class="page"></div>
     <div id="sourcingView" class="page"></div>
     <div id="tasksView" class="page"></div>
+    <div id="footfallView" class="page"></div>
     <div id="notesSearchView" class="page"></div>
   </main>
 </div>
@@ -663,11 +665,11 @@ async function ensureBirthdayReminders() {
 
 async function loadFromSupabase() {
   try {
-    var [c, r, s, b, comp, d, w, docs2, enq, tsk, arch] = await Promise.all([
+    var [c, r, s, b, comp, d, w, docs2, enq, tsk, arch, ff] = await Promise.all([
       sbGet("clients"), sbGet("reps"), sbGet("samples"),
       sbGet("birthdays"), sbGet("complaints"), sbGet("diary_events"),
       sbGet("websites"), sbGet("docs"), sbGet("enquiries"), sbGet("tasks"),
-      sbGet("archived_clients")
+      sbGet("archived_clients"), sbGet("footfall_entries")
     ]);
 
     // CLIENTS: Supabase is master. If empty, push local up.
@@ -693,6 +695,7 @@ async function loadFromSupabase() {
     if (d && d.length > 0) diaryEvents = d;
     if (enq && enq.length > 0) enquiries = enq;
     if (tsk && tsk.length > 0) tasks = tsk;
+    if (ff && ff.length > 0) footfallEntries = ff;
     if (w && w.length > 0) websites = w;
     if (arch && arch.length > 0) {
       archivedClients = arch;
@@ -1399,7 +1402,7 @@ function updateStats(){
 
 // ── VIEW MANAGER ──────────────────────────────────────────────────
 function showView(v){
-  ["dashView","detView","clientsView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView","sourcingView","tasksView","toolsView"].forEach(function(id){
+  ["dashView","detView","clientsView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView","sourcingView","tasksView","toolsView","footfallView"].forEach(function(id){
     var el=document.getElementById(id);
     el.style.display=(id===v+"View"||(v==="det"&&id==="detView")||(v==="form"&&id==="formView"))?"block":"none";
   });
@@ -5528,8 +5531,7 @@ var TOOLS_LIST = [
   { name: "Margin Calculator", desc: "Nett price + margin % \u2192 customer price ex/inc VAT, plus box pricing.", icon: "\uD83E\uDDEE", native: true, renderFn: renderMarginCalcNative },
   { name: "Measurement Converter", desc: "Feet & inches \u2194 metres/yards/cm, plus room area in m\u00b2, ft\u00b2 and yd\u00b2.", icon: "\uD83D\uDCD0", native: true, renderFn: renderMeasureConverterNative },
   { name: "Margin Cutter", desc: "Work out the discount needed to hit a target margin, inc/ex VAT.", icon: "\uD83D\uDCB0", url: "margin-cutter.html" },
-  { name: "Roll Planner", desc: "Carpet area & roll-width planner for rectangles, L-shapes, stairs and chimney breasts.", icon: "\uD83D\uDCD0", url: "roll-planner.html" },
-  { name: "Footfall Pattern Analyzer", desc: "Enter weekly footfall by category and see category share, week-on-week trend, and which categories move together.", icon: "\uD83D\uDCCA", native: true, renderFn: renderFootfallAnalyzerNative }
+  { name: "Roll Planner", desc: "Carpet area & roll-width planner for rectangles, L-shapes, stairs and chimney breasts.", icon: "\uD83D\uDCD0", url: "roll-planner.html" }
 ];
 
 function renderToolsView() {
@@ -5741,7 +5743,6 @@ function renderMarginCalcNative(container) {
 // week-on-week trend, and which categories tend to move together.
 var FOOTFALL_CATS = ["Best @ Floorstore","Existing Customer Picked Up/Paid","Existing Customer Query","Floorstore Customer Pickup","New Walk In - Query","New Walk In - Purchase","House Build Fitters"];
 var FOOTFALL_CATS_SHORT = ["Best @ Floorstore","Existing \u2013 Picked Up","Existing \u2013 Query","Floorstore Pickup","New Walk In \u2013 Query","New Walk In \u2013 Purchase","House Build Fitters"];
-var footfallRowSeq = 0;
 
 function pearsonCorr(x, y) {
   var n = x.length;
@@ -5785,174 +5786,6 @@ function mkFootfallTrendChart(id, weekLabels, totals) {
   };
   chartInstances[id] = new Chart(ctx.getContext("2d"), cfg);
 }
-
-function renderFootfallAnalyzerNative(container) {
-  var wrap = document.createElement("div");
-  wrap.style.cssText = "max-width:900px";
-
-  function mkCard(titleTxt) {
-    var card = document.createElement("div");
-    card.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
-    var h = document.createElement("div");
-    h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)";
-    h.textContent = titleTxt;
-    card.appendChild(h);
-    wrap.appendChild(card);
-    return card;
-  }
-
-  // Card 1: data entry table
-  var c1 = mkCard("Weekly figures \u2014 enter a total for each category, per week");
-  var hint = document.createElement("div"); hint.style.cssText = "font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5"; hint.textContent = "Add as many weeks as you like (the Footfall Tracker weekly totals per category work well here). At least 3 weeks are needed to spot patterns between categories.";
-  c1.appendChild(hint);
-
-  var tblWrap = document.createElement("div"); tblWrap.style.cssText = "overflow-x:auto";
-  var tbl = document.createElement("table"); tbl.style.cssText = "border-collapse:collapse;width:100%;font-size:11px";
-  var thead = document.createElement("thead");
-  var htr = document.createElement("tr");
-  ["Week"].concat(FOOTFALL_CATS_SHORT).concat(["Total",""]).forEach(function(h){
-    var th = document.createElement("th"); th.style.cssText = "padding:6px 7px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap"; th.textContent = h; htr.appendChild(th);
-  });
-  thead.appendChild(htr); tbl.appendChild(thead);
-  var tbody = document.createElement("tbody"); tbl.appendChild(tbody);
-  tblWrap.appendChild(tbl); c1.appendChild(tblWrap);
-
-  var addRowBtn = document.createElement("button"); addRowBtn.style.cssText = "margin-top:10px;padding:7px 14px;background:none;border:2px dashed var(--border);border-radius:var(--rs);color:var(--muted);font-size:11px;font-weight:700;cursor:pointer"; addRowBtn.textContent = "+ Add week";
-  c1.appendChild(addRowBtn);
-
-  function updateRowTotal(row) {
-    var total = 0;
-    row.inputs.forEach(function(inp){ total += (parseFloat(inp.value)||0); });
-    row.totalEl.textContent = total.toLocaleString("en-GB");
-  }
-
-  function addFootfallRow(weekLabel) {
-    footfallRowSeq++;
-    var tr = document.createElement("tr"); tr.style.cssText = "border-bottom:1px solid var(--border)";
-    var row = { tr: tr, inputs: [] };
-
-    var wkTd = document.createElement("td"); wkTd.style.cssText = "padding:4px";
-    var wkInp = document.createElement("input"); wkInp.type = "text"; wkInp.value = weekLabel || ("Wk " + footfallRowSeq); wkInp.style.cssText = "width:70px;box-sizing:border-box;padding:5px 6px;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;outline:none";
-    wkTd.appendChild(wkInp); tr.appendChild(wkTd);
-    row.weekInp = wkInp;
-
-    FOOTFALL_CATS.forEach(function(){
-      var td = document.createElement("td"); td.style.cssText = "padding:4px";
-      var inp = document.createElement("input"); inp.type = "number"; inp.min = "0"; inp.placeholder = "0";
-      inp.style.cssText = "width:66px;box-sizing:border-box;padding:5px 6px;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;outline:none";
-      inp.addEventListener("input", function(){ updateRowTotal(row); });
-      td.appendChild(inp); tr.appendChild(td);
-      row.inputs.push(inp);
-    });
-
-    var totTd = document.createElement("td"); totTd.style.cssText = "padding:4px 8px;font-weight:700;color:var(--navy);white-space:nowrap";
-    totTd.textContent = "0"; tr.appendChild(totTd);
-    row.totalEl = totTd;
-
-    var delTd = document.createElement("td"); delTd.style.cssText = "padding:4px";
-    var delBtn = document.createElement("button"); delBtn.textContent = "\u00d7"; delBtn.style.cssText = "background:none;border:none;color:var(--muted);font-size:15px;cursor:pointer;padding:2px 6px";
-    delBtn.addEventListener("click", function(){ tr.remove(); footfallRows = footfallRows.filter(function(r){ return r!==row; }); });
-    delTd.appendChild(delBtn); tr.appendChild(delTd);
-
-    tbody.appendChild(tr);
-    footfallRows.push(row);
-    return row;
-  }
-
-  var footfallRows = [];
-  for (var i=0;i<6;i++) addFootfallRow();
-  addRowBtn.addEventListener("click", function(){ addFootfallRow(); });
-
-  // Card 2: analyze trigger
-  var c2 = document.createElement("div"); c2.style.cssText = "margin-bottom:14px";
-  var analyzeBtn = document.createElement("button"); analyzeBtn.style.cssText = "padding:9px 20px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:13px;font-weight:700;cursor:pointer"; analyzeBtn.textContent = "\uD83D\uDCCA Analyze patterns";
-  c2.appendChild(analyzeBtn);
-  wrap.appendChild(c2);
-
-  // Results container, populated on Analyze
-  var results = document.createElement("div");
-  wrap.appendChild(results);
-
-  analyzeBtn.addEventListener("click", function(){
-    var usedRows = footfallRows.filter(function(r){ return r.inputs.some(function(inp){ return (parseFloat(inp.value)||0) > 0; }); });
-    results.innerHTML = "";
-    if (!usedRows.length) {
-      var warn = document.createElement("div"); warn.style.cssText = "font-size:12px;color:var(--muted);padding:14px;background:var(--surface);border:2px solid var(--border);border-radius:var(--r)"; warn.textContent = "Enter at least one week of figures first.";
-      results.appendChild(warn);
-      return;
-    }
-
-    var weekLabels = usedRows.map(function(r){ return r.weekInp.value || "Week"; });
-    var catSeries = FOOTFALL_CATS.map(function(cat, ci){ return usedRows.map(function(r){ return parseFloat(r.inputs[ci].value)||0; }); });
-    var catTotals = catSeries.map(function(s){ return s.reduce(function(a,b){return a+b;},0); });
-    var grandTotal = catTotals.reduce(function(a,b){return a+b;},0);
-    var weekTotals = usedRows.map(function(r,ri){ return FOOTFALL_CATS.map(function(_,ci){ return catSeries[ci][ri]; }).reduce(function(a,b){return a+b;},0); });
-
-    // Category share card
-    var r1 = document.createElement("div"); r1.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
-    var r1h = document.createElement("div"); r1h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r1h.textContent = "Category share (" + weekLabels.length + " week" + (weekLabels.length===1?"":"s") + ", " + grandTotal.toLocaleString("en-GB") + " total)";
-    r1.appendChild(r1h);
-    if (grandTotal > 0) {
-      var pieWrap = document.createElement("div"); pieWrap.style.cssText = "height:230px;position:relative";
-      var pieCan = document.createElement("canvas"); pieCan.id = "ffPieCh"; pieWrap.appendChild(pieCan);
-      r1.appendChild(pieWrap);
-    }
-    results.appendChild(r1);
-
-    // Weekly trend card
-    var r2 = document.createElement("div"); r2.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
-    var r2h = document.createElement("div"); r2h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r2h.textContent = "Week-on-week total footfall";
-    r2.appendChild(r2h);
-    var trendWrap = document.createElement("div"); trendWrap.style.cssText = "height:200px;position:relative";
-    var trendCan = document.createElement("canvas"); trendCan.id = "ffTrendCh"; trendWrap.appendChild(trendCan);
-    r2.appendChild(trendWrap);
-    results.appendChild(r2);
-
-    // Patterns between categories
-    var r3 = document.createElement("div"); r3.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
-    var r3h = document.createElement("div"); r3h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r3h.textContent = "Patterns between categories";
-    r3.appendChild(r3h);
-
-    if (usedRows.length < 3) {
-      var need = document.createElement("div"); need.style.cssText = "font-size:12px;color:var(--muted)"; need.textContent = "Add at least 3 weeks of figures to see which categories tend to move together.";
-      r3.appendChild(need);
-    } else {
-      var pairs = [];
-      for (var a=0;a<FOOTFALL_CATS.length;a++) {
-        for (var b=a+1;b<FOOTFALL_CATS.length;b++) {
-          var r = pearsonCorr(catSeries[a], catSeries[b]);
-          if (r!==null) pairs.push({ a:FOOTFALL_CATS[a], b:FOOTFALL_CATS[b], r:r });
-        }
-      }
-      pairs.sort(function(x,y){ return Math.abs(y.r)-Math.abs(x.r); });
-      var top = pairs.slice(0,5);
-      if (!top.length) {
-        var flat = document.createElement("div"); flat.style.cssText = "font-size:12px;color:var(--muted)"; flat.textContent = "Not enough variation in the figures yet to spot a pattern \u2014 add a few more weeks.";
-        r3.appendChild(flat);
-      } else {
-        top.forEach(function(p){
-          var strength = Math.abs(p.r);
-          var word = strength>=0.7 ? "strongly" : strength>=0.4 ? "moderately" : "weakly";
-          var dir = p.r >= 0 ? "rise and fall together" : "move in opposite directions";
-          var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)";
-          var left = document.createElement("div"); left.style.cssText = "font-size:12px;color:var(--text);max-width:70%"; left.innerHTML = "<strong>"+p.a+"</strong> and <strong>"+p.b+"</strong> "+word+" "+dir;
-          var right = document.createElement("div"); right.style.cssText = "font-size:12px;font-weight:700;color:"+(p.r>=0?"var(--gtxt)":"#b23a2e"); right.textContent = "r="+p.r.toFixed(2);
-          row.appendChild(left); row.appendChild(right);
-          r3.appendChild(row);
-        });
-      }
-    }
-    results.appendChild(r3);
-
-    setTimeout(function(){
-      if (grandTotal > 0) mkFootfallPieChart("ffPieCh", FOOTFALL_CATS, catTotals);
-      mkFootfallTrendChart("ffTrendCh", weekLabels, weekTotals);
-    }, 30);
-  });
-
-  container.appendChild(wrap);
-}
-
 
 function renderMeasureConverterNative(container) {
   var wrap = document.createElement("div");
@@ -6312,6 +6145,366 @@ function showDocs() {
 // ── TASKS / TO-DO ───────────────────────────────────────────────
 var TASKS_STORE = "spcrm_tasks_v1";
 var tasks = [];
+
+var FOOTFALL_STORE = "spcrm_footfall_v1";
+var footfallEntries = [];
+function loadFootfallEntries() {
+  try { var r = localStorage.getItem(FOOTFALL_STORE); if (r) return JSON.parse(r); } catch(e) {}
+  return [];
+}
+function saveFootfallEntries() {
+  try { localStorage.setItem(FOOTFALL_STORE, JSON.stringify(footfallEntries)); } catch(e) {}
+  sbSaveAll("footfall_entries", footfallEntries, "id");
+}
+
+var FOOTFALL_WEATHER_OPTS = ["Sunny","Cloudy","Rain","Heavy Rain","Snow","Windy","Mixed"];
+var ffEditingId = null;
+
+function ffToUKDate(iso) {
+  if (!iso) return "";
+  var p = iso.split("-"); if (p.length!==3) return iso;
+  return p[2]+"/"+p[1]+"/"+p[0];
+}
+function ffDayName(iso) {
+  var d = new Date(iso+"T00:00:00");
+  return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()];
+}
+function ffTodayISO() {
+  var d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+function showFootfall() { activeId=null; renderList(); showView("footfall"); renderFootfallView(); }
+
+function renderFootfallView() {
+  var fv = document.getElementById("footfallView");
+  fv.innerHTML = "";
+  var wrap = document.createElement("div"); wrap.style.cssText = "max-width:960px";
+
+  var hdr = document.createElement("div"); hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px";
+  var title = document.createElement("h2"); title.style.cssText = "font-size:18px;font-weight:700"; title.textContent = "\uD83D\uDC63 Footfall Log";
+  var ffPrintBtn = document.createElement("button"); ffPrintBtn.className = "no-print"; ffPrintBtn.style.cssText = "padding:8px 16px;background:var(--navy);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer"; ffPrintBtn.textContent = "\uD83D\uDDA8\uFE0F Print summary";
+  ffPrintBtn.addEventListener("click", function(){ window.print(); });
+  hdr.appendChild(title); hdr.appendChild(ffPrintBtn);
+  wrap.appendChild(hdr);
+
+  function mkCard(titleTxt, cls) {
+    var card = document.createElement("div");
+    card.className = cls || "";
+    card.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+    if (titleTxt) {
+      var h = document.createElement("div");
+      h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)";
+      h.textContent = titleTxt;
+      card.appendChild(h);
+    }
+    wrap.appendChild(card);
+    return card;
+  }
+
+  // ── Entry form ──
+  var c1 = mkCard(ffEditingId ? "Editing entry" : "Log today's footfall", "no-print");
+  var formRow = document.createElement("div"); formRow.style.cssText = "display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px";
+
+  function mkFld(labelTxt, inputEl) {
+    var f = document.createElement("div"); f.style.cssText = "display:flex;flex-direction:column;gap:3px";
+    var l = document.createElement("label"); l.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px"; l.textContent = labelTxt;
+    f.appendChild(l); f.appendChild(inputEl);
+    formRow.appendChild(f);
+    return f;
+  }
+
+  var dateInp = document.createElement("input"); dateInp.type = "date"; dateInp.id = "ffDateInp"; dateInp.value = ffTodayISO();
+  dateInp.style.cssText = "padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none";
+  mkFld("Date", dateInp);
+
+  var catInputs = {};
+  FOOTFALL_CATS.forEach(function(cat, ci){
+    var inp = document.createElement("input"); inp.type = "number"; inp.min = "0"; inp.placeholder = "0";
+    inp.style.cssText = "width:70px;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none";
+    catInputs[cat] = inp;
+    mkFld(FOOTFALL_CATS_SHORT[ci], inp);
+  });
+
+  var weatherSel = document.createElement("select"); weatherSel.style.cssText = "padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none";
+  var optBlank = document.createElement("option"); optBlank.value=""; optBlank.textContent="\u2014"; weatherSel.appendChild(optBlank);
+  FOOTFALL_WEATHER_OPTS.forEach(function(w){ var o=document.createElement("option"); o.value=w; o.textContent=w; weatherSel.appendChild(o); });
+  mkFld("Weather", weatherSel);
+
+  var tempInp = document.createElement("input"); tempInp.type = "number"; tempInp.placeholder = "\u00b0C";
+  tempInp.style.cssText = "width:60px;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none";
+  mkFld("Temp \u00b0C", tempInp);
+
+  var saveEntryBtn = document.createElement("button"); saveEntryBtn.style.cssText = "padding:8px 18px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer;height:34px";
+  saveEntryBtn.textContent = ffEditingId ? "Update entry" : "Save entry";
+  formRow.appendChild(saveEntryBtn);
+
+  if (ffEditingId) {
+    var cancelEditBtn = document.createElement("button"); cancelEditBtn.style.cssText = "padding:8px 14px;background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer;height:34px";
+    cancelEditBtn.textContent = "Cancel";
+    cancelEditBtn.addEventListener("click", function(){ ffEditingId = null; renderFootfallView(); });
+    formRow.appendChild(cancelEditBtn);
+  }
+
+  c1.appendChild(formRow);
+  var formHint = document.createElement("div"); formHint.style.cssText = "font-size:10px;color:var(--muted)"; formHint.textContent = "Picking a date that already has an entry will load it here for editing instead of creating a duplicate.";
+  c1.appendChild(formHint);
+
+  function loadEntryIntoForm(entry) {
+    dateInp.value = entry.date;
+    FOOTFALL_CATS.forEach(function(cat){ catInputs[cat].value = entry.counts && entry.counts[cat] ? entry.counts[cat] : ""; });
+    weatherSel.value = entry.weather || "";
+    tempInp.value = (entry.temp===undefined||entry.temp===null) ? "" : entry.temp;
+  }
+
+  if (ffEditingId) {
+    var existing = footfallEntries.filter(function(e){ return e.id===ffEditingId; })[0];
+    if (existing) loadEntryIntoForm(existing);
+  }
+
+  dateInp.addEventListener("change", function(){
+    var match = footfallEntries.filter(function(e){ return e.date===dateInp.value; })[0];
+    if (match) { ffEditingId = match.id; renderFootfallView(); }
+  });
+
+  saveEntryBtn.addEventListener("click", function(){
+    var dateVal = dateInp.value;
+    if (!dateVal) { toast("Pick a date first"); return; }
+    var counts = {};
+    FOOTFALL_CATS.forEach(function(cat){ counts[cat] = parseFloat(catInputs[cat].value)||0; });
+    var id = ffEditingId || ("FF-"+dateVal);
+    var existingIdx = footfallEntries.findIndex(function(e){ return e.id===id; });
+    var entry = { id:id, date:dateVal, counts:counts, weather:weatherSel.value||"", temp: tempInp.value===""?null:parseFloat(tempInp.value) };
+    if (existingIdx>-1) footfallEntries[existingIdx] = entry; else footfallEntries.push(entry);
+    saveFootfallEntries();
+    ffEditingId = null;
+    toast("Footfall entry saved \u2713");
+    renderFootfallView();
+  });
+
+  // ── Recent entries ──
+  var c2 = mkCard("Recent entries");
+  var sorted = footfallEntries.slice().sort(function(a,b){ return b.date.localeCompare(a.date); });
+  if (!sorted.length) {
+    var noEntries = document.createElement("div"); noEntries.style.cssText = "font-size:12px;color:var(--muted)"; noEntries.textContent = "No footfall logged yet \u2014 use the form above to add your first day.";
+    c2.appendChild(noEntries);
+  } else {
+    var tblWrap = document.createElement("div"); tblWrap.style.cssText = "overflow-x:auto;max-height:340px;overflow-y:auto";
+    var tbl = document.createElement("table"); tbl.style.cssText = "border-collapse:collapse;width:100%;font-size:11px";
+    var thead = document.createElement("thead"); var htr = document.createElement("tr");
+    ["Date","Day"].concat(FOOTFALL_CATS_SHORT).concat(["Total","Weather","Temp","",""]).forEach(function(h){
+      var th = document.createElement("th"); th.style.cssText = "padding:6px 7px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap;position:sticky;top:0;background:var(--surface)"; th.textContent = h; htr.appendChild(th);
+    });
+    thead.appendChild(htr); tbl.appendChild(thead);
+    var tbody = document.createElement("tbody");
+    sorted.forEach(function(entry){
+      var tr = document.createElement("tr"); tr.style.cssText = "border-bottom:1px solid var(--border)";
+      var total = FOOTFALL_CATS.reduce(function(s,cat){ return s+(entry.counts&&entry.counts[cat]?entry.counts[cat]:0); },0);
+      var tdDate = document.createElement("td"); tdDate.style.cssText = "padding:5px 7px;white-space:nowrap"; tdDate.textContent = ffToUKDate(entry.date); tr.appendChild(tdDate);
+      var tdDay = document.createElement("td"); tdDay.style.cssText = "padding:5px 7px"; tdDay.textContent = ffDayName(entry.date); tr.appendChild(tdDay);
+      FOOTFALL_CATS.forEach(function(cat){ var td=document.createElement("td"); td.style.cssText="padding:5px 7px;text-align:center"; td.textContent = (entry.counts&&entry.counts[cat])?entry.counts[cat]:0; tr.appendChild(td); });
+      var tdTot = document.createElement("td"); tdTot.style.cssText = "padding:5px 7px;font-weight:700;color:var(--navy)"; tdTot.textContent = total; tr.appendChild(tdTot);
+      var tdW = document.createElement("td"); tdW.style.cssText = "padding:5px 7px"; tdW.textContent = entry.weather||"\u2014"; tr.appendChild(tdW);
+      var tdT = document.createElement("td"); tdT.style.cssText = "padding:5px 7px"; tdT.textContent = (entry.temp===null||entry.temp===undefined)?"\u2014":entry.temp+"\u00b0"; tr.appendChild(tdT);
+      var tdEdit = document.createElement("td"); tdEdit.className="no-print"; tdEdit.style.cssText = "padding:5px 4px";
+      var editBtn = document.createElement("button"); editBtn.textContent="\u270E"; editBtn.style.cssText = "background:none;border:1px solid var(--border);border-radius:var(--rs);cursor:pointer;padding:3px 7px;color:var(--muted)";
+      editBtn.addEventListener("click", (function(id){ return function(){ ffEditingId=id; renderFootfallView(); window.scrollTo(0,0); }; })(entry.id));
+      tdEdit.appendChild(editBtn); tr.appendChild(tdEdit);
+      var tdDel = document.createElement("td"); tdDel.className="no-print"; tdDel.style.cssText = "padding:5px 4px";
+      var delBtn = document.createElement("button"); delBtn.textContent="\u00d7"; delBtn.style.cssText = "background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:3px 6px";
+      delBtn.addEventListener("click", (function(id){ return function(){ if(confirm("Delete this day's entry?")){ footfallEntries=footfallEntries.filter(function(e){return e.id!==id;}); sbDelete("footfall_entries", id); saveFootfallEntries(); renderFootfallView(); toast("Deleted"); } }; })(entry.id));
+      tdDel.appendChild(delBtn); tr.appendChild(tdDel);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody); tblWrap.appendChild(tbl); c2.appendChild(tblWrap);
+  }
+
+  // ── Analysis ──
+  if (sorted.length) {
+    var c3 = mkCard(null, "no-print");
+    var rangeLbl = document.createElement("div"); rangeLbl.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:9px"; rangeLbl.textContent = "Analyze:";
+    c3.appendChild(rangeLbl);
+    var rangeRow = document.createElement("div"); rangeRow.style.cssText = "display:flex;gap:6px;flex-wrap:wrap";
+    c3.appendChild(rangeRow);
+
+    var ranges = [["All time",null],["This year",365],["Last 3 months",90],["This month",30]];
+    ranges.forEach(function(r, ri){
+      var btn = document.createElement("button"); btn.textContent = r[0];
+      btn.style.cssText = "padding:5px 12px;border-radius:20px;border:2px solid "+(ri===0?"var(--navy)":"var(--border)")+";background:"+(ri===0?"var(--navy)":"var(--surface)")+";color:"+(ri===0?"#fff":"var(--muted)")+";font-size:11px;font-weight:700;cursor:pointer";
+      btn.addEventListener("click", function(){
+        Array.from(rangeRow.children).forEach(function(b){ b.style.background="var(--surface)"; b.style.color="var(--muted)"; b.style.borderColor="var(--border)"; });
+        btn.style.background="var(--navy)"; btn.style.color="#fff"; btn.style.borderColor="var(--navy)";
+        renderFootfallAnalysis(r[1]);
+      });
+      rangeRow.appendChild(btn);
+    });
+
+    var analysisResults = document.createElement("div"); analysisResults.id = "ffAnalysisResults";
+    wrap.appendChild(analysisResults);
+
+    function renderFootfallAnalysis(days) {
+      analysisResults.innerHTML = "";
+      var cutoff = days ? (function(){ var d=new Date(); d.setDate(d.getDate()-days); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); })() : null;
+      var filtered = sorted.filter(function(e){ return !cutoff || e.date>=cutoff; }).slice().sort(function(a,b){ return a.date.localeCompare(b.date); });
+      if (!filtered.length) {
+        var none = document.createElement("div"); none.style.cssText="font-size:12px;color:var(--muted);padding:10px"; none.textContent="No entries in this range."; analysisResults.appendChild(none); return;
+      }
+
+      var catSeries = FOOTFALL_CATS.map(function(cat){ return filtered.map(function(e){ return (e.counts&&e.counts[cat])||0; }); });
+      var catTotals = catSeries.map(function(s){ return s.reduce(function(a,b){return a+b;},0); });
+      var grandTotal = catTotals.reduce(function(a,b){return a+b;},0);
+
+      // Category share
+      var r1 = document.createElement("div"); r1.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+      var r1h = document.createElement("div"); r1h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r1h.textContent = "Category share \u2014 "+filtered.length+" day"+(filtered.length===1?"":"s")+", "+grandTotal.toLocaleString("en-GB")+" total";
+      r1.appendChild(r1h);
+      if (grandTotal>0) {
+        var pieWrap = document.createElement("div"); pieWrap.style.cssText = "height:230px;position:relative";
+        var pieCan = document.createElement("canvas"); pieCan.id = "ffLogPieCh"; pieWrap.appendChild(pieCan);
+        r1.appendChild(pieWrap);
+      }
+      analysisResults.appendChild(r1);
+
+      // Weekly trend (group by ISO week start)
+      var weekMap = {};
+      filtered.forEach(function(e){
+        var d = new Date(e.date+"T00:00:00");
+        var dow = (d.getDay()+6)%7; // Mon=0
+        var monday = new Date(d); monday.setDate(d.getDate()-dow);
+        var wk = monday.getFullYear()+"-"+String(monday.getMonth()+1).padStart(2,"0")+"-"+String(monday.getDate()).padStart(2,"0");
+        var total = FOOTFALL_CATS.reduce(function(s,cat){ return s+((e.counts&&e.counts[cat])||0); },0);
+        weekMap[wk] = (weekMap[wk]||0) + total;
+      });
+      var weekKeys = Object.keys(weekMap).sort();
+      var r2 = document.createElement("div"); r2.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+      var r2h = document.createElement("div"); r2h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r2h.textContent = "Weekly total footfall";
+      r2.appendChild(r2h);
+      var wTrendWrap = document.createElement("div"); wTrendWrap.style.cssText = "height:190px;position:relative";
+      var wTrendCan = document.createElement("canvas"); wTrendCan.id = "ffLogWeekCh"; wTrendWrap.appendChild(wTrendCan);
+      r2.appendChild(wTrendWrap);
+      analysisResults.appendChild(r2);
+
+      // Monthly trend
+      var monthMap = {};
+      filtered.forEach(function(e){
+        var mk = e.date.slice(0,7);
+        var total = FOOTFALL_CATS.reduce(function(s,cat){ return s+((e.counts&&e.counts[cat])||0); },0);
+        monthMap[mk] = (monthMap[mk]||0) + total;
+      });
+      var monthKeys = Object.keys(monthMap).sort();
+      var monthLabelsShort = monthKeys.map(function(mk){ var p=mk.split("-"); return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][parseInt(p[1])-1]+" "+p[0].slice(2); });
+      var r3 = document.createElement("div"); r3.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+      var r3h = document.createElement("div"); r3h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r3h.textContent = "Monthly total footfall";
+      r3.appendChild(r3h);
+      var mTrendWrap = document.createElement("div"); mTrendWrap.style.cssText = "height:190px;position:relative";
+      var mTrendCan = document.createElement("canvas"); mTrendCan.id = "ffLogMonthCh"; mTrendWrap.appendChild(mTrendCan);
+      r3.appendChild(mTrendWrap);
+      analysisResults.appendChild(r3);
+
+      // Weekday pattern
+      var wdTotals = [0,0,0,0,0,0,0]; var wdCounts = [0,0,0,0,0,0,0];
+      filtered.forEach(function(e){
+        var d = new Date(e.date+"T00:00:00"); var dow=(d.getDay()+6)%7;
+        var total = FOOTFALL_CATS.reduce(function(s,cat){ return s+((e.counts&&e.counts[cat])||0); },0);
+        wdTotals[dow]+=total; wdCounts[dow]++;
+      });
+      var wdLabels = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+      var wdAverages = wdTotals.map(function(t,i){ return wdCounts[i]>0 ? Math.round((t/wdCounts[i])*10)/10 : 0; });
+      var r4 = document.createElement("div"); r4.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+      var r4h = document.createElement("div"); r4h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r4h.textContent = "Average footfall by day of the week";
+      r4.appendChild(r4h);
+      var wdWrap = document.createElement("div"); wdWrap.style.cssText = "height:190px;position:relative";
+      var wdCan = document.createElement("canvas"); wdCan.id = "ffLogWeekdayCh"; wdWrap.appendChild(wdCan);
+      r4.appendChild(wdWrap);
+      analysisResults.appendChild(r4);
+
+      // Patterns spotted (correlation)
+      var r5 = document.createElement("div"); r5.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+      var r5h = document.createElement("div"); r5h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r5h.textContent = "Patterns between categories";
+      r5.appendChild(r5h);
+      if (filtered.length < 3) {
+        var need = document.createElement("div"); need.style.cssText="font-size:12px;color:var(--muted)"; need.textContent="Add at least 3 days in this range to see which categories move together."; r5.appendChild(need);
+      } else {
+        var pairs = [];
+        for (var a=0;a<FOOTFALL_CATS.length;a++) for (var b=a+1;b<FOOTFALL_CATS.length;b++) {
+          var rr = pearsonCorr(catSeries[a], catSeries[b]);
+          if (rr!==null) pairs.push({a:FOOTFALL_CATS[a], b:FOOTFALL_CATS[b], r:rr});
+        }
+        pairs.sort(function(x,y){ return Math.abs(y.r)-Math.abs(x.r); });
+        var top = pairs.slice(0,5);
+        if (!top.length) {
+          var flat = document.createElement("div"); flat.style.cssText="font-size:12px;color:var(--muted)"; flat.textContent="Not enough variation yet to spot a pattern."; r5.appendChild(flat);
+        } else {
+          top.forEach(function(p){
+            var strength = Math.abs(p.r);
+            var word = strength>=0.7?"strongly":strength>=0.4?"moderately":"weakly";
+            var dir = p.r>=0?"rise and fall together":"move in opposite directions";
+            var rowEl = document.createElement("div"); rowEl.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)";
+            var left = document.createElement("div"); left.style.cssText="font-size:12px;color:var(--text);max-width:70%"; left.innerHTML = "<strong>"+p.a+"</strong> and <strong>"+p.b+"</strong> "+word+" "+dir;
+            var right = document.createElement("div"); right.style.cssText = "font-size:12px;font-weight:700;color:"+(p.r>=0?"var(--gtxt)":"#b23a2e"); right.textContent = "r="+p.r.toFixed(2);
+            rowEl.appendChild(left); rowEl.appendChild(right); r5.appendChild(rowEl);
+          });
+        }
+      }
+      analysisResults.appendChild(r5);
+
+      // Weather pattern
+      var withWeather = filtered.filter(function(e){ return e.weather; });
+      var r6 = document.createElement("div"); r6.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+      var r6h = document.createElement("div"); r6h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; r6h.textContent = "Footfall vs weather";
+      r6.appendChild(r6h);
+      if (!withWeather.length) {
+        var noWx = document.createElement("div"); noWx.style.cssText="font-size:12px;color:var(--muted)"; noWx.textContent="No weather logged yet for this range \u2014 add weather when logging a day to see this."; r6.appendChild(noWx);
+      } else {
+        var wxMap = {};
+        withWeather.forEach(function(e){
+          var total = FOOTFALL_CATS.reduce(function(s,cat){ return s+((e.counts&&e.counts[cat])||0); },0);
+          if (!wxMap[e.weather]) wxMap[e.weather] = {sum:0,n:0};
+          wxMap[e.weather].sum += total; wxMap[e.weather].n++;
+        });
+        var wxLabels = Object.keys(wxMap);
+        var wxAvgs = wxLabels.map(function(w){ return Math.round((wxMap[w].sum/wxMap[w].n)*10)/10; });
+        var wxWrap = document.createElement("div"); wxWrap.style.cssText = "height:190px;position:relative";
+        var wxCan = document.createElement("canvas"); wxCan.id = "ffLogWeatherCh"; wxWrap.appendChild(wxCan);
+        r6.appendChild(wxWrap);
+        var withTemp = filtered.filter(function(e){ return e.temp!==null && e.temp!==undefined; });
+        if (withTemp.length>=3) {
+          var temps = withTemp.map(function(e){ return e.temp; });
+          var totals2 = withTemp.map(function(e){ return FOOTFALL_CATS.reduce(function(s,cat){ return s+((e.counts&&e.counts[cat])||0); },0); });
+          var tCorr = pearsonCorr(temps, totals2);
+          var tDiv = document.createElement("div"); tDiv.style.cssText = "font-size:12px;color:var(--text);margin-top:10px;padding-top:10px;border-top:1px solid var(--border)";
+          tDiv.innerHTML = "Temperature correlation: <strong>"+(tCorr===null?"n/a":tCorr.toFixed(2))+"</strong> \u2014 "+(tCorr===null?"not enough variation yet.":(tCorr>=0?"footfall tends to rise on warmer days.":"footfall tends to rise on colder days."));
+          r6.appendChild(tDiv);
+        }
+        setTimeout(function(){ mkFootfallWeatherChart("ffLogWeatherCh", wxLabels, wxAvgs); }, 30);
+      }
+      analysisResults.appendChild(r6);
+
+      setTimeout(function(){
+        if (grandTotal>0) mkFootfallPieChart("ffLogPieCh", FOOTFALL_CATS, catTotals);
+        mkFootfallTrendChart("ffLogWeekCh", weekKeys.map(function(k){ return ffToUKDate(k); }), weekKeys.map(function(k){ return weekMap[k]; }));
+        mkFootfallTrendChart("ffLogMonthCh", monthLabelsShort, monthKeys.map(function(k){ return monthMap[k]; }));
+        mkFootfallTrendChart("ffLogWeekdayCh", wdLabels, wdAverages);
+      }, 30);
+    }
+
+    renderFootfallAnalysis(null);
+  }
+
+  fv.appendChild(wrap);
+}
+
+function mkFootfallWeatherChart(id, labels, values) {
+  var ctx = document.getElementById(id);
+  if (!ctx) return;
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+  var cfg = {
+    type: "bar",
+    data: { labels: labels, datasets: [{ label: "Avg footfall", data: values, backgroundColor: "#0072B2", borderRadius: 5 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
+  };
+  chartInstances[id] = new Chart(ctx.getContext("2d"), cfg);
+}
 
 function loadTasks() {
   try { var r = localStorage.getItem(TASKS_STORE); if (r) return JSON.parse(r); } catch(e) {}
@@ -9122,6 +9315,7 @@ function init(){
   enquiries=loadEnquiries();
   sourcing=loadSourcing();
   tasks=loadTasks();
+  footfallEntries=loadFootfallEntries();
   diaryEvents=loadDiary();
   activeFilter="All";activeId=null;editId=null;showLF=false;pendingDel=null;
   updateStats();renderList();showDash();
