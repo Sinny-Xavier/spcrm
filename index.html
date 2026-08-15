@@ -1652,10 +1652,10 @@ function renderDash(){
   t.textContent="Here\u2019s your daily briefing";dv.appendChild(t);
 
   // Quick actions for sales, quotes and special order enquiries.
-  var qaRow=document.createElement("div");qaRow.className="no-print";qaRow.style.cssText="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px";
+  var qaRow=document.createElement("div");qaRow.className="no-print";qaRow.style.cssText="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px";
   function mkQaBtn(label,bg,border,fn){
     var b=document.createElement("button");
-    b.style.cssText="flex:1;min-width:150px;padding:11px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid "+border+";background:"+bg+";color:#fff";
+    b.style.cssText="flex:1;min-width:220px;min-height:58px;padding:16px 20px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;border:2px solid "+border+";background:"+bg+";color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.12)";
     b.textContent=label;b.addEventListener("click",fn);return b;
   }
   qaRow.appendChild(mkQaBtn("\u00a3 Log a sale","var(--gtxt)","var(--gtxt)",showQuickSale));
@@ -5733,7 +5733,7 @@ function showFootfall() { activeId=null; renderList(); showView("footfall"); ren
 function renderFootfallView() {
   var fv = document.getElementById("footfallView");
   fv.innerHTML = "";
-  var wrap = document.createElement("div"); wrap.style.cssText = "max-width:1500px";
+  var wrap = document.createElement("div");
 
   var hdr = document.createElement("div"); hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px";
   var title = document.createElement("h2"); title.style.cssText = "font-size:18px;font-weight:700"; title.textContent = "\uD83D\uDC63 Footfall Log";
