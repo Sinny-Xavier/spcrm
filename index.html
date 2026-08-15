@@ -3073,8 +3073,8 @@ function getDailySalesData(year,month){
   return {days:days,monthTotal:monthTotal};
 }
 function getSalesData(year){
-  var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},prodQtrs={},subProd={},yearTotal=0,months=Array(12).fill(0);
-  clients.forEach(function(c){(c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;var m=parseInt(dp[1]),v=recordValue(l),cat=recordProduct(l)||"Other",q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrs[q]+=v;yearTotal+=v;months[m-1]+=v;prodTotals[cat]=(prodTotals[cat]||0)+v;if(!prodQtrs[cat])prodQtrs[cat]={Q1:0,Q2:0,Q3:0,Q4:0};prodQtrs[cat][q]+=v;});});
+  var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},prodQtrs={Q1:{},Q2:{},Q3:{},Q4:{}},subProd={},yearTotal=0,months=Array(12).fill(0);
+  clients.forEach(function(c){(c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;var m=parseInt(dp[1]),v=recordValue(l),cat=recordProduct(l)||"Other",q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrs[q]+=v;yearTotal+=v;months[m-1]+=v;prodTotals[cat]=(prodTotals[cat]||0)+v;prodQtrs[q][cat]=(prodQtrs[q][cat]||0)+v;});});
   return {qtrs:qtrs,prodTotals:prodTotals,prodQtrs:prodQtrs,subProd:subProd,yearTotal:yearTotal,months:months};
 }
 function getYears(){
