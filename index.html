@@ -1788,6 +1788,7 @@ function renderDash(){
     el.addEventListener("click",(function(id){return function(){openC(id);};})(c.id));return el;
   });
   dg.appendChild(coldCard);
+  dv.appendChild(dg);
   // Diary events - within 5 working days + overdue on dashboard
   function workingDaysFromNow(e) {
     var evDate = new Date(e.year, e.month, e.day);
