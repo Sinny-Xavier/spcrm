@@ -30,8 +30,12 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .sq-logo{width:44px;height:34px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px;color:#fff;line-height:1.1;text-align:center;flex-shrink:0}
 .hdr h1{font-size:13px;font-weight:700;color:#fff;white-space:nowrap}
 .hdr h1 span{color:#e74c3c}
-.nav-btn{padding:4px 8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:#fff;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
-.nav-btn:hover{background:rgba(255,255,255,.2)}
+.nav-btn{padding:5px 10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:20px;color:rgba(255,255,255,.85);font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .12s,color .12s,border-color .12s}
+.nav-btn:hover{background:rgba(255,255,255,.18);color:#fff}
+.nav-btn.active{background:#FFB800;border-color:#FFB800;color:#0F2438}
+.nav-btn-home{padding:7px 16px;font-size:11px;margin-right:12px;background:#FFB800;border-color:#FFB800;color:#0F2438}
+.nav-btn-home:hover{background:#ffc633;color:#0F2438}
+.nav-sep{width:1px;align-self:stretch;background:rgba(255,255,255,.14);margin:2px 2px;flex-shrink:0}
 .hdr-stats{display:flex;gap:5px;flex-shrink:0}
 .hs{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);padding:3px 9px;border-radius:20px;font-size:10px;color:rgba(255,255,255,.8);white-space:nowrap}
 .hs b{color:#fff}
@@ -140,8 +144,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .ldate{font-size:9px;color:var(--muted)}
 .lnote{font-size:11px;line-height:1.5}
 .qpill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:auto}
-.q-quote{background:var(--abg);color:var(--atxt)} .q-confirmed{background:var(--gbg);color:var(--gtxt)} .q-invoiced{background:var(--lbg);color:var(--ltxt)} .q-paid{background:var(--gbg);color:var(--gtxt)} .q-lost{background:var(--rbg);color:var(--rtxt)} .q-expired{background:var(--grbg);color:var(--grtxt)}
-.q-invoiced{background:var(--lbg);color:var(--ltxt)} .q-paid{background:#d0f0d0;color:#1a5c1a}
+.q-quote{background:var(--abg);color:var(--atxt)} .q-paid{background:#d0f0d0;color:#1a5c1a} .q-lost{background:var(--rbg);color:var(--rtxt)} .q-expired{background:var(--grbg);color:var(--grtxt)}
 .qbox{background:#f4f7ff;border:2px solid #b8caf5;border-radius:8px;padding:11px 13px;margin-top:8px}
 .log-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px;margin-left:3px}
 .log-del:hover{color:var(--red)}
@@ -238,6 +241,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   .hdr-stats { display:none; }
   .hdr-bottom { padding:4px 10px; }
   .nav-btn { padding:4px 8px;font-size:9px; }
+  .nav-btn-home { padding:6px 12px;font-size:10px;margin-right:8px; }
   .app { flex-direction:column;height:auto;min-height:calc(100vh - 88px); }
   .sb { width:88vw;max-height:75vh; }
   .main { flex:1;overflow-y:auto; }
@@ -259,6 +263,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 @media (max-width:480px) {
   .hdr-nav { justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px; }
   .nav-btn { font-size:9px;padding:4px 7px;white-space:nowrap; }
+  .nav-btn-home { font-size:10px;padding:6px 11px; }
   .kpi-val { font-size:18px; }
   .ci { padding:10px 12px; }
   .ci-name { font-size:12px; }
@@ -283,8 +288,23 @@ body.print-overview-mode .not-in-overview { display:none !important; }
 body.print-sales-summary-mode .not-in-sales-summary { display:none !important; }
 body.print-sales-summary-mode #salesChartsRow { grid-template-columns:1fr !important; }
 body.print-sales-summary-mode #salesChartsRow > div > div[style*="height:200px"] { height:340px !important; }
+.q-follow-up{background:var(--abg);color:var(--atxt)} .q-ordered{background:var(--gbg);color:var(--gtxt)}
+
+.ff-quick-main{min-height:58px;min-width:180px;flex:1 1 180px;padding:14px 18px;background:#fff;border:3px solid var(--border);border-radius:14px;color:var(--navy);font-size:15px;line-height:1.25;font-weight:800;cursor:pointer;text-align:center}
+.ff-quick-main:hover,.ff-quick-other:hover{border-color:var(--navy);background:var(--alt)}
+.ff-quick-other{padding:8px 13px;background:#fff;border:2px solid var(--border);border-radius:18px;color:var(--navy);font-size:11px;font-weight:700;cursor:pointer}
+.ff-undo{padding:6px 11px;background:#fff;border:2px solid var(--border);border-radius:16px;color:var(--rtxt);font-size:10px;font-weight:700;cursor:pointer}
+
 </style>
 </head>
+
+<!--
+MAINTENANCE NOTE
+Tidied before security upgrade.
+Legacy Confirmed/Invoiced migration is intentionally retained for old records.
+Supabase connection/authentication is intentionally unchanged in this cleanup build.
+-->
+
 <body>
 
 <div id="gateOverlay" style="position:fixed;inset:0;background:#002680;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px">
@@ -321,26 +341,30 @@ body.print-sales-summary-mode #salesChartsRow > div > div[style*="height:200px"]
   <div class="hdr-bottom">
     <div class="hdr-nav-rows">
       <div class="hdr-nav">
-        <button class="nav-btn" onclick="showDash()" style="background:#FFB800;border-color:#FFB800;color:#0F2438">&#127968; Dashboard</button>
-        <button class="nav-btn" onclick="showClients()" style="background:rgba(0,90,200,.3);border-color:rgba(0,90,200,.5)">&#128101; Clients</button>
-        <button class="nav-btn" onclick="showSales()">&#128200; Sales</button>
-        <button class="nav-btn" onclick="showQuotes()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128178; Quotes</button>
-        <button class="nav-btn" onclick="showSamples()">&#128230; Samples</button>
-        <button class="nav-btn" onclick="showTasks()" style="background:rgba(52,152,219,.2);border-color:rgba(52,152,219,.4)">&#9989; To-Do</button>
-        <button class="nav-btn" onclick="showDiary()" style="background:rgba(255,153,0,.25);border-color:rgba(255,153,0,.5)">&#128197; Diary</button>
+        <button class="nav-btn nav-btn-home" data-view="dash" onclick="showDash()">&#127968; Dashboard</button>
+        <span class="nav-sep"></span>
+        <button class="nav-btn" data-view="clients" onclick="showClients()">&#128101; Clients</button>
+        <button class="nav-btn" data-view="sales" onclick="showSales()">&#128200; Sales</button>
+        <button class="nav-btn" data-view="quotes" onclick="showQuotes()">&#128178; Quotes</button>
+        <span class="nav-sep"></span>
+        <button class="nav-btn" data-view="samples" onclick="showSamples()">&#128230; Samples</button>
+        <button class="nav-btn" data-view="tasks" onclick="showTasks()">&#9989; To-Do</button>
+        <button class="nav-btn" data-view="diary" onclick="showDiary()">&#128197; Diary</button>
+        <button class="nav-btn" data-view="sourcing" onclick="showSourcing()">&#127981; Sourcing</button>
       </div>
       <div class="hdr-nav">
-        <button class="nav-btn" onclick="showReps()">&#128101; Rep/ASM</button>
-        <button class="nav-btn" onclick="showComplaints()">&#128221; Complaints</button>
-        <button class="nav-btn" onclick="showEnquiries()" style="background:rgba(155,89,182,.2);border-color:rgba(155,89,182,.4)">&#128172; Enquiries</button>
-        <button class="nav-btn" onclick="showSourcing()" style="background:rgba(230,126,34,.2);border-color:rgba(230,126,34,.4)">&#127981; Sourcing</button>
-        <button class="nav-btn" onclick="showMonthlyReport()" style="background:rgba(46,204,113,.2);border-color:rgba(46,204,113,.4)">&#128202; Report</button>
-        <button class="nav-btn" onclick="showFootfall()" style="background:rgba(31,119,180,.2);border-color:rgba(31,119,180,.4)">&#128100; Footfall</button>
-        <button class="nav-btn" onclick="showWebsites()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#127760; Websites</button>
-        <button class="nav-btn" onclick="showDocs()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128196; Docs</button>
-        <button class="nav-btn" onclick="showNotesSearch()" style="background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)">&#128269; Search Notes</button>
-        <button class="nav-btn" onclick="showTools()" style="background:#FFB800;border-color:#FFB800;color:#0F2438">&#128295; Tools</button>
-        <button class="nav-btn" onclick="showAdmin()" style="background:#FFB800;border-color:#FFB800;color:#0F2438">&#9881;&#65039; Admin</button>
+        <button class="nav-btn" data-view="reps" onclick="showReps()">&#128101; Rep/ASM</button>
+        <button class="nav-btn" data-view="complaints" onclick="showComplaints()">&#128221; Complaints</button>
+        <button class="nav-btn" data-view="enquiries" onclick="showEnquiries()">&#128172; Enquiries</button>
+        <button class="nav-btn" data-view="footfall" onclick="showFootfall()">&#128100; Footfall</button>
+        <span class="nav-sep"></span>
+        <button class="nav-btn" onclick="showMonthlyReport()">&#128202; Report</button>
+        <button class="nav-btn" data-view="websites" onclick="showWebsites()">&#127760; Websites</button>
+        <button class="nav-btn" data-view="docs" onclick="showDocs()">&#128196; Docs</button>
+        <button class="nav-btn" data-view="notesSearch" onclick="showNotesSearch()">&#128269; Search Notes</button>
+        <span class="nav-sep"></span>
+        <button class="nav-btn" data-view="tools" onclick="showTools()">&#128295; Tools</button>
+        <button class="nav-btn" onclick="showAdmin()">&#9881;&#65039; Admin</button>
       </div>
     </div>
   </div>
@@ -1346,7 +1370,7 @@ async function syncSourcingFromCloud(){
 syncSourcingFromCloud();
 var clients,reps,samples,birthdays,complaints;
 var activeFilter="All",activeId=null,editId=null,showLF=false,pendingDel=null;
-var detLogTab="Interactions";
+var detLogTab="Sales / Orders";
 var currentSalesYear=new Date().getFullYear();
 var currentSalesMonth=new Date().getMonth();
 
@@ -1396,7 +1420,7 @@ function updateStats(){
   var due=clients.filter(function(c){var d=du(c.followup);return d>=-2&&d<=2;}).length;
   document.getElementById("sDue").textContent=due;
   document.getElementById("sDueWrap").className="hs"+(due>0?" alert":"");
-  var qt=0;clients.forEach(function(c){(c.log||[]).forEach(function(l){if(l.quote&&(l.quote.status==="Quote"||l.quote.status==="Confirmed"))qt+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});});
+  var qt=0;clients.forEach(function(c){(c.log||[]).forEach(function(l){if(isOpenQuoteEntry(l))qt+=recordValue(l);});});
   document.getElementById("sQ").textContent="\u00a3"+qt.toLocaleString("en-GB");
 }
 
@@ -1405,6 +1429,10 @@ function showView(v){
   ["dashView","detView","clientsView","formView","repsView","salesView","samplesView","birthdaysView","complaintsView","diaryView","quotesView","websitesView","docsView","notesSearchView","enquiriesView","sourcingView","tasksView","toolsView","footfallView"].forEach(function(id){
     var el=document.getElementById(id);
     el.style.display=(id===v+"View"||(v==="det"&&id==="detView")||(v==="form"&&id==="formView"))?"block":"none";
+  });
+  var navActiveKey = (v==="det"||v==="form") ? "clients" : v;
+  document.querySelectorAll(".nav-btn[data-view]").forEach(function(btn){
+    btn.classList.toggle("active", btn.getAttribute("data-view")===navActiveKey);
   });
   var ma=document.getElementById("mainArea");
   if(ma){
@@ -1550,85 +1578,6 @@ function renderClientsView(searchTerm){
 }
 
 
-// ── ON THIS DAY (world history, via Wikipedia's public feed API) ────
-var OTD_CACHE_STORE = "spcrm_otd_cache_v1";
-function otdRenderInto(el, text, year) {
-  el.innerHTML = "";
-  var txt = document.createElement("div");
-  txt.style.cssText = "font-size:12px;color:var(--text);line-height:1.5";
-  txt.textContent = year + " \u2014 " + text;
-  var src = document.createElement("div");
-  src.style.cssText = "font-size:9px;color:var(--muted);margin-top:6px";
-  src.textContent = "Source: Wikipedia";
-  el.appendChild(txt);
-  el.appendChild(src);
-}
-function loadOnThisDay(containerId) {
-  var el = document.getElementById(containerId);
-  if (!el) return;
-  var today = new Date();
-  var mm = String(today.getMonth() + 1).padStart(2, "0");
-  var dd = String(today.getDate()).padStart(2, "0");
-  var cacheKey = today.getFullYear() + "-" + mm + "-" + dd;
-  try {
-    var cached = JSON.parse(localStorage.getItem(OTD_CACHE_STORE) || "null");
-    if (cached && cached.key === cacheKey && cached.text) {
-      otdRenderInto(el, cached.text, cached.year);
-      return;
-    }
-  } catch (e) {}
-  fetch("https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/" + mm + "/" + dd)
-    .then(function (r) { if (!r.ok) throw new Error("bad response"); return r.json(); })
-    .then(function (data) {
-      var events = (data && data.events) ? data.events.filter(function (e) { return e.text && e.year; }) : [];
-      if (!events.length) throw new Error("no events");
-      // Seeded on today's date so it stays the same across re-renders/tabs today, but changes daily.
-      var seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-      var ev = events[seed % events.length];
-      try { localStorage.setItem(OTD_CACHE_STORE, JSON.stringify({ key: cacheKey, text: ev.text, year: ev.year })); } catch (e) {}
-      otdRenderInto(el, ev.text, ev.year);
-    })
-    .catch(function () {
-      el.innerHTML = "";
-      var fail = document.createElement("div");
-      fail.style.cssText = "font-size:11px;color:var(--muted)";
-      fail.textContent = "Couldn't load today's history (check your connection).";
-      el.appendChild(fail);
-    });
-}
-
-// ── FLOORING FACT OF THE DAY (hand-curated & fact-checked, not AI filler) ─
-var FLOORING_FACTS = [
-  "Linoleum was invented by Englishman Frederick Walton, who patented it in 1863 after finding a use for the skin that forms on oxidised linseed oil.",
-  "The herringbone pattern gets its name from its resemblance to a herring fish's skeleton, and the Romans used it to pave roads because the interlocking bricks resisted shifting.",
-  "Herringbone parquet became fashionable after it was laid at the Palace of Versailles in the late 1600s, replacing heavy marble floors.",
-  "Laminate flooring wasn't originally designed as a floor at all \u2014 it came out of a 1977 brainstorming session at Swedish company Perstorp, who were looking for new uses for their laminate worktop material.",
-  "\"Parquet\" comes from the French for \"small compartment\", describing how individual wood pieces are cut and fitted together.",
-  "Bamboo flooring isn't technically wood \u2014 bamboo is a grass, which is part of why it grows and regenerates far faster than hardwood trees.",
-  "Cork flooring is harvested from the bark of the cork oak without felling the tree, and the bark regrows, making it one of the more renewable flooring materials.",
-  "Terrazzo flooring originated with Venetian construction workers, who mixed leftover marble chips with cement to make a hard-wearing, low-cost floor.",
-  "Underfloor heating isn't a modern invention \u2014 the Romans used a hypocaust system, circulating hot air beneath raised floors to heat villas and bathhouses.",
-  "Engineered wood flooring is built from cross-layered wood veneers, which makes it more dimensionally stable than solid wood \u2014 particularly useful over underfloor heating.",
-  "Herringbone-style patterns show up in Ancient Egyptian jewellery, long before the design was ever used for flooring.",
-  "\"Opus spicatum\", Latin for \"spiked work\", is the technical name for the herringbone brick paving used across the Roman Empire.",
-  "Vinyl flooring is typically built in layers \u2014 a backing layer, a printed design layer, and a clear wear layer on top that determines how long it holds up.",
-  "The click-lock joint that makes modern laminate and LVT quick to fit was developed independently in the 1990s by Sweden's V\u00e4linge and Belgium's Unilin (Quick-Step).",
-  "Hardwood floor hardness is measured on the Janka scale, which rates how much force it takes to embed a steel ball halfway into the wood.",
-  "The Mohs hardness scale, originally created for minerals, is often used to compare how scratch-resistant different tile and stone finishes are.",
-  "Solid wood flooring naturally expands and contracts with humidity, which is why fitters leave an expansion gap around the edge of every room.",
-  "The UK's Building Regulations Part E sets minimum sound insulation standards between separate dwellings, which is why acoustic underlay matters in flats and conversions.",
-  "Chevron flooring looks similar to herringbone, but the plank ends are cut at an angle so the pattern forms a continuous \"V\" rather than a staggered zig-zag.",
-  "Grout comes in sanded and unsanded types \u2014 sanded is generally used for wider joints for extra strength, while unsanded suits narrower joints and won't scratch delicate tile surfaces."
-];
-function loadFlooringFact(containerId) {
-  var el = document.getElementById(containerId);
-  if (!el) return;
-  var today = new Date();
-  var start = new Date(today.getFullYear(), 0, 0);
-  var doy = Math.floor((today - start) / 86400000);
-  el.textContent = FLOORING_FACTS[doy % FLOORING_FACTS.length];
-}
-
 function renderDash(){
   var overdue=clients.filter(function(c){return du(c.followup)<0;});
   var today2=clients.filter(function(c){var d=du(c.followup);return d>=0&&d<=1;});
@@ -1646,15 +1595,27 @@ function renderDash(){
   var openQ=[],qTotal=0,allQuotes=[];
   clients.forEach(function(c){(c.log||[]).forEach(function(l){
     if(l.quote){
-      var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
+      var v=recordValue(l);
       allQuotes.push({client:c,log:l,val:v});
-      if(l.quote.status==="Quote"||l.quote.status==="Confirmed"){qTotal+=v;openQ.push({client:c,log:l,val:v});}
+      if(isOpenQuoteEntry(l)){qTotal+=v;openQ.push({client:c,log:l,val:v});}
     }
   });});
   openQ.sort(function(a,b){return b.val-a.val;});
   var dv=document.getElementById("dashView");dv.innerHTML="";
   var t=document.createElement("div");t.style.cssText="font-size:16px;font-weight:700;margin-bottom:16px";
   t.textContent="Here\u2019s your daily briefing";dv.appendChild(t);
+
+  // Quick actions for sales, quotes and special order enquiries.
+  var qaRow=document.createElement("div");qaRow.className="no-print";qaRow.style.cssText="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px";
+  function mkQaBtn(label,bg,border,fn){
+    var b=document.createElement("button");
+    b.style.cssText="flex:1;min-width:150px;padding:11px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid "+border+";background:"+bg+";color:#fff";
+    b.textContent=label;b.addEventListener("click",fn);return b;
+  }
+  qaRow.appendChild(mkQaBtn("\u00a3 Log a sale","var(--gtxt)","var(--gtxt)",showQuickSale));
+  qaRow.appendChild(mkQaBtn("\u00a3 New quote","var(--navy)","var(--navy)",showQuickQuote));
+  qaRow.appendChild(mkQaBtn("\uD83C\uDFED New special order enquiry","#e67e22","#e67e22",function(){showSourcingForm(null,null);}));
+  dv.appendChild(qaRow);
 
   var ffToday = ffTodayISO();
   var ffLoggedToday = footfallEntries.filter(function(e){ return e.date===ffToday; })[0];
@@ -1668,7 +1629,7 @@ function renderDash(){
   dv.appendChild(ffBanner);
   var kg=document.createElement("div");kg.className="kpi-grid";
   var selfGen=clients.filter(function(c){return c.source==="New - Sinbad's Old Customer"||c.source==="New - Walk In"||c.source==="New - Referral"||c.source==="Existing Customer (Dormant 12m+)";}).length;
-  [{l:"Total clients",v:clients.length,c:"kv-blue",s:"in your black book"},{l:"Active",v:clients.filter(function(c){return c.status==="Active";}).length,c:"kv-green",s:"clients"},{l:"Overdue follow-ups",v:overdue.length,c:overdue.length>0?"kv-red":"kv-green",s:"need chasing"},{l:"Open quote value",v:"\u00a3"+qTotal.toLocaleString("en-GB"),c:"kv-amber",s:"quote + confirmed"}].forEach(function(k){
+  [{l:"Total clients",v:clients.length,c:"kv-blue",s:"in your black book"},{l:"Active",v:clients.filter(function(c){return c.status==="Active";}).length,c:"kv-green",s:"clients"},{l:"Overdue follow-ups",v:overdue.length,c:overdue.length>0?"kv-red":"kv-green",s:"need chasing"},{l:"Open quote value",v:"\u00a3"+qTotal.toLocaleString("en-GB"),c:"kv-amber",s:"open quotes"}].forEach(function(k){
     var card=document.createElement("div");card.className="kpi";
     var lbl=document.createElement("div");lbl.className="kpi-lbl";lbl.textContent=k.l;
     var val=document.createElement("div");val.className="kpi-val "+k.c;val.textContent=k.v;
@@ -1782,316 +1743,6 @@ function renderDash(){
     el.appendChild(rk);el.appendChild(av);el.appendChild(info);el.appendChild(st);
     el.addEventListener("click",(function(id){return function(){openC(id);};})(c.id));return el;
   }));
-  var QUOTES=[
-    {q:"The secret of getting ahead is getting started.",a:"Mark Twain"},
-    {q:"It's not about ideas. It's about making ideas happen.",a:"Scott Belsky"},
-    {q:"Take care of your customers and they will take care of your business.",a:"unknown"},
-    {q:"Sales are contingent upon the attitude of the salesman, not the attitude of the prospect.",a:"W. Clement Stone"},
-    {q:"The way to get started is to quit talking and begin doing.",a:"Walt Disney"},
-    {q:"Quality is remembered long after the price is forgotten.",a:"Gucci family slogan"},
-    {q:"Don't watch the clock; do what it does. Keep going.",a:"Sam Levenson"},
-    {q:"People don't buy what you do; they buy why you do it.",a:"Simon Sinek"},
-    {q:"Success is the sum of small efforts, repeated day in and day out.",a:"Robert Collier"},
-    {q:"A satisfied customer is the best business strategy of all.",a:"Michael LeBoeuf"},
-    {q:"The best way to predict the future is to create it.",a:"Peter Drucker"},
-    {q:"You don't close a sale, you open a relationship.",a:"Patricia Fripp"},
-    {q:"Measure twice, cut once.",a:"Trade proverb"},
-    {q:"Well done is better than well said.",a:"Benjamin Franklin"},
-    {q:"The customer's perception is your reality.",a:"Kate Zabriskie"},
-    {q:"Good things come to those who hustle.",a:"unknown"},
-    {q:"Either you run the day, or the day runs you.",a:"Jim Rohn"},
-    {q:"Excellence is not a skill, it's an attitude.",a:"Ralph Marston"},
-    {q:"Opportunities don't happen, you create them.",a:"Chris Grosser"},
-    {q:"Make it simple, but significant.",a:"Don Draper"},
-    {q:"Quality means doing it right when no one is looking.",a:"Henry Ford"},
-    {q:"Whether you think you can or you think you can't, you're right.",a:"Henry Ford"},
-    {q:"The harder I work, the luckier I get.",a:"Samuel Goldwyn"},
-    {q:"Customers don't expect you to be perfect. They expect you to fix things when they go wrong.",a:"Donald Porter"},
-    {q:"Build it well, and they will tell their friends.",a:"Trade proverb"},
-    {q:"There is no traffic jam on the extra mile.",a:"unknown"},
-    {q:"Do what you do so well that they will want to see it again and bring their friends.",a:"Walt Disney"},
-    {q:"The job is never finished until the paperwork is done.",a:"unknown"},
-    {q:"A craftsman is recognised by his chips.",a:"German proverb"},
-    {q:"Strive not to be a success, but rather to be of value.",a:"Albert Einstein"},
-    {q:"Good enough never is.",a:"Debbi Fields"},
-    {q:"A goal without a plan is just a wish.",a:"Antoine de Saint-Exupery"},
-    {q:"Small daily improvements are the key to staggering long-term results.",a:"unknown"},
-    {q:"What's measured improves.",a:"Peter Drucker"},
-    {q:"Don't find customers for your products, find products for your customers.",a:"Seth Godin"},
-    {q:"It is not the employer who pays wages, he only handles the money. It is the customer who pays the wages.",a:"Henry Ford"},
-    {q:"Your most unhappy customers are your greatest source of learning.",a:"Bill Gates"},
-    {q:"The aim of marketing is to know the customer so well the product sells itself.",a:"Peter Drucker"},
-    {q:"Punctuality is the soul of business.",a:"Thomas Chandler Haliburton"},
-    {q:"Honesty is the best policy.",a:"Benjamin Franklin"},
-    {q:"Pleasure in the job puts perfection in the work.",a:"Aristotle"},
-    {q:"Never stop learning, because life never stops teaching.",a:"unknown"},
-    {q:"The expert in anything was once a beginner.",a:"Helen Hayes"},
-    {q:"A smooth floor doesn't come from a smooth sea.",a:"unknown"},
-    {q:"Plans are nothing; planning is everything.",a:"Dwight D. Eisenhower"},
-    {q:"Patience and persistence are worth more than fast feet and a strong arm.",a:"unknown"},
-    {q:"You miss 100% of the calls you don't make.",a:"adapted from Wayne Gretzky"},
-    {q:"Treat every customer like they're your only customer.",a:"unknown"},
-    {q:"It always seems impossible until it's done.",a:"Nelson Mandela"},
-    {q:"Trust takes years to build, seconds to break, and forever to repair.",a:"unknown"},
-    {q:"Hard work beats talent when talent doesn't work hard.",a:"Tim Notke"},
-    {q:"The man who moves a mountain begins by carrying away small stones.",a:"Confucius"},
-    {q:"You can't build a reputation on what you're going to do.",a:"Henry Ford"},
-    {q:"A craftsman knows he has achieved perfection not when there is nothing left to add, but when there is nothing left to take away.",a:"adapted from Antoine de Saint-Exupery"},
-    {q:"There are no shortcuts to any place worth going.",a:"Beverly Sills"},
-    {q:"Diligence is the mother of good fortune.",a:"Miguel de Cervantes"},
-    {q:"To handle yourself, use your head; to handle others, use your heart.",a:"Eleanor Roosevelt"},
-    {q:"If you fail to plan, you are planning to fail.",a:"Benjamin Franklin"},
-    {q:"Every job is a self-portrait of the person who did it.",a:"unknown"},
-    {q:"A good plan violently executed now is better than a perfect plan next week.",a:"George S. Patton"},
-    {q:"The bitterness of poor quality remains long after the sweetness of low price is forgotten.",a:"Benjamin Franklin"},
-    {q:"What you do today can improve all your tomorrows.",a:"Ralph Marston"},
-    {q:"Energy and persistence conquer all things.",a:"Benjamin Franklin"},
-    {q:"Be so good they can't ignore you.",a:"Steve Martin"},
-    {q:"Reputation is what people say about you when you're not in the room.",a:"unknown"},
-    {q:"Service to others is the rent you pay for your room here on earth.",a:"Muhammad Ali"},
-    {q:"The way to gain a good reputation is to endeavor to be what you desire to appear.",a:"Socrates"},
-    {q:"It's not what you sell that matters as much as how you sell it.",a:"Brian Halligan"},
-    {q:"Make a customer, not a sale.",a:"Katherine Barchetti"},
-    {q:"Slow is smooth, smooth is fast.",a:"Trade proverb"},
-    {q:"A house is made of walls and beams; a home is built with love and dreams.",a:"unknown"},
-    {q:"What gets measured gets managed.",a:"Peter Drucker"},
-    {q:"Don't wait for opportunity. Create it.",a:"unknown"},
-    {q:"Quality is never an accident; it is always the result of intelligent effort.",a:"John Ruskin"},
-    {q:"Coming together is a beginning, staying together is progress, working together is success.",a:"Henry Ford"},
-    {q:"If you can't explain it simply, you don't understand it well enough.",a:"adapted from Albert Einstein"},
-    {q:"There is no substitute for hard work.",a:"Thomas Edison"},
-    {q:"A man who works with his hands is a labourer. A man who works with his hands and his brain is a craftsman.",a:"Louis Nizer"},
-    {q:"Do the best you can until you know better. Then when you know better, do better.",a:"Maya Angelou"},
-    {q:"In business, the competition will bite you if you keep running; if you stand still, they will swallow you.",a:"William S. Knudsen"},
-    {q:"The way to develop self-confidence is to do the thing you fear.",a:"William Jennings Bryan"},
-    {q:"Choose a job you love, and you will never have to work a day in your life.",a:"adapted, attributed to Confucius"},
-    {q:"Don't be afraid to give up the good to go for the great.",a:"John D. Rockefeller"},
-    {q:"It's not the customer's job to know what they want.",a:"Steve Jobs"},
-    {q:"Always deliver more than expected.",a:"Larry Page"},
-    {q:"Genius is one percent inspiration and ninety-nine percent perspiration.",a:"Thomas Edison"},
-    {q:"To improve is to change; to be perfect is to change often.",a:"Winston Churchill"},
-    {q:"A real decision is measured by the fact that you've taken a new action.",a:"Tony Robbins"},
-    {q:"The only place success comes before work is in the dictionary.",a:"Vidal Sassoon"},
-    {q:"Today's accomplishments were yesterday's impossibilities.",a:"unknown"},
-    {q:"Persistence guarantees that results are inevitable.",a:"Paramahansa Yogananda"},
-    {q:"Strive for progress, not perfection.",a:"unknown"},
-    {q:"You can't pour from an empty cup. Take care of yourself too.",a:"unknown"},
-    {q:"A goal properly set is halfway reached.",a:"Zig Ziglar"},
-    {q:"Knowing is not enough; we must apply. Willing is not enough; we must do.",a:"Johann Wolfgang von Goethe"},
-    {q:"Good craftsmanship lasts longer than the memory of its price.",a:"unknown"},
-    {q:"What you lay down today, someone will walk on for twenty years.",a:"unknown"},
-    {q:"Take pride in how far you've come; have faith in how far you can go.",a:"unknown"},
-    {q:"It's not about having time, it's about making time.",a:"unknown"},
-    {q:"Believe you can and you're halfway there.",a:"Theodore Roosevelt"},
-    {q:"Done is better than perfect.",a:"Sheryl Sandberg"},
-    {q:"Service is the rent we pay for being.",a:"Marian Wright Edelman"},
-    {q:"You become what you give your attention to.",a:"Epictetus"},
-    {q:"A foundation laid well never needs to be laid twice.",a:"unknown"},
-    {q:"Customers remember the service long after they've forgotten the price.",a:"unknown"},
-    {q:"Show up, do the work, repeat.",a:"unknown"},
-    {q:"Discipline is choosing between what you want now and what you want most.",a:"Abraham Lincoln"},
-    {q:"A river cuts through rock not because of its power, but its persistence.",a:"Jim Watkins"},
-    {q:"You don't have to be great to start, but you have to start to be great.",a:"Zig Ziglar"},
-    {q:"Action is the foundational key to all success.",a:"Pablo Picasso"},
-    {q:"The man on top of the mountain didn't fall there.",a:"Vince Lombardi"},
-    {q:"What seems impossible today will one day become your warm-up.",a:"unknown"},
-    {q:"It does not matter how slowly you go as long as you do not stop.",a:"Confucius"},
-    {q:"Great things are done by a series of small things brought together.",a:"Vincent Van Gogh"},
-    {q:"Don't count the days, make the days count.",a:"Muhammad Ali"},
-    {q:"Success belongs to those who prepare for it.",a:"adapted proverb"},
-    {q:"Fall seven times, stand up eight.",a:"Japanese proverb"},
-    {q:"The only way to do great work is to love what you do.",a:"Steve Jobs"},
-    {q:"Quality is not an act, it is a habit.",a:"Aristotle"},
-    {q:"Success usually comes to those who are too busy to be looking for it.",a:"Henry David Thoreau"},
-    {q:"Your reputation is built one job at a time.",a:"unknown"},
-    {q:"A craftsman who hurries is a craftsman who hasn't finished learning.",a:"unknown"},
-    {q:"Customers will forget what you said but never how you made them feel.",a:"adapted from Maya Angelou"},
-    {q:"Be where your feet are.",a:"unknown"},
-    {q:"A job well done is its own reward.",a:"adapted proverb"},
-    {q:"There's always a way if you're committed.",a:"Tony Robbins"},
-    {q:"Don't judge each day by the harvest you reap but by the seeds you plant.",a:"Robert Louis Stevenson"},
-    {q:"Strive for excellence, not perfection.",a:"H. Jackson Brown Jr."},
-    {q:"A goal is a dream with a deadline.",a:"Napoleon Hill"},
-    {q:"Stay hungry, stay foolish.",a:"Steve Jobs"},
-    {q:"Adversity introduces a man to himself.",a:"Albert Einstein"},
-    {q:"What lies behind us and what lies before us are tiny matters compared to what lies within us.",a:"Ralph Waldo Emerson"},
-    {q:"Look after your tools and your tools will look after you.",a:"Trade proverb"},
-    {q:"Sharp tools make light work.",a:"Old proverb"},
-    {q:"You miss every shot you don't take.",a:"Wayne Gretzky"},
-    {q:"Speak less, listen more, you'll close more.",a:"unknown"},
-    {q:"Every expert was once a disaster.",a:"unknown"},
-    {q:"The job's not finished until it's finished right.",a:"unknown"},
-    {q:"Treat the small jobs like the big jobs and the big jobs will find you.",a:"unknown"},
-    {q:"Don't lower your expectations to meet your performance; raise your performance to meet your expectations.",a:"Ralph Marston"},
-    {q:"He who has a why to live can bear almost any how.",a:"Friedrich Nietzsche"},
-    {q:"To know and not to do is not yet to know.",a:"Confucius"},
-    {q:"Make the customer the hero of your story.",a:"unknown"},
-    {q:"A little progress each day adds up to big results.",a:"unknown"},
-    {q:"Anyone who has never made a mistake has never tried anything new.",a:"Albert Einstein"},
-    {q:"The bricklayer's secret: one brick at a time.",a:"unknown"},
-    {q:"Honest work always finds its reward.",a:"unknown"},
-    {q:"There is no elevator to success. You have to take the stairs.",a:"unknown"},
-    {q:"Begin with the end in mind.",a:"Stephen Covey"},
-    {q:"What you allow is what will continue.",a:"unknown"},
-    {q:"Service is what life is all about.",a:"Marian Wright Edelman"},
-    {q:"Whatever you are, be a good one.",a:"Abraham Lincoln"},
-    {q:"The biggest risk is not taking any risk.",a:"Mark Zuckerberg"},
-    {q:"Today is the day to start the things you've been putting off.",a:"unknown"},
-    {q:"Build your reputation like a wall, brick by brick.",a:"unknown"},
-    {q:"The first step is you have to say that you can.",a:"Will Smith"},
-    {q:"No one ever drowned in their own sweat.",a:"unknown"},
-    {q:"Doubt kills more dreams than failure ever will.",a:"Suzy Kassem"},
-    {q:"Skill is only developed by hours and hours and hours of beating on your craft.",a:"Will Smith"},
-    {q:"Success is not final, failure is not fatal: it is the courage to continue that counts.",a:"Winston Churchill"},
-    {q:"The way you do anything is the way you do everything.",a:"unknown"},
-    {q:"A smooth sea never made a skilled sailor.",a:"Franklin D. Roosevelt"},
-    {q:"You can't pour from an empty cup.",a:"unknown"},
-    {q:"Trust is built in drops and lost in buckets.",a:"unknown"},
-    {q:"Win the morning, win the day.",a:"unknown"},
-    {q:"There's no traffic on the road less travelled.",a:"unknown"},
-    {q:"Good things take time, great things take longer.",a:"unknown"},
-    {q:"Be stubborn about your goals and flexible about your methods.",a:"unknown"},
-    {q:"What you tolerate, you teach others to repeat.",a:"unknown"},
-    {q:"A goal is not always meant to be reached, it serves to give us something to aim at.",a:"Bruce Lee"},
-    {q:"Stay ready so you don't have to get ready.",a:"unknown"},
-    {q:"It's the small repeated efforts that build a great business.",a:"unknown"},
-    {q:"Energy flows where attention goes.",a:"unknown"},
-    {q:"Discipline equals freedom.",a:"Jocko Willink"},
-    {q:"You become what you repeatedly do.",a:"adapted from Aristotle"},
-    {q:"Speak the truth, even if your voice shakes.",a:"unknown"},
-    {q:"The man who removes a mountain begins by carrying away small stones.",a:"Chinese proverb"},
-    {q:"Master the basics and the rest follows.",a:"unknown"},
-    {q:"Comparison is the thief of joy.",a:"Theodore Roosevelt"},
-    {q:"Be the reason someone believes in good people.",a:"unknown"},
-    {q:"What you focus on expands.",a:"unknown"},
-    {q:"Every accomplishment starts with the decision to try.",a:"John F. Kennedy"},
-    {q:"Out of clutter, find simplicity.",a:"Albert Einstein"},
-    {q:"Vision without execution is just hallucination.",a:"Thomas Edison"},
-    {q:"Tough times never last, but tough people do.",a:"Robert H. Schuller"},
-    {q:"Inch by inch, anything's a cinch.",a:"unknown"},
-    {q:"A goal without a deadline is just a dream.",a:"unknown"},
-    {q:"Half measures avail us nothing.",a:"unknown"},
-    {q:"The cave you fear to enter holds the treasure you seek.",a:"Joseph Campbell"},
-    {q:"Build something today your future self will thank you for.",a:"unknown"},
-    {q:"Don't be busy, be productive.",a:"unknown"},
-    {q:"Plans fail for lack of counsel, but with many advisers they succeed.",a:"Proverbs 15:22"},
-    {q:"做 the work; the rest takes care of itself.",a:"unknown"},
-    {q:"You can't build a great business on bad foundations.",a:"unknown"},
-    {q:"Solid floors start with a solid plan.",a:"unknown"},
-    {q:"Underneath every great finish is hours of unseen prep.",a:"unknown"},
-    {q:"Detail is not a detail, it makes the design.",a:"Charles Eames"},
-    {q:"Craft over haste, every time.",a:"unknown"},
-    {q:"Good work speaks for itself, loudly.",a:"unknown"}
-  ];
-  var QUOTES2=[
-    {q:"What you do speaks so loudly that I cannot hear what you say.",a:"Ralph Waldo Emerson"},
-    {q:"Quality work creates its own demand.",a:"unknown"},
-    {q:"A good name is better than riches.",a:"unknown"},
-    {q:"You'll never plough a field by turning it over in your mind.",a:"unknown"},
-    {q:"The man who does not read has no advantage over the man who cannot.",a:"Mark Twain"},
-    {q:"Speak with confidence, deliver with care.",a:"unknown"},
-    {q:"What's worth doing is worth doing well.",a:"unknown"},
-    {q:"The best preparation for tomorrow is doing your best today.",a:"H. Jackson Brown Jr."},
-    {q:"Strong walls don't make a home, the people inside do.",a:"unknown"},
-    {q:"Skill comes from consistent reps, not luck.",a:"unknown"},
-    {q:"A quiet conscience makes a sound sleep.",a:"unknown"},
-    {q:"Do small things with great love.",a:"Mother Teresa"},
-    {q:"Honour your word and your word will honour you.",a:"unknown"},
-    {q:"The level never lies.",a:"Trade proverb"},
-    {q:"Build trust before you build anything else.",a:"unknown"},
-    {q:"A square corner starts every great job.",a:"Trade proverb"},
-    {q:"There's no glory in cutting corners.",a:"unknown"},
-    {q:"A well-laid floor outlasts a hasty promise.",a:"unknown"},
-    {q:"The proof is always in the finish.",a:"unknown"},
-    {q:"Plan your work, then work your plan.",a:"Napoleon Hill"},
-    {q:"Patience is bitter, but its fruit is sweet.",a:"Aristotle"},
-    {q:"Excellence is doing ordinary things extraordinarily well.",a:"John W. Gardner"},
-    {q:"The man who can drive himself further once the effort gets painful is the man who will win.",a:"Roger Bannister"},
-    {q:"Nail the basics, win the big jobs.",a:"unknown"},
-    {q:"A craftsman's word is his bond.",a:"unknown"},
-    {q:"Slow and steady wins more repeat customers.",a:"unknown"},
-    {q:"Better a diamond with a flaw than a pebble without.",a:"Confucius"},
-    {q:"There is no failure except in no longer trying.",a:"Elbert Hubbard"},
-    {q:"Big doors swing on small hinges.",a:"unknown"},
-    {q:"Trust your training and your tools.",a:"unknown"},
-    {q:"You're only as good as your last job, so make it count.",a:"unknown"},
-    {q:"It's not the load that breaks you down, it's the way you carry it.",a:"Lou Holtz"},
-    {q:"Reliability is rarer than talent.",a:"unknown"},
-    {q:"Good craftsmanship can't be rushed, only respected.",a:"unknown"},
-    {q:"A satisfied customer tells one friend; an unhappy one tells everyone.",a:"unknown"},
-    {q:"What you repeat, you become known for.",a:"unknown"},
-    {q:"The smallest deed is better than the grandest intention.",a:"unknown"},
-    {q:"Treat every quote like it's the only one that matters.",a:"unknown"},
-    {q:"Confidence comes from preparation.",a:"unknown"},
-    {q:"Every wall was once just a drawing.",a:"unknown"},
-    {q:"The right tool, used right, saves the day.",a:"unknown"},
-    {q:"Promises made should be promises kept.",a:"unknown"},
-    {q:"A job well-measured is a job half-done.",a:"Trade proverb"},
-    {q:"There's dignity in honest labour.",a:"unknown"},
-    {q:"Build relationships, not just invoices.",a:"unknown"},
-    {q:"The bigger the challenge, the bigger the opportunity to shine.",a:"unknown"},
-    {q:"Listen twice, measure once, speak last.",a:"unknown"},
-    {q:"You earn loyalty one good experience at a time.",a:"unknown"},
-    {q:"A steady hand builds a steady business.",a:"unknown"},
-    {q:"Less talk, more graft — get the real work done.",a:"unknown"},
-    {q:"Don't chase perfection, chase consistency.",a:"unknown"},
-    {q:"The work you're proud of is the work that lasts.",a:"unknown"},
-    {q:"A fair price and an honest job never go out of fashion.",a:"unknown"},
-    {q:"Small wins, repeated, become a career.",a:"unknown"},
-    {q:"The customer remembers who showed up on time.",a:"unknown"},
-    {q:"Effort compounds, just like interest.",a:"unknown"},
-    {q:"A tidy van reflects a tidy mind.",a:"unknown"},
-    {q:"You are the standard you walk past.",a:"unknown"},
-    {q:"Make today's work yesterday's best.",a:"unknown"},
-    {q:"Every great business started with someone answering the phone.",a:"unknown"},
-    {q:"Care shows in the corners no one checks.",a:"unknown"},
-    {q:"Earn the next job while finishing this one.",a:"unknown"},
-    {q:"A good plan today beats a perfect plan next week.",a:"unknown"},
-    {q:"Reputation travels faster than any advert.",a:"unknown"},
-    {q:"The harder the job, the sweeter the finish.",a:"unknown"},
-    {q:"Honesty saves more relationships than charm ever will.",a:"unknown"},
-    {q:"You can't pour quality from an empty effort.",a:"unknown"},
-    {q:"A steady pace beats a frantic sprint.",a:"unknown"},
-    {q:"Skilled hands and a clear head finish the job right.",a:"unknown"},
-    {q:"The smallest follow-up call can save the biggest account.",a:"unknown"},
-    {q:"Don't just sell the product, solve the problem.",a:"unknown"},
-    {q:"A well-kept workshop builds well-kept work.",a:"unknown"},
-    {q:"Good habits are the quiet architects of success.",a:"unknown"},
-    {q:"Care about the work and the profit follows.",a:"unknown"},
-    {q:"The strongest pitch is a finished job that speaks for itself.",a:"unknown"},
-    {q:"Every customer is a future referral, treat them like one.",a:"unknown"},
-    {q:"Do it properly or do it twice.",a:"unknown"},
-    {q:"A clear quote builds a clear relationship.",a:"unknown"},
-    {q:"The job isn't done until the client is happy, not just the floor.",a:"unknown"},
-    {q:"Take the extra five minutes; it's never wasted.",a:"unknown"},
-    {q:"Consistency is the quiet engine behind every good reputation.",a:"unknown"},
-    {q:"The work remembers the hands that rushed it.",a:"unknown"},
-    {q:"Stand behind your work and it will stand for you.",a:"unknown"},
-    {q:"A good morning starts with a clear plan for the day.",a:"unknown"},
-    {q:"Small courtesies build big loyalty.",a:"unknown"},
-    {q:"There's no substitute for showing up prepared.",a:"unknown"},
-    {q:"The best advert is a job done right.",a:"unknown"},
-    {q:"Take pride in the parts no one will ever see.",a:"unknown"},
-    {q:"A calm head fits better than a fast hand.",a:"unknown"},
-    {q:"What you finish today builds what you're offered tomorrow.",a:"unknown"},
-    {q:"Service with patience outlasts service with speed.",a:"unknown"},
-    {q:"The right measurement now saves the wrong argument later.",a:"unknown"},
-    {q:"Make every customer feel like your only customer, even on a busy day.",a:"unknown"},
-    {q:"A clean job site is a quiet form of respect.",a:"unknown"},
-    {q:"Today's effort is tomorrow's reputation.",a:"unknown"},
-    {q:"The work doesn't lie, even when the day was rushed.",a:"unknown"},
-    {q:"Small jobs done well lead to bigger jobs done well.",a:"unknown"},
-    {q:"There's always time to do it right the second time \u2014 better to find it the first.",a:"unknown"},
-    {q:"The trade rewards patience more than speed.",a:"unknown"}
-  ];
-  QUOTES = QUOTES.concat(QUOTES2);
-  function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
-  function seededShuffle(len,seed){var arr=[];for(var i=0;i<len;i++)arr.push(i);var rnd=mulberry32(seed);for(var j=arr.length-1;j>0;j--){var k=Math.floor(rnd()*(j+1));var tmp=arr[j];arr[j]=arr[k];arr[k]=tmp;}return arr;}
-  function dayOfYear(d){var start=new Date(d.getFullYear(),0,0);return Math.floor((d-start)/86400000);}
-  var todayIdx=dayOfYear(new Date());var yr=new Date().getFullYear();
-  var qLap=Math.floor(todayIdx/QUOTES.length);var qPos=todayIdx%QUOTES.length;
-  var qOrder=seededShuffle(QUOTES.length,yr*1000+qLap);
-  var qod=QUOTES[qOrder[qPos]];
   var coldCard=mkCard("Going cold",cold.slice(0,6),"No active clients going cold \u2713",function(c){
     var s=c.lastContact||"";if(s.indexOf("/")>-1){var p=s.split("/");s=p[2]+"-"+p[1]+"-"+p[0];}
     var dt=new Date(s);var days=!isNaN(dt.getTime())?Math.round((new Date().getTime()-dt.getTime())/86400000):0;
@@ -2106,25 +1757,6 @@ function renderDash(){
     el.addEventListener("click",(function(id){return function(){openC(id);};})(c.id));return el;
   });
   dg.appendChild(coldCard);
-  var quoteCard=document.createElement("div");quoteCard.className="dash-card";
-  var qTitle=document.createElement("div");qTitle.className="dash-card-title";qTitle.textContent="\uD83D\uDCAC Quote of the Day";quoteCard.appendChild(qTitle);
-  var qBody=document.createElement("div");qBody.style.cssText="padding:6px 2px 2px";
-  var qText=document.createElement("div");qText.style.cssText="font-size:13px;font-style:italic;color:var(--text);line-height:1.5";qText.textContent="\u201C"+qod.q+"\u201D";
-  var qAuth=document.createElement("div");qAuth.style.cssText="font-size:11px;color:var(--muted);margin-top:8px;font-weight:700";qAuth.textContent="\u2014 "+qod.a;
-  qBody.appendChild(qText);qBody.appendChild(qAuth);quoteCard.appendChild(qBody);
-  var jDiv=document.createElement("div");jDiv.style.cssText="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)";
-  var jTitle=document.createElement("div");jTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px";jTitle.textContent="\uD83C\uDF0D On This Day";
-  var jBody=document.createElement("div");jBody.id="otdBox";jBody.style.cssText="font-size:12px;color:var(--muted);line-height:1.5";jBody.textContent="Loading\u2026";
-  jDiv.appendChild(jTitle);jDiv.appendChild(jBody);quoteCard.appendChild(jDiv);
-  var fDiv=document.createElement("div");fDiv.style.cssText="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)";
-  var fTitle=document.createElement("div");fTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px";fTitle.textContent="\uD83E\uDEB5 Flooring Fact";
-  var fBody=document.createElement("div");fBody.id="floorFactBox";fBody.style.cssText="font-size:12px;color:var(--text);line-height:1.5";
-  fDiv.appendChild(fTitle);fDiv.appendChild(fBody);quoteCard.appendChild(fDiv);
-  dg.appendChild(quoteCard);
-  dv.appendChild(dg);
-  loadOnThisDay("otdBox");
-  loadFlooringFact("floorFactBox");
-
   // Diary events - within 5 working days + overdue on dashboard
   function workingDaysFromNow(e) {
     var evDate = new Date(e.year, e.month, e.day);
@@ -2288,6 +1920,70 @@ function renderDash(){
   }
 }
 
+
+// ── SALES / QUOTES MODEL V2 ───────────────────────────────────────
+// Quotes remain quotes while being decided. Ordered / Paid / Collected
+// are sales/orders. Direct sales use entry.sale and never appear in Quote Log.
+var OPEN_QUOTE_STATUSES=["Quote","Follow-up"];
+var PAST_QUOTE_STATUSES=["Lost","Expired"];
+var SALE_STATUSES=["Ordered","Paid","Collected"];
+// New code should not use Confirmed/Invoiced; legacy records are migrated to Ordered.
+
+function logRecord(entry){return entry?(entry.sale||entry.quote||null):null;}
+function isDirectSaleEntry(entry){return !!(entry&&entry.sale);}
+function isConvertedQuoteSale(entry){return !!(entry&&entry.quote&&SALE_STATUSES.indexOf(entry.quote.status)>-1);}
+function isSaleEntry(entry){return isDirectSaleEntry(entry)||isConvertedQuoteSale(entry);}
+function isOpenQuoteEntry(entry){return !!(entry&&entry.quote&&OPEN_QUOTE_STATUSES.indexOf(entry.quote.status)>-1);}
+function isPastQuoteEntry(entry){return !!(entry&&entry.quote&&PAST_QUOTE_STATUSES.indexOf(entry.quote.status)>-1);}
+function isQuoteEntry(entry){return isOpenQuoteEntry(entry)||isPastQuoteEntry(entry);}
+function statusIsSale(status){return SALE_STATUSES.indexOf(status)>-1;}
+function recordValue(entry){var r=logRecord(entry);return r?(parseFloat(String(r.value||"0").replace(/[^0-9.]/g,""))||0):0;}
+function recordProduct(entry){var r=logRecord(entry);return r?(r.category||r.products||"Other"):"Other";}
+function recordDisplayDate(entry){var r=logRecord(entry)||{};return r.collectedDate||r.paidDate||r.orderedDate||entry.date||"";}
+
+// Legacy-data compatibility only. Safe to keep until all old records have migrated.
+function migrateSalesQuoteModelV2(){
+  var changed=false;
+  clients.forEach(function(c){
+    (c.log||[]).forEach(function(l){
+      if(l.quote&&String(l.quote.ref||"").indexOf("SALE-")===0){
+        l.sale={ref:l.quote.ref,value:l.quote.value,products:l.quote.products,category:l.quote.category,status:l.quote.status==="Paid"?"Paid":"Collected",paidDate:l.quote.paidDate||l.date,collectedDate:l.quote.collectedDate||l.date,source:"Direct Sale"};
+        delete l.quote;l.type="Sale";changed=true;
+      }
+      if(l.quote&&l.quote.status==="Confirmed"){l.quote.status="Ordered";l.quote.orderedDate=l.quote.orderedDate||l.date;l.quote.convertedFromQuote=true;changed=true;}
+      if(l.quote&&l.quote.status==="Invoiced"){l.quote.status="Ordered";l.quote.orderedDate=l.quote.orderedDate||l.date;l.quote.convertedFromQuote=true;changed=true;}
+      if(l.quote&&statusIsSale(l.quote.status)){l.quote.convertedFromQuote=true;if(!l.quote.orderedDate)l.quote.orderedDate=l.date;}
+    });
+  });
+  if(changed)saveC();
+}
+
+function setQuoteOrSaleStatus(clientId,idx,status,onDone){
+  var c=clients.find(function(x){return x.id===clientId;});
+  if(!c||!c.log||!c.log[idx])return;
+  var entry=c.log[idx],rec=logRecord(entry);if(!rec)return;
+  if(status==="Lost"&&entry.quote){
+    var reason=prompt("Why was this quote lost?\nExamples: Price too high, Competitor, No response, Job cancelled","");
+    if(reason===null){if(onDone)onDone();return;}
+    rec.lostReason=reason.trim()||"No reason given";rec.status="Lost";rec.paidDate="";rec.collectedDate="";rec.orderedDate="";
+  }else{
+    if(statusIsSale(status)&&entry.quote){
+      rec.convertedFromQuote=true;
+      if(!rec.orderedDate){var d=new Date();rec.orderedDate=String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear();}
+    }
+    if(status==="Paid"&&rec.status!=="Paid"){
+      var d2=new Date(),def2=String(d2.getDate()).padStart(2,"0")+"/"+String(d2.getMonth()+1).padStart(2,"0")+"/"+d2.getFullYear();
+      var paid=prompt("Date paid (DD/MM/YYYY):",def2);if(paid===null){if(onDone)onDone();return;}rec.paidDate=paid.trim()||def2;
+    }
+    if(status==="Collected"&&rec.status!=="Collected"){
+      var d3=new Date(),def3=String(d3.getDate()).padStart(2,"0")+"/"+String(d3.getMonth()+1).padStart(2,"0")+"/"+d3.getFullYear();
+      var coll=prompt("Date collected (DD/MM/YYYY):",def3);if(coll===null){if(onDone)onDone();return;}rec.collectedDate=coll.trim()||def3;
+    }
+    rec.status=status;
+  }
+  saveC();toast(statusIsSale(status)?"Moved into Sales / Order History ✓":"Quote updated ✓");if(onDone)onDone();
+}
+
 // ── DETAIL VIEW ───────────────────────────────────────────────────
 function renderDet(){
   var c=null;for(var i=0;i<clients.length;i++){if(clients[i].id===activeId){c=clients[i];break;}}
@@ -2336,7 +2032,7 @@ function renderDet(){
     var sourceColors = {"Existing Customer":"background:#e8edf6;color:#2348b0","Existing Customer (Dormant 12m+)":"background:#f0e6f6;color:#6b2d8b","New - Sinbad's Old Customer":"background:var(--gbg);color:var(--gtxt)","New - Walk In":"background:#e8f5e0;color:#2d6a0f","New - Referral":"background:#fff3e0;color:#854f0b","Fitter":"background:var(--lbg);color:var(--ltxt)"};
   var sourceHtml = c.source ? "<span style=\'font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;"+(sourceColors[c.source]||"background:var(--alt);color:var(--muted)")+"\'>"+c.source+"</span>" : "&mdash;";
   grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",labelColor:"#2348b0",val:c.binder},{label:"Manager",labelColor:"#9b59b6",val:c.manager},{label:"Account name",labelColor:"#16324D",val:c.name,wide:true},{label:"Primary contact name",labelColor:"#2d6a0f",val:c.contact},{label:"Primary contact number",labelColor:"#0f7d5c",val:c.mobile},{label:"Secondary contact name",labelColor:"#2d6a0f",val:c.contact2},{label:"Secondary contact number",labelColor:"#0f7d5c",val:c.mobile2},{label:"Customer source",labelColor:"#c77800",html:sourceHtml},{label:"Area",labelColor:"#b8860b",val:c.address}],true));
-  grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",labelColor:"#2348b0",val:c.product,wide:true},{label:"Est. annual spend",labelColor:"#2d6a0f",html:(function(){var auto=calcAnnualSpend(c);if(auto>0){return "<span style='color:var(--gtxt);font-weight:700'>\u00a3"+auto.toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>(paid orders, last 12mo)</span>";}return c.spend?("\u00a3"+c.spend+" <span style='font-size:9px;color:var(--muted)'>(manual estimate)</span>"):"\u2014";})()},{label:"Priority",labelColor:"#e8a020",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",labelColor:"#16324D",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",labelColor:"#0f7d5c",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected")t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",labelColor:"#b23a2e",val:c.wontBuy,wide:true},{label:"Who else they buy from",labelColor:"#9b59b6",val:c.competitorNotes,wide:true}],true));
+  grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",labelColor:"#2348b0",val:c.product,wide:true},{label:"Est. annual spend",labelColor:"#2d6a0f",html:(function(){var auto=calcAnnualSpend(c);if(auto>0){return "<span style='color:var(--gtxt);font-weight:700'>\u00a3"+auto.toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>(paid orders, last 12mo)</span>";}return c.spend?("\u00a3"+c.spend+" <span style='font-size:9px;color:var(--muted)'>(manual estimate)</span>"):"\u2014";})()},{label:"Priority",labelColor:"#e8a020",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",labelColor:"#16324D",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(isSaleEntry(l)){t+=recordValue(l);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",labelColor:"#0f7d5c",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(isSaleEntry(l))t+=recordValue(l);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Wont buy",labelColor:"#b23a2e",val:c.wontBuy,wide:true},{label:"Who else they buy from",labelColor:"#9b59b6",val:c.competitorNotes,wide:true}],true));
   var trackingSec=addSec("full","t-tr","Tracking",[{label:"Status",labelColor:"#2348b0",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",labelColor:"#9b59b6",val:c.interactionType},{label:"Last contacted",labelColor:"#2d6a0f",val:c.lastContact},{label:"Follow-up date",labelColor:"#c77800",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Account opened",labelColor:"#16324D",val:c.dateOpened||"—"},{label:"Key dates",labelColor:"#b23a2e",val:c.keyDates,wide:true}],true);
   trackingSec.className+=" not-in-overview"; grid.appendChild(trackingSec);
   var notesSec=document.createElement("div");notesSec.className="sec full not-in-overview";
@@ -2346,10 +2042,12 @@ function renderDet(){
   var logSec=document.createElement("div");logSec.className="sec full not-in-overview";
   var lt=document.createElement("span");lt.className="stag t-lg";lt.textContent="Interaction log";logSec.appendChild(lt);
 
-  var quoteCount=(c.log||[]).filter(function(l){return !!l.quote;}).length;
-  var interactionCount=(c.log||[]).filter(function(l){return !l.quote;}).length;
-  var tabRow=document.createElement("div");tabRow.className="no-print";tabRow.style.cssText="display:flex;gap:6px;margin:10px 0 4px";
-  [["Interactions",interactionCount],["Quotes",quoteCount]].forEach(function(pair){
+  var openQuoteCount=(c.log||[]).filter(isOpenQuoteEntry).length;
+  var saleCount=(c.log||[]).filter(isSaleEntry).length;
+  var pastQuoteCount=(c.log||[]).filter(isPastQuoteEntry).length;
+  var interactionCount=(c.log||[]).filter(function(l){return !l.quote&&!l.sale;}).length;
+  var tabRow=document.createElement("div");tabRow.className="no-print";tabRow.style.cssText="display:flex;gap:6px;margin:10px 0 4px;flex-wrap:wrap";
+  [["Sales / Orders",saleCount],["Open Quotes",openQuoteCount],["Past Quotes",pastQuoteCount],["Interactions",interactionCount]].forEach(function(pair){
     var tabName=pair[0],tabCount=pair[1];
     var tb=document.createElement("button");
     tb.textContent=tabName+" ("+tabCount+")";
@@ -2358,24 +2056,26 @@ function renderDet(){
     tabRow.appendChild(tb);
   });
   logSec.appendChild(tabRow);
+  // Reference-only: sourcing button only appears once enquiries exist, and only ever views them.
+  // New sales, quotes and special order enquiries are entered from the Dashboard quick actions, not from here.
   var srcCount=(sourcing||[]).filter(function(s){return s.clientId===c.id;}).length;
-  var srcBtn=document.createElement("button");srcBtn.className="no-print";srcBtn.style.cssText="margin:8px 0 4px;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #e67e22;"+(srcCount?"background:#fff4e8;color:#a5590f":"background:#e67e22;color:#fff");
-  srcBtn.textContent=srcCount?("\uD83C\uDFED Special order enquiries ("+srcCount+")"):"\uD83C\uDFED + New special order enquiry";
-  srcBtn.addEventListener("click",function(){srcCount?showSourcing(c.id):showSourcingForm(null,c.id);});
-  logSec.appendChild(srcBtn);
+  if(srcCount){
+    var srcBtn=document.createElement("button");srcBtn.className="no-print";srcBtn.style.cssText="margin:8px 0 4px;padding:6px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #e67e22;background:#fff4e8;color:#a5590f";
+    srcBtn.textContent="\uD83C\uDFED Special order enquiries ("+srcCount+")";
+    srcBtn.addEventListener("click",function(){showSourcing(c.id);});
+    logSec.appendChild(srcBtn);
+  }
 
   if(showLF){logSec.appendChild(buildLogForm(c.id));}
   else{
     var btnRow=document.createElement("div");btnRow.style.cssText="display:flex;gap:7px;margin-top:6px";
     var alb=document.createElement("button");alb.className="log-trigger";alb.style.flex="1";
     alb.textContent="+ Log an interaction";alb.addEventListener("click",function(){showLF=true;renderDet();});
-    var slb=document.createElement("button");slb.className="log-trigger";slb.style.cssText="flex:1;border-color:var(--gtxt);color:var(--gtxt)";
-    slb.textContent="\u00a3 Log a sale";slb.addEventListener("click",function(){showSaleForm(c.id,c.name);});
-    btnRow.appendChild(alb);btnRow.appendChild(slb);logSec.appendChild(btnRow);
+    btnRow.appendChild(alb);logSec.appendChild(btnRow);
   }
   (c.log||[]).forEach(function(l,idx){
-    var isQuoteEntry = !!l.quote;
-    var hideForTab = (detLogTab==="Interactions" && isQuoteEntry) || (detLogTab==="Quotes" && !isQuoteEntry);
+    var bucket=isSaleEntry(l)?"Sales / Orders":isOpenQuoteEntry(l)?"Open Quotes":isPastQuoteEntry(l)?"Past Quotes":"Interactions";
+    var hideForTab=detLogTab!==bucket;
     var entry=document.createElement("div");entry.className="log-entry"+(hideForTab?" tab-hidden":"");
     if(hideForTab) entry.style.display="none";
     var meta=document.createElement("div");meta.className="log-meta";
@@ -2384,34 +2084,35 @@ function renderDet(){
     var delB=document.createElement("button");delB.className="log-del";delB.textContent="\u00d7";
     delB.addEventListener("click",(function(i){return function(){delLog(c.id,i);};})(idx));
     meta.appendChild(ltype);meta.appendChild(ldate);
-    if(l.quote){var qp=document.createElement("span");qp.className="qpill q-"+(l.quote.status||"quote").toLowerCase().replace(" ","-");qp.textContent=l.quote.status;meta.appendChild(qp);}
+    var recPill=logRecord(l);if(recPill){var qp=document.createElement("span");qp.className="qpill q-"+(recPill.status||"quote").toLowerCase().replace(" ","-");qp.textContent=recPill.status;meta.appendChild(qp);}
     meta.appendChild(delB);
     var note=document.createElement("div");note.className="lnote";note.textContent=l.note;
     entry.appendChild(meta);entry.appendChild(note);
-    if(l.quote){
+    if(l.quote||l.sale){
+      var rec=logRecord(l),saleSide=isSaleEntry(l);
       var qbox=document.createElement("div");qbox.className="qbox";
       var qhdr=document.createElement("div");qhdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px";
-      var qttl=document.createElement("div");qttl.style.cssText="font-size:11px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:7px";qttl.textContent="Quote details";
-      if((l.quote.ref||"").indexOf("SALE-")===0){
+      var qttl=document.createElement("div");qttl.style.cssText="font-size:11px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:7px";qttl.textContent=saleSide?"Sale / order details":"Quote details";
+      if(l.sale){
         var saleTag2=document.createElement("span");saleTag2.style.cssText="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 7px;border-radius:20px;background:#1a5c1a;color:#fff";saleTag2.textContent="\uD83D\uDED2 Counter Sale";
         qttl.appendChild(saleTag2);
       }
       var qhdrRight=document.createElement("div");qhdrRight.style.cssText="display:flex;align-items:center;gap:8px";
-      var qvb=document.createElement("div");qvb.style.cssText="font-size:17px;font-weight:700;color:var(--gtxt)";qvb.textContent=money(l.quote.value);
+      var qvb=document.createElement("div");qvb.style.cssText="font-size:17px;font-weight:700;color:var(--gtxt)";qvb.textContent=money(rec.value);
       var qEditBtn=document.createElement("button");qEditBtn.style.cssText="padding:3px 9px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:10px;font-weight:700;cursor:pointer";qEditBtn.textContent="\u270E Edit";
       qEditBtn.addEventListener("click",(function(cid,i){return function(){showQuoteEditForm(cid,i);};})(c.id,idx));
       qhdrRight.appendChild(qvb);qhdrRight.appendChild(qEditBtn);
       qhdr.appendChild(qttl);qhdr.appendChild(qhdrRight);qbox.appendChild(qhdr);
       var qg=document.createElement("div");qg.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px";
       function qf2(lbl2,val2,wide2){var f=document.createElement("div");if(wide2)f.style.gridColumn="1/-1";var fl=document.createElement("div");fl.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";fl.textContent=lbl2;var fv=document.createElement("div");fv.style.cssText="font-size:11px;color:var(--text)"+(wide2?";font-weight:700":"");fv.textContent=val2||"\u2014";f.appendChild(fl);f.appendChild(fv);return f;}
-      qg.appendChild(qf2("Ref",l.quote.ref));qg.appendChild(qf2("Value",money(l.quote.value)));qg.appendChild(qf2("Product",l.quote.products,true));qbox.appendChild(qg);
-      if(l.quote.lostReason){var lrDiv=document.createElement("div");lrDiv.style.cssText="font-size:11px;color:var(--rtxt);background:var(--rbg);border-radius:var(--rs);padding:6px 9px;margin-top:7px";lrDiv.innerHTML="<strong>Lost reason:</strong> "+l.quote.lostReason;qbox.appendChild(lrDiv);}
-      if(l.quote.paidDate){var pdDiv=document.createElement("div");pdDiv.style.cssText="font-size:11px;color:#1a5c1a;background:#d0f0d0;border-radius:var(--rs);padding:6px 9px;margin-top:7px";pdDiv.innerHTML="<strong>Paid:</strong> "+l.quote.paidDate;qbox.appendChild(pdDiv);}
-      if(l.quote.collectedDate){var cdDiv=document.createElement("div");cdDiv.style.cssText="font-size:11px;color:#0a4a7a;background:#d0e8f5;border-radius:var(--rs);padding:6px 9px;margin-top:7px";cdDiv.innerHTML="<strong>Collected:</strong> "+l.quote.collectedDate;qbox.appendChild(cdDiv);}
-      if(l.quote.expiry){
-        var expDateObj=new Date(l.quote.expiry);
+      qg.appendChild(qf2(saleSide?"Sale / Quote Ref":"Quote Ref",rec.ref));qg.appendChild(qf2("Value",money(rec.value)));qg.appendChild(qf2("Product",rec.products,true));qbox.appendChild(qg);
+      if(rec.lostReason){var lrDiv=document.createElement("div");lrDiv.style.cssText="font-size:11px;color:var(--rtxt);background:var(--rbg);border-radius:var(--rs);padding:6px 9px;margin-top:7px";lrDiv.innerHTML="<strong>Lost reason:</strong> "+rec.lostReason;qbox.appendChild(lrDiv);}
+      if(rec.paidDate){var pdDiv=document.createElement("div");pdDiv.style.cssText="font-size:11px;color:#1a5c1a;background:#d0f0d0;border-radius:var(--rs);padding:6px 9px;margin-top:7px";pdDiv.innerHTML="<strong>Paid:</strong> "+rec.paidDate;qbox.appendChild(pdDiv);}
+      if(rec.collectedDate){var cdDiv=document.createElement("div");cdDiv.style.cssText="font-size:11px;color:#0a4a7a;background:#d0e8f5;border-radius:var(--rs);padding:6px 9px;margin-top:7px";cdDiv.innerHTML="<strong>Collected:</strong> "+rec.collectedDate;qbox.appendChild(cdDiv);}
+      if(l.quote&&rec.expiry){
+        var expDateObj=new Date(rec.expiry);
         var isExpired=!isNaN(expDateObj.getTime())&&new Date()>expDateObj;
-        var expDisplay=!isNaN(expDateObj.getTime())?String(expDateObj.getDate()).padStart(2,"0")+"/"+String(expDateObj.getMonth()+1).padStart(2,"0")+"/"+expDateObj.getFullYear():l.quote.expiry;
+        var expDisplay=!isNaN(expDateObj.getTime())?String(expDateObj.getDate()).padStart(2,"0")+"/"+String(expDateObj.getMonth()+1).padStart(2,"0")+"/"+expDateObj.getFullYear():rec.expiry;
         var exDiv=document.createElement("div");
         exDiv.style.cssText="font-size:11px;border-radius:var(--rs);padding:6px 9px;margin-top:7px;"+(isExpired?"color:var(--rtxt);background:var(--rbg)":"color:#8a5a00;background:#fff4e0");
         exDiv.innerHTML="<strong>Expires:</strong> "+expDisplay+(isExpired?" \u26A0 EXPIRED":"");
@@ -2420,16 +2121,16 @@ function renderDet(){
       var qsr=document.createElement("div");qsr.style.cssText="display:flex;align-items:center;gap:8px;padding-top:7px;border-top:1px solid #b8caf5";
       var qsl=document.createElement("div");qsl.style.cssText="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px";qsl.textContent="Update status:";
       var qsel=document.createElement("select");qsel.style.cssText="padding:4px 9px;border:2px solid var(--border);border-radius:20px;font-size:10px;font-weight:700;background:#fff;cursor:pointer;outline:none;flex:1";
-      ["Quote","Confirmed","Invoiced","Paid","Collected","Lost","Expired"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(l.quote.status===s2)opt.selected=true;qsel.appendChild(opt);});
-      qsel.addEventListener("change",(function(i){return function(e){updateQStatus(c.id,i,e.target.value);};})(idx));
+      var statusChoices=saleSide?["Ordered","Paid","Collected"]:["Quote","Follow-up","Ordered","Paid","Collected","Lost","Expired"];statusChoices.forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(rec.status===s2)opt.selected=true;qsel.appendChild(opt);});
+      qsel.addEventListener("change",(function(i){return function(e){setQuoteOrSaleStatus(c.id,i,e.target.value,function(){renderDet();});};})(idx));
       qsr.appendChild(qsl);qsr.appendChild(qsel);qbox.appendChild(qsr);entry.appendChild(qbox);
     }
     logSec.appendChild(entry);
   });
-  var visibleLogCount=(c.log||[]).filter(function(l){return detLogTab==="Quotes" ? !!l.quote : !l.quote;}).length;
-  if(!visibleLogCount){var nl=document.createElement("p");nl.style.cssText="font-size:11px;color:var(--muted);margin-bottom:7px";nl.textContent=detLogTab==="Quotes"?"No quotes logged yet.":"No interactions logged yet.";logSec.appendChild(nl);}grid.appendChild(logSec);
+  var visibleLogCount=(c.log||[]).filter(function(l){var b=isSaleEntry(l)?"Sales / Orders":isOpenQuoteEntry(l)?"Open Quotes":isPastQuoteEntry(l)?"Past Quotes":"Interactions";return b===detLogTab;}).length;
+  if(!visibleLogCount){var nl=document.createElement("p");nl.style.cssText="font-size:11px;color:var(--muted);margin-bottom:7px";nl.textContent=detLogTab==="Sales / Orders"?"No sales or orders yet.":detLogTab==="Open Quotes"?"No open quotes.":detLogTab==="Past Quotes"?"No lost or expired quotes.":"No interactions logged yet.";logSec.appendChild(nl);}grid.appendChild(logSec);
   var prodMap={},qtrMap={Q1:0,Q2:0,Q3:0,Q4:0};
-  (c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);var prod=l.quote.category||l.quote.products||"Other";prodMap[prod]=(prodMap[prod]||0)+v;var useDate=l.quote.collectedDate||l.date;if(useDate){var dp=useDate.split("/");if(dp.length===3){var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrMap[q]=(qtrMap[q]||0)+v;}}}}); 
+  (c.log||[]).forEach(function(l){if(isSaleEntry(l)){var v=recordValue(l);var prod=recordProduct(l);prodMap[prod]=(prodMap[prod]||0)+v;var useDate=recordDisplayDate(l);if(useDate){var dp=useDate.split("/");if(dp.length===3){var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrMap[q]=(qtrMap[q]||0)+v;}}}}); 
   var hasProd=Object.keys(prodMap).length>0,hasQtr=Object.values(qtrMap).some(function(v){return v>0;});
   if(hasProd||hasQtr){
     var cs=document.createElement("div");cs.className="sec full";var ct=document.createElement("span");ct.className="stag t-ch";ct.textContent="Sales intelligence";cs.appendChild(ct);
@@ -2850,52 +2551,6 @@ function saveLog(id){
   saveC();showLF=false;renderDet();renderList();
 }
 function delLog(id,idx){var c=null;for(var i=0;i<clients.length;i++){if(clients[i].id===id){c=clients[i];break;}}if(c&&c.log){c.log.splice(idx,1);saveC();renderDet();toast("Entry removed");}}
-function updateQStatus(id,idx,status){
-  var c=null;for(var i=0;i<clients.length;i++){if(clients[i].id===id){c=clients[i];break;}}
-  if(!c||!c.log[idx]||!c.log[idx].quote)return;
-  if(status==="Lost"){
-    // Show lost reason modal
-    var overlay=document.createElement("div");overlay.style.cssText="position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px";
-    var box=document.createElement("div");box.style.cssText="background:var(--surface);border-radius:var(--r);width:100%;max-width:400px;border-top:3px solid var(--rtxt);padding:20px";
-    var title=document.createElement("div");title.style.cssText="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--rtxt)";title.textContent="Why was this quote lost?";
-    var sel=document.createElement("select");sel.style.cssText="width:100%;padding:8px;border:2px solid var(--border);border-radius:var(--rs);font-size:13px;margin-bottom:10px;font-family:inherit";
-    ["Price too high","Went with competitor","No response","Job cancelled","Timing/not ready","Budget cut","Went direct to supplier","Other"].forEach(function(r){var o=document.createElement("option");o.value=r;o.textContent=r;sel.appendChild(o);});
-    var notes=document.createElement("input");notes.placeholder="Additional notes (optional)";notes.style.cssText="width:100%;padding:8px;border:2px solid var(--border);border-radius:var(--rs);font-size:13px;margin-bottom:14px;font-family:inherit";
-    var btns=document.createElement("div");btns.style.cssText="display:flex;gap:8px;justify-content:flex-end";
-    var cancel=document.createElement("button");cancel.textContent="Cancel";cancel.style.cssText="padding:7px 16px;border:2px solid var(--border);border-radius:var(--rs);background:none;cursor:pointer;font-size:12px";
-    var confirm=document.createElement("button");confirm.textContent="Mark Lost";confirm.style.cssText="padding:7px 16px;background:var(--rtxt);border:none;border-radius:var(--rs);color:#fff;cursor:pointer;font-size:12px;font-weight:700";
-    cancel.addEventListener("click",function(){document.body.removeChild(overlay);});
-    confirm.addEventListener("click",function(){
-      c.log[idx].quote.lostReason=sel.value+(notes.value?" - "+notes.value:"");
-      c.log[idx].quote.status="Lost";
-      c.log[idx].quote.paidDate="";
-      c.log[idx].quote.collectedDate="";
-      saveC();toast("Quote marked lost");
-      if(id===activeId)renderDet();
-      document.body.removeChild(overlay);
-    });
-    btns.appendChild(cancel);btns.appendChild(confirm);
-    box.appendChild(title);box.appendChild(sel);box.appendChild(notes);box.appendChild(btns);
-    overlay.appendChild(box);document.body.appendChild(overlay);
-    return;
-  }
-  if(status==="Paid"&&c.log[idx].quote.status!=="Paid"){
-    var today10=new Date();
-    var defaultPaid2=String(today10.getDate()).padStart(2,"0")+"/"+String(today10.getMonth()+1).padStart(2,"0")+"/"+today10.getFullYear();
-    var enteredDate2=prompt("Date paid (DD/MM/YYYY):",defaultPaid2);
-    if(enteredDate2===null){if(id===activeId)renderDet();return;}
-    c.log[idx].quote.paidDate=enteredDate2.trim()||defaultPaid2;
-  }
-  if(status==="Collected"&&c.log[idx].quote.status!=="Collected"){
-    var today11=new Date();
-    var defaultCollected=String(today11.getDate()).padStart(2,"0")+"/"+String(today11.getMonth()+1).padStart(2,"0")+"/"+today11.getFullYear();
-    var enteredCollected=prompt("Date collected (DD/MM/YYYY):",defaultCollected);
-    if(enteredCollected===null){if(id===activeId)renderDet();return;}
-    c.log[idx].quote.collectedDate=enteredCollected.trim()||defaultCollected;
-  }
-  c.log[idx].quote.status=status;saveC();toast("Quote updated");
-  if(id===activeId)renderDet();
-}
 
 // ── FORM ──────────────────────────────────────────────────────────
 function showForm(id){
@@ -3051,8 +2706,6 @@ function submitForm(){
   toast((wasEdit?"Client updated":"Client added")+" \u2713");
   activeId=data.id;showView("det");renderDet();
 }
-
-
 
 
 // ── DELETE ────────────────────────────────────────────────────────
@@ -3384,66 +3037,18 @@ function showRepForm(id){
 }
 
 // ── SALES ─────────────────────────────────────────────────────────
-function getDailySalesData(year, month){ // month is 0-indexed (0=Jan)
-  var daysInMonth = new Date(year, month+1, 0).getDate();
-  var days = []; for (var d=1; d<=daysInMonth; d++) days.push(0);
-  var monthTotal = 0;
-  clients.forEach(function(c){(c.log||[]).forEach(function(l){
-    if(!l.quote||l.quote.status!=="Collected")return;
-    var useDate = l.quote.collectedDate || l.date;
-    if(!useDate)return;
-    var dp=useDate.split("/");if(dp.length!==3)return;
-    var d=parseInt(dp[0]),m=parseInt(dp[1])-1,y=parseInt(dp[2]);
-    if(y!==year||m!==month)return;
-    var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
-    days[d-1]+=v; monthTotal+=v;
-  });});
-  return{days:days,monthTotal:monthTotal,daysInMonth:daysInMonth};
+function getDailySalesData(year,month){
+  var dim=new Date(year,month+1,0).getDate(),days=Array(dim).fill(0),monthTotal=0;
+  clients.forEach(function(c){(c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length!==3)return;if(parseInt(dp[2])===year&&parseInt(dp[1])-1===month){var v=recordValue(l),d=parseInt(dp[0]);if(d>=1&&d<=dim){days[d-1]+=v;monthTotal+=v;}}});});
+  return {days:days,monthTotal:monthTotal};
 }
 function getSalesData(year){
-  var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},qtrProd={Q1:{},Q2:{},Q3:{},Q4:{}},yearTotal=0;
-  // subProd[product][subcategory][quarter] = value - only populated for products with a ": " sub-category split
-  var subProd={};
-  PRODUCTS.forEach(function(p){prodTotals[p]=0;});
-  clients.forEach(function(c){(c.log||[]).forEach(function(l){
-    if(!l.quote||l.quote.status!=="Collected")return;
-    var useDate = l.quote.collectedDate || l.date;
-    if(!useDate)return;
-    var dp=useDate.split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;
-    var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";
-    var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
-    var cat=l.quote.category||l.quote.products||"Other";
-    var baseCat=cat.indexOf(": ")>-1?cat.split(": ")[0]:cat;
-    var subCat=cat.indexOf(": ")>-1?cat.split(": ")[1]:null;
-    var matched=PRODUCTS.indexOf(baseCat)>-1?baseCat:"Other";
-    qtrs[q]+=v;yearTotal+=v;prodTotals[matched]=(prodTotals[matched]||0)+v;qtrProd[q][matched]=(qtrProd[q][matched]||0)+v;
-    if(subCat){
-      if(!subProd[matched])subProd[matched]={};
-      if(!subProd[matched][subCat])subProd[matched][subCat]={Q1:0,Q2:0,Q3:0,Q4:0,total:0};
-      subProd[matched][subCat][q]+=v;
-      subProd[matched][subCat].total+=v;
-    }
-  });});
-  return{qtrs:qtrs,prodTotals:prodTotals,qtrProd:qtrProd,yearTotal:yearTotal,subProd:subProd};
+  var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},prodQtrs={},yearTotal=0,months=Array(12).fill(0);
+  clients.forEach(function(c){(c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;var m=parseInt(dp[1]),v=recordValue(l),cat=recordProduct(l)||"Other",q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrs[q]+=v;yearTotal+=v;months[m-1]+=v;prodTotals[cat]=(prodTotals[cat]||0)+v;if(!prodQtrs[cat])prodQtrs[cat]={Q1:0,Q2:0,Q3:0,Q4:0};prodQtrs[cat][q]+=v;});});
+  return {qtrs:qtrs,prodTotals:prodTotals,prodQtrs:prodQtrs,yearTotal:yearTotal,months:months};
 }
-function getYears(){var y={};y[new Date().getFullYear()]=1;clients.forEach(function(c){(c.log||[]).forEach(function(l){if(l.quote&&l.date){var dp=l.date.split("/");if(dp.length===3)y[parseInt(dp[2])]=1;}});});return Object.keys(y).map(Number).sort();}
-
-var QUARTER_MONTHS = {Q1:[1,2,3], Q2:[4,5,6], Q3:[7,8,9], Q4:[10,11,12]};
-var QUARTER_MONTH_NAMES = {Q1:["January","February","March"], Q2:["April","May","June"], Q3:["July","August","September"], Q4:["October","November","December"]};
-
-function getQuarterMonthlyBreakdown(year, quarter) {
-  var months = QUARTER_MONTHS[quarter];
-  var totals = {}; months.forEach(function(m){ totals[m] = 0; });
-  clients.forEach(function(c){ (c.log||[]).forEach(function(l){
-    if (!l.quote || l.quote.status!=="Collected") return;
-    var useDate = l.quote.collectedDate || l.date;
-    if (!useDate) return;
-    var dp = useDate.split("/"); if (dp.length!==3 || parseInt(dp[2])!==year) return;
-    var m = parseInt(dp[1]); if (months.indexOf(m)===-1) return;
-    var v = (parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
-    totals[m] = (totals[m]||0) + v;
-  });});
-  return totals;
+function getYears(){
+  var y={};y[new Date().getFullYear()]=1;clients.forEach(function(c){(c.log||[]).forEach(function(l){if(isSaleEntry(l)){var dp=recordDisplayDate(l).split("/");if(dp.length===3)y[parseInt(dp[2])]=1;}});});return Object.keys(y).map(Number).sort();
 }
 
 function showQuarterDetail(year, quarter) {
@@ -3524,7 +3129,8 @@ function renderSalesView(){
   years.forEach(function(y){var btn=document.createElement("button");btn.style.cssText="padding:4px 12px;border-radius:20px;border:2px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;"+(y===currentSalesYear?"background:var(--navy);color:#fff;border-color:var(--navy)":"background:var(--surface);color:var(--muted)");btn.textContent=y;btn.addEventListener("click",function(){currentSalesYear=y;renderSalesView();});ysel.appendChild(btn);});
   var salesPrintBtn=document.createElement("button");salesPrintBtn.className="no-print";salesPrintBtn.style.cssText="padding:4px 12px;border-radius:20px;border:none;background:var(--navy);color:#fff;font-size:11px;font-weight:700;cursor:pointer";salesPrintBtn.textContent="\uD83D\uDDA8\uFE0F Print summary";
   salesPrintBtn.addEventListener("click",function(){ printSalesSummary(); });
-  hdr.appendChild(title);hdr.appendChild(salesPrintBtn);hdr.appendChild(ysel);sv.appendChild(hdr);
+  var newSaleBtn=document.createElement("button");newSaleBtn.className="no-print";newSaleBtn.style.cssText="padding:7px 16px;border-radius:20px;border:none;background:var(--gtxt);color:#fff;font-size:11px;font-weight:700;cursor:pointer";newSaleBtn.textContent="+ New sale";newSaleBtn.addEventListener("click",showQuickSale);
+  hdr.appendChild(title);hdr.appendChild(newSaleBtn);hdr.appendChild(salesPrintBtn);hdr.appendChild(ysel);sv.appendChild(hdr);
   var kr=document.createElement("div");kr.style.cssText="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px";kr.id="salesKpiRow";
   [{l:currentSalesYear+" total",v:"\u00a3"+data.yearTotal.toLocaleString("en-GB"),c:"kv-blue",hi:true},{l:"Q1 Jan-Mar",v:"\u00a3"+data.qtrs.Q1.toLocaleString("en-GB"),c:"",q:"Q1"},{l:"Q2 Apr-Jun",v:"\u00a3"+data.qtrs.Q2.toLocaleString("en-GB"),c:"",q:"Q2"},{l:"Q3 Jul-Sep",v:"\u00a3"+data.qtrs.Q3.toLocaleString("en-GB"),c:"",q:"Q3"},{l:"Q4 Oct-Dec",v:"\u00a3"+data.qtrs.Q4.toLocaleString("en-GB"),c:"",q:"Q4"}].forEach(function(k){
     var card=document.createElement("div");card.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:13px 15px"+(k.hi?";border-top:3px solid var(--navy)":"");
@@ -4320,6 +3926,7 @@ function showComplaintForm(){
 
 // ── QUICK SALE LOG ────────────────────────────────────────────────
 function showSaleForm(clientId, clientName) {
+  var footfallBumped = false; // only count footfall once per visit, even if multiple product lines are saved
   var overlay = document.createElement("div");
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
   var box = document.createElement("div");
@@ -4438,6 +4045,15 @@ function showSaleForm(clientId, clientName) {
   dateInp.style.cssText = "width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
   bd.appendChild(mkF2("Date", dateInp));
 
+  // Footfall link — preselect the likely visit type but allow a quick correction.
+  var ffWrap=document.createElement("div");
+  var ffLbl=document.createElement("label");ffLbl.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";ffLbl.textContent="Footfall visit type";
+  var ffSel=document.createElement("select");ffSel.id="sl_footfall";ffSel.style.cssText="width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+  var ffDefault=isCashSaleClient(clients.find(function(x){return x.id===clientId;}))?"New Walk In - Purchase":"Existing Customer Picked Up/Paid";
+  FOOTFALL_CATS.forEach(function(cat){var opt=document.createElement("option");opt.value=cat;opt.textContent=cat;if(cat===ffDefault)opt.selected=true;ffSel.appendChild(opt);});
+  var noFf=document.createElement("option");noFf.value="";noFf.textContent="Do not add to Footfall";ffSel.appendChild(noFf);
+  ffWrap.appendChild(ffLbl);ffWrap.appendChild(ffSel);bd.appendChild(ffWrap);
+
   // Add another line checkbox
   var anotherWrap = document.createElement("div");
   anotherWrap.style.cssText = "display:flex;align-items:center;gap:6px";
@@ -4491,20 +4107,27 @@ function showSaleForm(clientId, clientName) {
       date: fd(date),
       type: "Sale",
       note: saleNote,
-      quote: {
+      sale: {
         ref: "SALE-" + Date.now(),
         value: val,
         products: prod + (det ? " (" + det + ")" : ""),
         category: prod,
         status: "Collected",
         paidDate: fd(date),
-        collectedDate: fd(date)
+        collectedDate: fd(date),
+        source: "Direct Sale"
       }
     });
     c.lastContact = fd(date);
     c.interactionType = "Sale";
     saveC();
     toast("£ Sale logged ✓");
+
+    if (!footfallBumped) {
+      var selectedFootfall=document.getElementById("sl_footfall")?document.getElementById("sl_footfall").value:"";
+      if(selectedFootfall) bumpFootfallCategory(date,selectedFootfall);
+      footfallBumped = true;
+    }
 
     if (another) {
       // Clear fields for next product
@@ -5291,6 +4914,65 @@ function editDiaryEvent(eid) {
 }
 
 
+// ── QUICK GLOBAL SALE / QUOTE ENTRY ───────────────────────────────
+function pickClientForAction(titleText,onPick){
+  var overlay=document.createElement("div");overlay.style.cssText="position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:450;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box=document.createElement("div");box.style.cssText="background:var(--surface);border-radius:var(--r);width:100%;max-width:440px;max-height:80vh;border-top:3px solid var(--red);overflow:hidden;display:flex;flex-direction:column";
+  var hdr=document.createElement("div");hdr.style.cssText="background:var(--navy3);padding:13px 16px;color:#fff;font-weight:700";hdr.textContent=titleText;box.appendChild(hdr);
+  var bd=document.createElement("div");bd.style.cssText="padding:16px;display:flex;flex-direction:column;gap:10px;overflow:hidden";
+
+  var searchInp=document.createElement("input");searchInp.type="text";searchInp.placeholder="Start typing a customer name...";
+  searchInp.style.cssText="width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none";
+  bd.appendChild(searchInp);
+
+  var listWrap=document.createElement("div");listWrap.style.cssText="overflow-y:auto;max-height:min(340px,50vh);border:1px solid var(--border);border-radius:var(--rs);display:flex;flex-direction:column";
+  bd.appendChild(listWrap);
+
+  var sortedClients=clients.slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+
+  function renderMatches(){
+    var q=searchInp.value.trim().toLowerCase();
+    var matches=q?sortedClients.filter(function(c){return c.name.toLowerCase().indexOf(q)>-1;}):sortedClients;
+    listWrap.innerHTML="";
+    if(!matches.length){
+      var none=document.createElement("div");none.style.cssText="padding:14px;font-size:12px;color:var(--muted);text-align:center";none.textContent="No matching customers";
+      listWrap.appendChild(none);return;
+    }
+    matches.forEach(function(c){
+      var row=document.createElement("button");row.type="button";
+      row.style.cssText="text-align:left;padding:10px 12px;border:none;border-bottom:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:inherit;color:var(--text)";
+      row.onmouseenter=function(){row.style.background="var(--alt)";};
+      row.onmouseleave=function(){row.style.background="var(--surface)";};
+      row.textContent=c.name+(c.binder?" · "+c.binder:"");
+      row.addEventListener("click",function(){document.body.removeChild(overlay);onPick(c);});
+      listWrap.appendChild(row);
+    });
+  }
+  searchInp.addEventListener("input",renderMatches);
+  renderMatches();
+
+  var btns=document.createElement("div");btns.style.cssText="display:flex;justify-content:flex-end;margin-top:4px";
+  var cancel=document.createElement("button");cancel.className="fcancel";cancel.textContent="Cancel";cancel.onclick=function(){document.body.removeChild(overlay);};
+  btns.appendChild(cancel);bd.appendChild(btns);box.appendChild(bd);overlay.appendChild(box);document.body.appendChild(overlay);
+  setTimeout(function(){searchInp.focus();},80);
+}
+function showQuickSale(){pickClientForAction("£ New sale",function(c){showSaleForm(c.id,c.name);});}
+function showQuickQuote(){pickClientForAction("£ New quote",function(c){showQuickQuoteForClient(c);});}
+function showQuickQuoteForClient(c){
+  var overlay=document.createElement("div");overlay.style.cssText="position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:460;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box=document.createElement("div");box.style.cssText="background:var(--surface);border-radius:var(--r);width:100%;max-width:500px;border-top:3px solid var(--navy);overflow:hidden";
+  var hdr=document.createElement("div");hdr.style.cssText="background:var(--navy3);padding:13px 16px;color:#fff;font-weight:700";hdr.textContent="£ New quote — "+c.name;box.appendChild(hdr);
+  var bd=document.createElement("div");bd.style.cssText="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px";
+  function fld(label,id,type,wide,ph){var w=document.createElement("label");w.style.cssText=(wide?"grid-column:1/-1;":"")+"display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted)";w.innerHTML=label+"<input id='"+id+"' type='"+(type||"text")+"' placeholder='"+(ph||"")+"' style='display:block;width:100%;margin-top:3px;padding:8px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px'>";return w;}
+  bd.appendChild(fld("Quote ref","qq_ref","text",false,"e.g. Q1045"));bd.appendChild(fld("Value (£)","qq_val","number",false,"e.g. 850"));bd.appendChild(fld("Product / details","qq_prod","text",true,"e.g. Camaro Naked Blonde Oak — 8 packs"));bd.appendChild(fld("Expiry date","qq_exp","date",false,""));bd.appendChild(fld("Notes","qq_note","text",false,"Optional"));
+  var info=document.createElement("div");info.style.cssText="grid-column:1/-1;background:#eef4ff;border:1px solid #b8caf5;border-radius:var(--rs);padding:8px 10px;font-size:10px;color:var(--navy)";info.textContent="Starts as an Open Quote. Ordered, Paid or Collected automatically moves it into Sales / Order History.";bd.appendChild(info);box.appendChild(bd);
+  var foot=document.createElement("div");foot.style.cssText="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
+  var cancel=document.createElement("button");cancel.className="fcancel";cancel.textContent="Cancel";cancel.onclick=function(){document.body.removeChild(overlay);};
+  var save=document.createElement("button");save.className="fsave";save.textContent="Save quote";save.onclick=function(){var ref=document.getElementById("qq_ref").value.trim(),val=document.getElementById("qq_val").value,prod=document.getElementById("qq_prod").value.trim();if(!ref||!val||!prod){toast("Please enter quote ref, value and product/details");return;}if(!c.log)c.log=[];var now=new Date(),dateStr=String(now.getDate()).padStart(2,"0")+"/"+String(now.getMonth()+1).padStart(2,"0")+"/"+now.getFullYear();c.log.unshift({date:dateStr,type:"Quote",note:document.getElementById("qq_note").value.trim()||("Quote "+ref+" — "+prod),quote:{ref:ref,value:val,products:prod,category:prod,status:"Quote",expiry:document.getElementById("qq_exp").value}});c.lastContact=dateStr;c.interactionType="Quote";saveC();document.body.removeChild(overlay);toast("Quote logged ✓");renderQuotesView();};
+  foot.appendChild(cancel);foot.appendChild(save);box.appendChild(foot);overlay.appendChild(box);document.body.appendChild(overlay);
+}
+
+
 // ── QUOTES ────────────────────────────────────────────────────────
 function showQuotes() {
   activeId = null; renderList(); showView("quotes"); renderQuotesView();
@@ -5304,245 +4986,30 @@ function scrollToDash(section) {
   }, 100);
 }
 
-function renderQuotesView() {
-  var qv = document.getElementById("quotesView");
-  qv.innerHTML = "";
-
-  // Collect all quotes from all clients
-  var allQuotes = [];
-  clients.forEach(function(c) {
-    (c.log||[]).forEach(function(l, li) {
-      if (l.quote) {
-        var daysOpen = 0;
-        if (l.date) {
-          var dp = l.date.split("/");
-          if (dp.length===3) {
-            var qDate = new Date(dp[2], dp[1]-1, dp[0]);
-            daysOpen = Math.round((new Date()-qDate)/86400000);
-          }
-        }
-        var expired = l.quote.expiry ? new Date() > new Date(l.quote.expiry) : false;
-        allQuotes.push({
-          client: c, logIdx: li, log: l,
-          val: parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0,
-          daysOpen: daysOpen,
-          expired: expired
-        });
-      }
-    });
-  });
-
-  // Sort by status priority then value
-  var statusOrder = {"Quote":0,"Confirmed":1,"Invoiced":2,"Paid":3,"Collected":4,"Lost":5,"Expired":6};
-  allQuotes.sort(function(a,b){
-    var so = (statusOrder[a.log.quote.status]||0) - (statusOrder[b.log.quote.status]||0);
-    return so !== 0 ? so : b.val - a.val;
-  });
-
-  // Header
-  var hdr = document.createElement("div");
-  hdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px";
-  var title = document.createElement("div"); title.className = "page-title"; title.textContent = "Quote Pipeline";
-
-  // Filter buttons
-  var filters = document.createElement("div"); filters.style.cssText = "display:flex;gap:5px;flex-wrap:wrap";
-  var activeFilter2 = "Quote";
-  ["All","Quote","Confirmed","Invoiced","Paid","Collected","Lost","Expired"].forEach(function(f) {
-    var btn = document.createElement("button");
-    btn.style.cssText = "padding:4px 12px;border-radius:20px;border:2px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;"+(f===activeFilter2?"background:var(--navy);color:#fff;border-color:var(--navy)":"background:var(--surface);color:var(--muted)");
-    btn.textContent = f;
-    btn.addEventListener("click", function() {
-      filters.querySelectorAll("button").forEach(function(b){b.style.background="var(--surface)";b.style.color="var(--muted)";b.style.borderColor="var(--border)";});
-      btn.style.background="var(--navy)";btn.style.color="#fff";btn.style.borderColor="var(--navy)";
-      activeFilter2=f; renderFilteredQuotes();
-    });
-    filters.appendChild(btn);
-  });
-  hdr.appendChild(title); hdr.appendChild(filters); qv.appendChild(hdr);
-
-  // KPI row
-  var openVal=0, confirmedVal=0, invoicedVal=0, paidVal=0, collectedVal=0;
-  var nowYearQP = new Date().getFullYear();
-  function qpCollectedYear(q){
-    var ds = q.log.quote.collectedDate || q.log.date;
-    if (!ds) return null;
-    var parts = ds.split("/");
-    return parts.length===3 ? parseInt(parts[2],10) : null;
-  }
-  allQuotes.forEach(function(q){
-    if(q.log.quote.status==="Quote")openVal+=q.val;
-    else if(q.log.quote.status==="Confirmed")confirmedVal+=q.val;
-    else if(q.log.quote.status==="Invoiced")invoicedVal+=q.val;
-    else if(q.log.quote.status==="Paid")paidVal+=q.val;
-    else if(q.log.quote.status==="Collected" && qpCollectedYear(q)===nowYearQP)collectedVal+=q.val;
-  });
-  var lostVal=0,expiredVal=0;
-  allQuotes.forEach(function(q){
-    if(q.log.quote.status==="Lost")lostVal+=q.val;
-    else if(q.log.quote.status==="Expired")expiredVal+=q.val;
-  });
-  var kpiRow = document.createElement("div");
-  kpiRow.style.cssText = "display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:8px";
-  [
-    {l:"Quoted",v:openVal,c:"kv-amber",s:allQuotes.filter(function(q){return q.log.quote.status==="Quote";}).length+" quotes"},
-    {l:"Confirmed",v:confirmedVal,c:"kv-green",s:allQuotes.filter(function(q){return q.log.quote.status==="Confirmed";}).length+" quotes"},
-    {l:"Paid (awaiting collection)",v:paidVal,c:"kv-green",s:allQuotes.filter(function(q){return q.log.quote.status==="Paid";}).length+" quotes"}
-  ].forEach(function(k){
-    var card=document.createElement("div");card.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:13px 15px";
-    var lbl=document.createElement("div");lbl.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px";lbl.textContent=k.l;
-    var val=document.createElement("div");val.style.cssText="font-size:20px;font-weight:700";val.className=k.c;val.textContent="£"+k.v.toLocaleString("en-GB");
-    var sub=document.createElement("div");sub.style.cssText="font-size:10px;color:var(--muted);margin-top:2px";sub.textContent=k.s;
-    card.appendChild(lbl);card.appendChild(val);card.appendChild(sub);kpiRow.appendChild(card);
-  });
-  qv.appendChild(kpiRow);
-  var kpiRow2 = document.createElement("div");
-  kpiRow2.style.cssText = "display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px";
-  [
-    {l:"Invoiced",v:invoicedVal,c:"kv-blue",s:allQuotes.filter(function(q){return q.log.quote.status==="Invoiced";}).length+" quotes"},
-    {l:"Collected ("+nowYearQP+")",v:collectedVal,c:"kv-blue",s:allQuotes.filter(function(q){return q.log.quote.status==="Collected" && qpCollectedYear(q)===nowYearQP;}).length+" quotes this year"},
-    {l:"Lost",v:lostVal,c:"kv-red",s:allQuotes.filter(function(q){return q.log.quote.status==="Lost";}).length+" quotes"},
-    {l:"Expired",v:expiredVal,c:"kv-amber",s:allQuotes.filter(function(q){return q.log.quote.status==="Expired";}).length+" quotes"}
-  ].forEach(function(k){
-    var card=document.createElement("div");card.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:13px 15px";
-    var lbl=document.createElement("div");lbl.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px";lbl.textContent=k.l;
-    var val=document.createElement("div");val.style.cssText="font-size:20px;font-weight:700";val.className=k.c;val.textContent="£"+k.v.toLocaleString("en-GB");
-    var sub=document.createElement("div");sub.style.cssText="font-size:10px;color:var(--muted);margin-top:2px";sub.textContent=k.s;
-    card.appendChild(lbl);card.appendChild(val);card.appendChild(sub);kpiRow2.appendChild(card);
-  });
-  qv.appendChild(kpiRow2);
-
-  // Quote list container
-  var listWrap = document.createElement("div"); listWrap.id = "quoteListWrap"; qv.appendChild(listWrap);
-
-  function renderFilteredQuotes() {
-    listWrap.innerHTML = "";
-    var filtered = activeFilter2==="All" ? allQuotes.filter(function(q){return q.log.quote.status!=="Lost"&&q.log.quote.status!=="Expired";}) : allQuotes.filter(function(q){return q.log.quote.status===activeFilter2;});
-    if (!filtered.length) {
-      var em=document.createElement("div");em.className="empty-state";em.innerHTML="<div>&#128178;</div><div class='es-title'>No "+activeFilter2.toLowerCase()+" quotes</div>";listWrap.appendChild(em);return;
-    }
-    var statusCols={"Quote":"background:var(--abg);color:var(--atxt)","Confirmed":"background:var(--gbg);color:var(--gtxt)","Invoiced":"background:var(--lbg);color:var(--ltxt)","Paid":"background:#d0f0d0;color:#1a5c1a","Collected":"background:#d0e8f5;color:#0a4a7a","Lost":"background:var(--rbg);color:var(--rtxt)","Expired":"background:var(--grbg);color:var(--grtxt)"};
-    filtered.forEach(function(q) {
-      var card=document.createElement("div");card.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:9px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;cursor:pointer";
-      card.addEventListener("click",(function(cid,li4){return function(){showQuoteEditForm(cid,li4);};})(q.client.id,q.logIdx));
-      // Left - client info
-      var left=document.createElement("div");left.style.flex="1";left.style.minWidth="180px";
-      var av=document.createElement("div");av.style.cssText="display:flex;align-items:center;gap:8px;margin-bottom:4px";
-      var avCircle=document.createElement("div");avCircle.style.cssText="width:28px;height:28px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0";avCircle.textContent=ini(q.client.name);
-      var cname=document.createElement("div");cname.style.cssText="font-weight:700;font-size:13px";cname.textContent=q.client.name;
-      av.appendChild(avCircle);av.appendChild(cname);
-      var isCounterSale = (q.log.quote.ref||"").indexOf("SALE-")===0;
-      if (isCounterSale) {
-        var saleTag=document.createElement("span");saleTag.style.cssText="font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:2px 7px;border-radius:20px;background:#1a5c1a;color:#fff";saleTag.textContent="\uD83D\uDED2 Counter Sale";
-        av.appendChild(saleTag);
-      }
-      var prod=document.createElement("div");prod.style.cssText="font-size:11px;color:var(--muted);margin-left:36px";prod.textContent=(q.log.quote.products||"")+(q.log.date?" · Quoted "+q.log.date:"")+(q.log.quote.paidDate?" · Paid "+q.log.quote.paidDate:"")+(q.log.quote.collectedDate?" · Collected "+q.log.quote.collectedDate:"");
-      left.appendChild(av);left.appendChild(prod);
-      if(q.log.quote.status==="Lost"&&q.log.quote.lostReason){
-        var lostReasonDiv=document.createElement("div");lostReasonDiv.style.cssText="font-size:11px;color:var(--rtxt);background:var(--rbg);border-radius:var(--rs);padding:3px 8px;margin-left:36px;margin-top:4px;display:inline-block";
-        lostReasonDiv.innerHTML="<strong>Lost reason:</strong> "+q.log.quote.lostReason;
-        left.appendChild(lostReasonDiv);
-      }
-      // Middle - value and days open
-      var mid=document.createElement("div");mid.style.cssText="text-align:right;min-width:100px";
-      var val2=document.createElement("div");val2.style.cssText="font-size:18px;font-weight:700;color:var(--gtxt)";val2.textContent=money(q.val);
-      var days=document.createElement("div");days.style.cssText="font-size:10px;color:"+(q.daysOpen>30?"var(--rtxt)":"var(--muted)");days.textContent=q.daysOpen+"d open"+(q.expired?" ⚠ EXPIRED":"");
-      mid.appendChild(val2);mid.appendChild(days);
-      // Right - status + expiry + update
-      var right=document.createElement("div");right.style.cssText="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0";
-      var pillRow=document.createElement("div");pillRow.style.cssText="display:flex;align-items:center;gap:6px";
-      var pill=document.createElement("span");pill.style.cssText="font-size:9px;font-weight:700;padding:2px 9px;border-radius:20px;"+(statusCols[q.log.quote.status]||"background:var(--lbg);color:var(--ltxt)");pill.textContent=q.log.quote.status;
-      var editBtn3=document.createElement("button");editBtn3.style.cssText="padding:2px 8px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:9px;font-weight:700;cursor:pointer";editBtn3.textContent="\u270E Edit";
-      editBtn3.addEventListener("click",(function(cid,li4){return function(e4){e4.stopPropagation();showQuoteEditForm(cid,li4);};})(q.client.id,q.logIdx));
-      var delBtn4=document.createElement("button");delBtn4.style.cssText="padding:2px 8px;background:var(--rbg);border:1px solid var(--rtxt);border-radius:var(--rs);color:var(--rtxt);font-size:9px;font-weight:700;cursor:pointer";delBtn4.textContent="\uD83D\uDDD1 Delete";
-      delBtn4.addEventListener("click",(function(cid,li5,clientName,quoteVal){return function(e5){
-        e5.stopPropagation();
-        if(confirm("Delete this quote (\u00a3"+quoteVal+") from "+clientName+"? This cannot be undone.")){
-          var c2=null;for(var i2=0;i2<clients.length;i2++){if(clients[i2].id===cid){c2=clients[i2];break;}}
-          if(c2&&c2.log){
-            c2.log.splice(li5,1);
-            saveC();
-            renderQuotesView();
-            toast("Quote deleted \u2713");
-          }
-        }
-      };})(q.client.id,q.logIdx,q.client.name,q.log.quote.value));
-      pillRow.appendChild(pill);pillRow.appendChild(editBtn3);pillRow.appendChild(delBtn4);
-      // Expiry
-      var expRow=document.createElement("div");expRow.style.cssText="display:flex;align-items:center;gap:5px";
-      var expLbl=document.createElement("span");expLbl.style.cssText="font-size:9px;color:var(--muted)";expLbl.textContent="Expires:";
-      var expInp=document.createElement("input");expInp.type="date";expInp.value=q.log.quote.expiry||"";expInp.style.cssText="padding:2px 5px;border:2px solid var(--border);border-radius:var(--rs);font-size:10px;font-family:inherit;outline:none;color:var(--text)";
-      expInp.addEventListener("click",function(e){e.stopPropagation();});
-      expInp.addEventListener("change",(function(client2,li2){return function(e2){e2.stopPropagation();client2.log[li2].quote.expiry=this.value;saveC();toast("Expiry set ✓");};})(q.client,q.logIdx));
-      var exp4wkBtn2=document.createElement("button");exp4wkBtn2.type="button";exp4wkBtn2.textContent="+4wk";exp4wkBtn2.style.cssText="padding:2px 7px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:9px;font-weight:700;cursor:pointer";
-      exp4wkBtn2.addEventListener("click",(function(client4,li5,inpEl){return function(e5){
-        e5.stopPropagation();
-        var d=new Date(); d.setDate(d.getDate()+28);
-        var dateStr=d.toISOString().split("T")[0];
-        inpEl.value=dateStr;
-        client4.log[li5].quote.expiry=dateStr;
-        saveC();
-        toast("Expiry set \u2713");
-      };})(q.client,q.logIdx,expInp));
-      expRow.appendChild(expLbl);expRow.appendChild(expInp);expRow.appendChild(exp4wkBtn2);
-      // Status update
-      var statSel=document.createElement("select");statSel.style.cssText="padding:3px 7px;border:2px solid var(--border);border-radius:var(--rs);font-size:10px;background:#fff;cursor:pointer;outline:none";
-      ["Quote","Confirmed","Invoiced","Paid","Collected","Lost"].forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2;if(q.log.quote.status===s2)opt.selected=true;statSel.appendChild(opt);});
-      statSel.addEventListener("click",function(e){e.stopPropagation();});
-      statSel.addEventListener("change",(function(client3,li3){return function(e3){
-        e3.stopPropagation();
-        var newStatus = this.value;
-        if (newStatus === "Lost" && client3.log[li3].quote.status !== "Lost") {
-          var reasonOverlay=document.createElement("div");reasonOverlay.style.cssText="position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px";
-          var reasonBox=document.createElement("div");reasonBox.style.cssText="background:var(--surface);border-radius:var(--r);width:100%;max-width:400px;border-top:3px solid var(--rtxt);padding:20px";
-          var reasonTitle=document.createElement("div");reasonTitle.style.cssText="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--rtxt)";reasonTitle.textContent="Why was this quote lost?";
-          var reasonSel=document.createElement("select");reasonSel.style.cssText="width:100%;padding:8px;border:2px solid var(--border);border-radius:var(--rs);font-size:13px;margin-bottom:10px;font-family:inherit";
-          ["Price too high","Went with competitor","No response","Job cancelled","Timing/not ready","Budget cut","Went direct to supplier","Other"].forEach(function(r){var o=document.createElement("option");o.value=r;o.textContent=r;reasonSel.appendChild(o);});
-          var reasonNotes=document.createElement("input");reasonNotes.placeholder="Additional notes (optional)";reasonNotes.style.cssText="width:100%;padding:8px;border:2px solid var(--border);border-radius:var(--rs);font-size:13px;margin-bottom:14px;font-family:inherit";
-          var reasonBtns=document.createElement("div");reasonBtns.style.cssText="display:flex;gap:8px;justify-content:flex-end";
-          var reasonCancel=document.createElement("button");reasonCancel.textContent="Cancel";reasonCancel.style.cssText="padding:7px 16px;border:2px solid var(--border);border-radius:var(--rs);background:none;cursor:pointer;font-size:12px";
-          var reasonConfirm=document.createElement("button");reasonConfirm.textContent="Mark Lost";reasonConfirm.style.cssText="padding:7px 16px;background:var(--rtxt);border:none;border-radius:var(--rs);color:#fff;cursor:pointer;font-size:12px;font-weight:700";
-          reasonCancel.addEventListener("click",function(){document.body.removeChild(reasonOverlay);renderQuotesView();});
-          reasonConfirm.addEventListener("click",function(){
-            client3.log[li3].quote.lostReason=reasonSel.value+(reasonNotes.value?" - "+reasonNotes.value:"");
-            client3.log[li3].quote.status="Lost";
-            client3.log[li3].quote.paidDate="";
-            client3.log[li3].quote.collectedDate="";
-            saveC();
-            document.body.removeChild(reasonOverlay);
-            renderQuotesView();
-            toast("Quote marked lost");
-          });
-          reasonBtns.appendChild(reasonCancel);reasonBtns.appendChild(reasonConfirm);
-          reasonBox.appendChild(reasonTitle);reasonBox.appendChild(reasonSel);reasonBox.appendChild(reasonNotes);reasonBox.appendChild(reasonBtns);
-          reasonOverlay.appendChild(reasonBox);document.body.appendChild(reasonOverlay);
-          return;
-        }
-        if (newStatus === "Paid" && client3.log[li3].quote.status !== "Paid") {
-          var today9 = new Date();
-          var defaultPaid = String(today9.getDate()).padStart(2,"0")+"/"+String(today9.getMonth()+1).padStart(2,"0")+"/"+today9.getFullYear();
-          var enteredDate = prompt("Date paid (DD/MM/YYYY):", defaultPaid);
-          if (enteredDate === null) { renderQuotesView(); return; } // cancelled, revert dropdown
-          client3.log[li3].quote.paidDate = enteredDate.trim() || defaultPaid;
-        }
-        if (newStatus === "Collected" && client3.log[li3].quote.status !== "Collected") {
-          var today12 = new Date();
-          var defaultCollected2 = String(today12.getDate()).padStart(2,"0")+"/"+String(today12.getMonth()+1).padStart(2,"0")+"/"+today12.getFullYear();
-          var enteredCollected2 = prompt("Date collected (DD/MM/YYYY):", defaultCollected2);
-          if (enteredCollected2 === null) { renderQuotesView(); return; }
-          client3.log[li3].quote.collectedDate = enteredCollected2.trim() || defaultCollected2;
-        }
-        client3.log[li3].quote.status = newStatus;
-        saveC();
-        renderQuotesView();
-        toast("Quote updated \u2713");
-      };})(q.client,q.logIdx));
-      right.appendChild(pillRow);right.appendChild(expRow);right.appendChild(statSel);
-      card.appendChild(left);card.appendChild(mid);card.appendChild(right);listWrap.appendChild(card);
+function renderQuotesView(){
+  var qv=document.getElementById("quotesView");qv.innerHTML="",rows=[];
+  clients.forEach(function(c){(c.log||[]).forEach(function(l,idx){if(isQuoteEntry(l))rows.push({client:c,log:l,idx:idx,val:recordValue(l)});});});
+  rows.sort(function(a,b){var o={"Quote":0,"Follow-up":1,"Lost":2,"Expired":3},d=(o[a.log.quote.status]||0)-(o[b.log.quote.status]||0);return d||b.val-a.val;});
+  var hdr=document.createElement("div");hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:16px";
+  var title=document.createElement("div");title.className="page-title";title.textContent="Quote Log";
+  var add=document.createElement("button");add.style.cssText="padding:7px 16px;background:var(--navy);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer";add.textContent="+ New quote";add.onclick=showQuickQuote;hdr.appendChild(title);hdr.appendChild(add);qv.appendChild(hdr);
+  var open=rows.filter(function(x){return isOpenQuoteEntry(x.log);}),past=rows.filter(function(x){return isPastQuoteEntry(x.log);}),openVal=open.reduce(function(s,x){return s+x.val;},0);
+  var kg=document.createElement("div");kg.className="kpi-grid";[["Open quotes",open.length,"kv-amber"],["Open quote value","£"+openVal.toLocaleString("en-GB"),"kv-blue"],["Follow-up",open.filter(function(x){return x.log.quote.status==="Follow-up";}).length,"kv-amber"],["Lost / expired",past.length,"kv-red"]].forEach(function(x){var c=document.createElement("div");c.className="kpi";c.innerHTML="<div class='kpi-lbl'>"+x[0]+"</div><div class='kpi-val "+x[2]+"'>"+x[1]+"</div>";kg.appendChild(c);});qv.appendChild(kg);
+  var filter="Open",tabs=document.createElement("div"),list=document.createElement("div");tabs.style.cssText="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap";
+  function draw(){
+    list.innerHTML="";Array.from(tabs.children).forEach(function(b){var on=b.dataset.f===filter;b.className="fb"+(on?" on":"");});
+    var use=filter==="Open"?open:filter==="Past"?past:rows.filter(function(x){return x.log.quote.status===filter;});
+    if(!use.length){list.innerHTML="<div class='empty-state'><div>💬</div><div class='es-title'>No "+filter.toLowerCase()+" quotes</div></div>";return;}
+    use.forEach(function(x){var r=x.log.quote,card=document.createElement("div");card.className="log-entry";card.style.cssText+="display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center";
+      var left=document.createElement("div");left.innerHTML="<div style='font-weight:700'>"+escHtml(x.client.name)+" · "+escHtml(r.ref||"No ref")+"</div><div style='font-size:10px;color:var(--muted);margin-top:3px'>"+escHtml(r.products||"")+"</div><div style='font-size:9px;color:var(--muted);margin-top:3px'>Logged "+escHtml(x.log.date||"")+(r.expiry?" · Expires "+escHtml(r.expiry):"")+"</div>";
+      var val=document.createElement("div");val.style.cssText="font-size:17px;font-weight:700;color:var(--gtxt)";val.textContent=money(r.value);
+      var right=document.createElement("div");right.style.cssText="display:flex;flex-direction:column;gap:5px;align-items:flex-end";
+      var sel=document.createElement("select");sel.style.cssText="padding:5px 8px;border:2px solid var(--border);border-radius:var(--rs);font-size:10px";["Quote","Follow-up","Ordered","Paid","Collected","Lost","Expired"].forEach(function(s){var o=document.createElement("option");o.value=s;o.textContent=s;if(r.status===s)o.selected=true;sel.appendChild(o);});sel.onchange=(function(cid,idx){return function(){setQuoteOrSaleStatus(cid,idx,this.value,function(){renderQuotesView();});};})(x.client.id,x.idx);
+      var cb=document.createElement("button");cb.className="fb";cb.textContent="Client";cb.onclick=(function(cid){return function(){openC(cid);};})(x.client.id);right.appendChild(sel);right.appendChild(cb);card.appendChild(left);card.appendChild(val);card.appendChild(right);list.appendChild(card);
     });
   }
-  renderFilteredQuotes();
-
-  var bk=document.createElement("button");bk.className="bkl";bk.textContent="← Back to dashboard";bk.addEventListener("click",showDash);qv.appendChild(bk);
+  ["Open","Quote","Follow-up","Past","Lost","Expired"].forEach(function(f){var b=document.createElement("button");b.dataset.f=f;b.className="fb";b.textContent=f;b.onclick=function(){filter=f;draw();};tabs.appendChild(b);});qv.appendChild(tabs);qv.appendChild(list);draw();
+  var info=document.createElement("div");info.style.cssText="margin-top:14px;background:#eef4ff;border:1px solid #b8caf5;border-radius:var(--rs);padding:10px 12px;font-size:10px;color:var(--navy)";info.textContent="Ordered, Paid and Collected leave the Quote Log automatically and appear in Sales / Order History. Lost and Expired remain as past quotes.";qv.appendChild(info);
 }
 
 
@@ -5562,9 +5029,7 @@ function showWebsites() {
 
 var TOOLS_LIST = [
   { name: "Margin Calculator", desc: "Nett price + margin % \u2192 customer price ex/inc VAT, plus box pricing.", icon: "\uD83E\uDDEE", native: true, renderFn: renderMarginCalcNative },
-  { name: "Measurement Converter", desc: "Feet & inches \u2194 metres/yards/cm, plus room area in m\u00b2, ft\u00b2 and yd\u00b2.", icon: "\uD83D\uDCD0", native: true, renderFn: renderMeasureConverterNative },
-  { name: "Margin Cutter", desc: "Work out the discount needed to hit a target margin, inc/ex VAT.", icon: "\uD83D\uDCB0", url: "margin-cutter.html" },
-  { name: "Roll Planner", desc: "Carpet area & roll-width planner for rectangles, L-shapes, stairs and chimney breasts.", icon: "\uD83D\uDCD0", url: "roll-planner.html" }
+  { name: "Margin Cutter", desc: "Work out the discount needed to hit a target margin, inc/ex VAT.", icon: "\uD83D\uDCB0", url: "margin-cutter.html" }
 ];
 
 function renderToolsView() {
@@ -5769,13 +5234,51 @@ function renderMarginCalcNative(container) {
   m2Box.addEventListener("input", updateBox);
 }
 
-// Built-in Measurement Converter — feet & inches <-> metres/yards/cm, live,
-// plus a room-area calculator giving m² / ft² / yd² for ordering flooring.
 // Footfall Pattern Analyzer — enter weekly footfall counts by category (same
 // categories as the Footfall Tracker spreadsheet) and see category share,
 // week-on-week trend, and which categories tend to move together.
-var FOOTFALL_CATS = ["Best @ Floorstore","Existing Customer Picked Up/Paid","Existing Customer Query","Floorstore Customer Pickup","New Walk In - Query","New Walk In - Purchase","House Build Fitters"];
-var FOOTFALL_CATS_SHORT = ["Best @ Floorstore","Existing \u2013 Picked Up","Existing \u2013 Query","Floorstore Pickup","New Walk In \u2013 Query","New Walk In \u2013 Purchase","House Build Fitters"];
+var FOOTFALL_MAIN_CATS = ["Existing Customer Picked Up/Paid","Existing Customer Query","New Walk In - Query","New Walk In - Purchase","House Build Fitters"];
+var FOOTFALL_VISITOR_CATS = ["Best at Flooring","Floorstore Customer Pickup","Sales Rep Visit","FSM / Facilities Visit","Management Visitor"];
+var FOOTFALL_CATS = FOOTFALL_MAIN_CATS.concat(FOOTFALL_VISITOR_CATS);
+var FOOTFALL_CATS_SHORT = ["Existing – Picked Up","Existing – Query","New Walk In – Query","New Walk In – Purchase","House Build Fitters","Best at Flooring","Floorstore Pickup","Sales Rep","FSM / Facilities","Management"];
+var ffLastQuickAdd = null;
+
+function migrateFootfallCategoryNames(){
+  var changed=false;
+  footfallEntries.forEach(function(e){
+    if(!e.counts)return;
+    if(Object.prototype.hasOwnProperty.call(e.counts,"Best @ Floorstore")){
+      e.counts["Best at Flooring"]=(parseFloat(e.counts["Best at Flooring"])||0)+(parseFloat(e.counts["Best @ Floorstore"])||0);
+      delete e.counts["Best @ Floorstore"];
+      changed=true;
+    }
+  });
+  if(changed) saveFootfallEntries();
+}
+
+function quickAddFootfall(dateISO, category){
+  var id = "FF-" + dateISO;
+  var existing = footfallEntries.find(function(e){ return e.id===id; });
+  var previous = existing && existing.counts ? (existing.counts[category]||0) : 0;
+  ffLastQuickAdd = {date:dateISO, category:category, previous:previous};
+  bumpFootfallCategory(dateISO, category, 1);
+}
+
+function undoLastFootfallQuickAdd(){
+  if(!ffLastQuickAdd){ toast("Nothing to undo"); return; }
+  var a = ffLastQuickAdd;
+  var id = "FF-" + a.date;
+  var idx = footfallEntries.findIndex(function(e){ return e.id===id; });
+  if(idx<0){ ffLastQuickAdd=null; toast("Nothing to undo"); return; }
+  if(!footfallEntries[idx].counts) footfallEntries[idx].counts = {};
+  footfallEntries[idx].counts[a.category] = a.previous;
+  saveFootfallEntries();
+  ffLastQuickAdd = null;
+  toast("Last footfall add undone ✓");
+  var fv=document.getElementById("footfallView");
+  if(fv && fv.style.display==="block") renderFootfallView();
+}
+
 
 function pearsonCorr(x, y) {
   var n = x.length;
@@ -5868,7 +5371,7 @@ function showFootfallWeekSnapshot(weekKey) {
   var tblWrap = document.createElement("div"); tblWrap.style.cssText = "overflow-x:auto";
   var tbl = document.createElement("table"); tbl.style.cssText = "border-collapse:collapse;width:100%;font-size:10.5px";
   var thead = document.createElement("tr");
-  ["Date","Day"].concat(["Best@FS","Exist\u2013PU","Exist\u2013Q","FS\u2013PU","New\u2013Q","New\u2013P","HB Fit"]).concat(["Total","Weather"]).forEach(function(h,hi){
+  ["Date","Day"].concat(["Best at Flooring","Exist\u2013PU","Exist\u2013Q","FS\u2013PU","New\u2013Q","New\u2013P","HB Fit"]).concat(["Total","Weather"]).forEach(function(h,hi){
     var th = document.createElement("th"); th.style.cssText = "padding:5px 6px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.2px;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap"; th.textContent = h;
     if (hi>=2 && hi<9) th.title = FOOTFALL_CATS[hi-2];
     thead.appendChild(th);
@@ -5908,147 +5411,6 @@ function showFootfallWeekSnapshot(weekKey) {
   overlay.appendChild(box); document.body.appendChild(overlay);
 
   if (grandTotal>0) setTimeout(function(){ mkFootfallPieChart("ffWeekPieCh", FOOTFALL_CATS, catTotals); }, 60);
-}
-
-function renderMeasureConverterNative(container) {
-  var wrap = document.createElement("div");
-  wrap.style.cssText = "max-width:560px";
-
-  function mkCard(titleTxt) {
-    var card = document.createElement("div");
-    card.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
-    var h = document.createElement("div");
-    h.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)";
-    h.textContent = titleTxt;
-    card.appendChild(h);
-    wrap.appendChild(card);
-    return card;
-  }
-  function mkNumBox(id, placeholder, w) {
-    var inp = document.createElement("input"); inp.id = id; inp.type = "number"; inp.step = "any"; inp.placeholder = placeholder||"";
-    inp.style.cssText = "border:2px solid var(--border);border-radius:var(--rs);width:"+(w||"84px")+";box-sizing:border-box;padding:7px 8px;font-size:14px;font-family:inherit;outline:none;background:#fff";
-    return inp;
-  }
-  function mkFd(lbl, el) {
-    var w = document.createElement("div"); w.style.cssText = "display:flex;flex-direction:column;gap:4px";
-    var l = document.createElement("label"); l.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;white-space:nowrap"; l.textContent = lbl;
-    w.appendChild(l); w.appendChild(el);
-    return w;
-  }
-  function mkStat(lblTxt) {
-    var s = document.createElement("div"); s.style.cssText = "background:var(--alt);border-radius:var(--rs);padding:8px 10px;flex:1;min-width:100px";
-    var l = document.createElement("div"); l.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:3px;white-space:nowrap"; l.textContent = lblTxt;
-    var v = document.createElement("div"); v.style.cssText = "font-size:15px;font-weight:700;color:var(--navy)"; v.textContent = "\u2014";
-    s.appendChild(l); s.appendChild(v);
-    return { el: s, valEl: v };
-  }
-
-  // ── Card 1: Length converter ──────────────────────────────────
-  var c1 = mkCard("Length converter — type into any box");
-  var row1 = document.createElement("div"); row1.style.cssText = "display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end";
-  var feetInp = mkNumBox("mv_feet", "0", "70px");
-  var inchInp = mkNumBox("mv_inch", "0", "70px");
-  var metresInp = mkNumBox("mv_metres", "0", "90px");
-  var yardsInp = mkNumBox("mv_yards", "0", "90px");
-  var cmInp = mkNumBox("mv_cm", "0", "90px");
-  row1.appendChild(mkFd("Feet", feetInp));
-  row1.appendChild(mkFd("Inches", inchInp));
-  row1.appendChild(mkFd("Metres", metresInp));
-  row1.appendChild(mkFd("Yards", yardsInp));
-  row1.appendChild(mkFd("Centimetres", cmInp));
-  c1.appendChild(row1);
-
-  var FT_TO_M = 0.3048, IN_TO_M = 0.0254, YD_TO_M = 0.9144;
-  function pushLength(m, skip) {
-    if (skip !== "fi") {
-      var totalIn = m / IN_TO_M;
-      var ft = Math.floor(totalIn / 12 + 1e-9);
-      var inch = Math.round((totalIn - ft * 12) * 100) / 100;
-      feetInp.value = ft; inchInp.value = inch;
-    }
-    if (skip !== "m") metresInp.value = m.toFixed(3);
-    if (skip !== "y") yardsInp.value = (m / YD_TO_M).toFixed(3);
-    if (skip !== "cm") cmInp.value = (m * 100).toFixed(1);
-  }
-  feetInp.addEventListener("input", function(){ pushLength(((parseFloat(feetInp.value)||0)*12 + (parseFloat(inchInp.value)||0)) * IN_TO_M, "fi"); });
-  inchInp.addEventListener("input", function(){ pushLength(((parseFloat(feetInp.value)||0)*12 + (parseFloat(inchInp.value)||0)) * IN_TO_M, "fi"); });
-  metresInp.addEventListener("input", function(){ pushLength(parseFloat(metresInp.value)||0, "m"); });
-  yardsInp.addEventListener("input", function(){ pushLength((parseFloat(yardsInp.value)||0) * YD_TO_M, "y"); });
-  cmInp.addEventListener("input", function(){ pushLength((parseFloat(cmInp.value)||0) / 100, "cm"); });
-
-  // ── Card 2: Room area calculator ────────────────────────────────
-  var c2 = mkCard("Room area — length \u00d7 width");
-  var modeRow = document.createElement("div"); modeRow.style.cssText = "display:flex;gap:8px;margin-bottom:12px";
-  var modeFi = document.createElement("button"); modeFi.type = "button"; modeFi.textContent = "Feet & inches";
-  var modeM = document.createElement("button"); modeM.type = "button"; modeM.textContent = "Metres";
-  [modeFi, modeM].forEach(function(b){ b.style.cssText = "padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--border);background:#fff;color:var(--muted)"; });
-  modeRow.appendChild(modeFi); modeRow.appendChild(modeM);
-  c2.appendChild(modeRow);
-
-  var dimsRow = document.createElement("div"); dimsRow.style.cssText = "display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:12px";
-  c2.appendChild(dimsRow);
-
-  var resultsRow = document.createElement("div"); resultsRow.style.cssText = "display:flex;flex-wrap:wrap;gap:10px";
-  var statM2 = mkStat("Area (m\u00b2)"), statFt2 = mkStat("Area (ft\u00b2)"), statYd2 = mkStat("Area (yd\u00b2)");
-  resultsRow.appendChild(statM2.el); resultsRow.appendChild(statFt2.el); resultsRow.appendChild(statYd2.el);
-  c2.appendChild(resultsRow);
-
-  var wasteRow = document.createElement("div"); wasteRow.style.cssText = "display:flex;align-items:flex-end;gap:10px;margin-top:12px";
-  var wasteInp = mkNumBox("mv_waste", "10", "70px");
-  wasteRow.appendChild(mkFd("+ Waste %", wasteInp));
-  var statGross = mkStat("Gross area (m\u00b2, inc. waste)");
-  wasteRow.appendChild(statGross.el);
-  c2.appendChild(wasteRow);
-
-  var areaMode = "fi";
-  function setAreaMode(m) {
-    areaMode = m;
-    modeFi.style.cssText += (m==="fi" ? ";background:var(--navy);color:#fff;border-color:var(--navy)" : ";background:#fff;color:var(--muted);border-color:var(--border)");
-    modeM.style.cssText += (m==="m" ? ";background:var(--navy);color:#fff;border-color:var(--navy)" : ";background:#fff;color:var(--muted);border-color:var(--border)");
-    dimsRow.innerHTML = "";
-    if (m === "fi") {
-      var lf = mkNumBox("mv_lf","0","60px"), li = mkNumBox("mv_li","0","60px");
-      var wf = mkNumBox("mv_wf","0","60px"), wi = mkNumBox("mv_wi","0","60px");
-      dimsRow.appendChild(mkFd("Length ft", lf)); dimsRow.appendChild(mkFd("in", li));
-      dimsRow.appendChild(mkFd("Width ft", wf)); dimsRow.appendChild(mkFd("in", wi));
-      [lf,li,wf,wi].forEach(function(inp){ inp.addEventListener("input", recalcArea); });
-    } else {
-      var lm = mkNumBox("mv_lm","0","90px"), wm = mkNumBox("mv_wm","0","90px");
-      dimsRow.appendChild(mkFd("Length (m)", lm)); dimsRow.appendChild(mkFd("Width (m)", wm));
-      [lm,wm].forEach(function(inp){ inp.addEventListener("input", recalcArea); });
-    }
-    recalcArea();
-  }
-  function recalcArea() {
-    var lenM, widM;
-    if (areaMode === "fi") {
-      var lf = parseFloat(document.getElementById("mv_lf") && document.getElementById("mv_lf").value) || 0;
-      var li = parseFloat(document.getElementById("mv_li") && document.getElementById("mv_li").value) || 0;
-      var wf = parseFloat(document.getElementById("mv_wf") && document.getElementById("mv_wf").value) || 0;
-      var wi = parseFloat(document.getElementById("mv_wi") && document.getElementById("mv_wi").value) || 0;
-      lenM = (lf*12 + li) * IN_TO_M;
-      widM = (wf*12 + wi) * IN_TO_M;
-    } else {
-      lenM = parseFloat(document.getElementById("mv_lm") && document.getElementById("mv_lm").value) || 0;
-      widM = parseFloat(document.getElementById("mv_wm") && document.getElementById("mv_wm").value) || 0;
-    }
-    var m2 = lenM * widM;
-    if (m2 > 0) {
-      statM2.valEl.textContent = m2.toFixed(2);
-      statFt2.valEl.textContent = (m2 / (FT_TO_M*FT_TO_M)).toFixed(2);
-      statYd2.valEl.textContent = (m2 / (YD_TO_M*YD_TO_M)).toFixed(2);
-      var waste = parseFloat(wasteInp.value) || 0;
-      statGross.valEl.textContent = (m2 * (1 + waste/100)).toFixed(2);
-    } else {
-      statM2.valEl.textContent = statFt2.valEl.textContent = statYd2.valEl.textContent = statGross.valEl.textContent = "\u2014";
-    }
-  }
-  wasteInp.addEventListener("input", recalcArea);
-  modeFi.addEventListener("click", function(){ setAreaMode("fi"); });
-  modeM.addEventListener("click", function(){ setAreaMode("m"); });
-  setAreaMode("fi");
-
-  container.appendChild(wrap);
 }
 
 function renderWebsitesView() {
@@ -6297,6 +5659,29 @@ function ffTodayISO() {
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
 
+// A logged sale bumps today's footfall automatically: Cash Sale is the one client that
+// counts as a walk-in purchase; every other client counts as an existing customer pickup.
+function isCashSaleClient(c) {
+  return !!(c && c.name && c.name.trim().toUpperCase() === "CASH SALE");
+}
+function bumpFootfallCategory(dateISO, category, amount) {
+  amount = amount || 1;
+  var id = "FF-" + dateISO;
+  var idx = footfallEntries.findIndex(function(e){ return e.id === id; });
+  if (idx > -1) {
+    if (!footfallEntries[idx].counts) footfallEntries[idx].counts = {};
+    footfallEntries[idx].counts[category] = (footfallEntries[idx].counts[category] || 0) + amount;
+  } else {
+    var counts = {};
+    FOOTFALL_CATS.forEach(function(cat){ counts[cat] = 0; });
+    counts[category] = amount;
+    footfallEntries.push({ id: id, date: dateISO, counts: counts, weather: "", temp: null });
+  }
+  saveFootfallEntries();
+  var fv = document.getElementById("footfallView");
+  if (fv && fv.style.display === "block") renderFootfallView();
+}
+
 function showFootfall() { activeId=null; renderList(); showView("footfall"); renderFootfallView(); }
 
 function renderFootfallView() {
@@ -6326,7 +5711,7 @@ function renderFootfallView() {
   }
 
   // ── Entry form ──
-  var c1 = mkCard(ffEditingId ? "Editing entry" : "Log today's footfall", "no-print");
+  var c1 = mkCard(ffEditingId ? "Editing footfall day" : "Log footfall", "no-print");
   var formRow = document.createElement("div"); formRow.style.cssText = "display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px";
 
   function mkFld(labelTxt, inputEl) {
@@ -6341,14 +5726,6 @@ function renderFootfallView() {
   dateInp.style.cssText = "padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none";
   mkFld("Date", dateInp);
 
-  var catInputs = {};
-  FOOTFALL_CATS.forEach(function(cat, ci){
-    var inp = document.createElement("input"); inp.type = "number"; inp.min = "0"; inp.placeholder = "0";
-    inp.style.cssText = "width:70px;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none";
-    catInputs[cat] = inp;
-    mkFld(FOOTFALL_CATS_SHORT[ci], inp);
-  });
-
   var weatherSel = document.createElement("select"); weatherSel.style.cssText = "padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none";
   var optBlank = document.createElement("option"); optBlank.value=""; optBlank.textContent="\u2014"; weatherSel.appendChild(optBlank);
   FOOTFALL_WEATHER_OPTS.forEach(function(w){ var o=document.createElement("option"); o.value=w; o.textContent=w; weatherSel.appendChild(o); });
@@ -6359,7 +5736,7 @@ function renderFootfallView() {
   mkFld("Temp \u00b0C", tempInp);
 
   var saveEntryBtn = document.createElement("button"); saveEntryBtn.style.cssText = "padding:8px 18px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer;height:34px";
-  saveEntryBtn.textContent = ffEditingId ? "Update entry" : "Save entry";
+  saveEntryBtn.textContent = "Save day details";
   formRow.appendChild(saveEntryBtn);
 
   if (ffEditingId) {
@@ -6370,12 +5747,74 @@ function renderFootfallView() {
   }
 
   c1.appendChild(formRow);
-  var formHint = document.createElement("div"); formHint.style.cssText = "font-size:10px;color:var(--muted)"; formHint.textContent = "Picking a date that already has an entry will load it here for editing instead of creating a duplicate.";
+
+  // Quick add customer footfall — one click = +1 for the selected date.
+  var quickBox=document.createElement("div");
+  quickBox.style.cssText="margin-top:12px;padding-top:11px;border-top:1px solid var(--border)";
+  var quickTop=document.createElement("div");
+  quickTop.style.cssText="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:7px";
+  var quickTitle=document.createElement("div");
+  quickTitle.style.cssText="font-size:12px;font-weight:800;text-transform:uppercase;color:var(--navy);letter-spacing:.5px";
+  quickTitle.textContent="Customer footfall — tap once per visitor";
+  var undoBtn=document.createElement("button");
+  undoBtn.type="button";
+  undoBtn.className="ff-undo";
+  undoBtn.textContent="↶ Undo last add";
+  undoBtn.addEventListener("click",undoLastFootfallQuickAdd);
+  quickTop.appendChild(quickTitle);quickTop.appendChild(undoBtn);quickBox.appendChild(quickTop);
+
+  var quickBtns=document.createElement("div");
+  quickBtns.style.cssText="display:flex;gap:10px;flex-wrap:wrap;width:100%";
+  FOOTFALL_MAIN_CATS.forEach(function(cat,ci){
+    var b=document.createElement("button");
+    b.type="button";
+    b.className="ff-quick-main";
+    b.textContent="+ "+FOOTFALL_CATS_SHORT[ci];
+    b.addEventListener("click",function(){
+      var dateVal=dateInp.value||ffTodayISO();
+      quickAddFootfall(dateVal,cat);
+      toast(cat+" added ✓");
+      renderFootfallView();
+    });
+    quickBtns.appendChild(b);
+  });
+  quickBox.appendChild(quickBtns);
+  c1.appendChild(quickBox);
+
+  // Operational / non-customer visitors — quick +1 buttons under the main footfall list.
+  var visitorBox=document.createElement("div");
+  visitorBox.style.cssText="margin-top:12px;padding-top:11px;border-top:1px solid var(--border)";
+  var visitorTitle=document.createElement("div");
+  visitorTitle.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.5px;margin-bottom:7px";
+  visitorTitle.textContent="Other visitors / collections — tap once per visitor";
+  visitorBox.appendChild(visitorTitle);
+  var visitorBtns=document.createElement("div");
+  visitorBtns.style.cssText="display:flex;gap:7px;flex-wrap:wrap";
+  FOOTFALL_VISITOR_CATS.forEach(function(cat){
+    var b=document.createElement("button");
+    b.type="button";
+    b.className="ff-quick-other";
+    b.textContent="+ "+cat;
+    b.addEventListener("click",function(){
+      var dateVal=dateInp.value||ffTodayISO();
+      quickAddFootfall(dateVal,cat);
+      toast(cat+" added ✓");
+      renderFootfallView();
+    });
+    visitorBtns.appendChild(b);
+  });
+  visitorBox.appendChild(visitorBtns);
+  var visitorHint=document.createElement("div");
+  visitorHint.style.cssText="font-size:9px;color:var(--muted);margin-top:6px";
+  visitorHint.textContent="These are recorded separately from customer visits, so they won't be mistaken for sales/customer footfall.";
+  visitorBox.appendChild(visitorHint);
+  c1.appendChild(visitorBox);
+
+  var formHint = document.createElement("div"); formHint.style.cssText = "font-size:10px;color:var(--muted);margin-top:9px"; formHint.textContent = "Choose the date, then tap a button for each visitor. Use Undo if you tap the wrong one. Weather and temperature are optional.";
   c1.appendChild(formHint);
 
   function loadEntryIntoForm(entry) {
     dateInp.value = entry.date;
-    FOOTFALL_CATS.forEach(function(cat){ catInputs[cat].value = entry.counts && entry.counts[cat] ? entry.counts[cat] : ""; });
     weatherSel.value = entry.weather || "";
     tempInp.value = (entry.temp===undefined||entry.temp===null) ? "" : entry.temp;
   }
@@ -6393,10 +5832,11 @@ function renderFootfallView() {
   saveEntryBtn.addEventListener("click", function(){
     var dateVal = dateInp.value;
     if (!dateVal) { toast("Pick a date first"); return; }
-    var counts = {};
-    FOOTFALL_CATS.forEach(function(cat){ counts[cat] = parseFloat(catInputs[cat].value)||0; });
     var id = ffEditingId || ("FF-"+dateVal);
     var existingIdx = footfallEntries.findIndex(function(e){ return e.id===id; });
+    var oldCounts = existingIdx>-1 && footfallEntries[existingIdx].counts ? footfallEntries[existingIdx].counts : {};
+    var counts = {};
+    FOOTFALL_CATS.forEach(function(cat){ counts[cat] = parseFloat(oldCounts[cat])||0; });
     var entry = { id:id, date:dateVal, counts:counts, weather:weatherSel.value||"", temp: tempInp.value===""?null:parseFloat(tempInp.value) };
     if (existingIdx>-1) footfallEntries[existingIdx] = entry; else footfallEntries.push(entry);
     saveFootfallEntries();
@@ -6408,7 +5848,7 @@ function renderFootfallView() {
   // ── Recent entries ──
   var c2 = mkCard("Recent entries");
   var sorted = footfallEntries.slice().sort(function(a,b){ return b.date.localeCompare(a.date); });
-  var FF_TBL_ABBR = ["Best@FS","Exist\u2013PU","Exist\u2013Q","FS\u2013PU","New\u2013Q","New\u2013P","HB Fit"];
+  var FF_TBL_ABBR = ["Exist–PU","Exist–Q","New–Q","New–P","HB Fit","Best at Flooring","FS Pickup","Sales Rep","FSM","Mgmt"];
   if (!sorted.length) {
     var noEntries = document.createElement("div"); noEntries.style.cssText = "font-size:12px;color:var(--muted)"; noEntries.textContent = "No footfall logged yet \u2014 use the form above to add your first day.";
     c2.appendChild(noEntries);
@@ -7993,15 +7433,8 @@ function parseUKDate(s){
   return isNaN(d.getTime())?null:d;
 }
 function calcAnnualSpend(c){
-  var cutoff=new Date(); cutoff.setFullYear(cutoff.getFullYear()-1);
-  var t=0;
-  (c.log||[]).forEach(function(l){
-    if(l.quote&&l.quote.status==="Collected"){
-      var useDate=l.quote.collectedDate||l.date;
-      var dt=parseUKDate(useDate);
-      if(!dt||dt>=cutoff){ t+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0); }
-    }
-  });
+  var cutoff=new Date();cutoff.setFullYear(cutoff.getFullYear()-1);var t=0;
+  (c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length===3){var dt=new Date(parseInt(dp[2]),parseInt(dp[1])-1,parseInt(dp[0]));if(dt>=cutoff)t+=recordValue(l);}});
   return t;
 }
 function calcAutoPriority(c) {
@@ -8010,8 +7443,8 @@ function calcAutoPriority(c) {
   // Total paid sales (up to 40 points)
   var totalSales = 0;
   (c.log||[]).forEach(function(l){
-    if(l.quote&&l.quote.status==="Collected")
-      totalSales += (parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
+    if(isSaleEntry(l))
+      totalSales += recordValue(l);
   });
   if(totalSales >= 10000) score += 40;
   else if(totalSales >= 5000) score += 30;
@@ -8022,8 +7455,8 @@ function calcAutoPriority(c) {
   // Open quote value (up to 20 points)
   var openVal = 0;
   (c.log||[]).forEach(function(l){
-    if(l.quote&&(l.quote.status==="Quote"||l.quote.status==="Confirmed"))
-      openVal += (parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
+    if(isOpenQuoteEntry(l))
+      openVal += recordValue(l);
   });
   if(openVal >= 5000) score += 20;
   else if(openVal >= 2000) score += 15;
@@ -8307,12 +7740,10 @@ function showMonthlyReport() {
       var newClients=clients.filter(function(c){if(!c.log||!c.log.length)return false;var fl=c.log[c.log.length-1];if(!fl.date)return false;var dp=fl.date.split("/");return dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr;});
       clients.forEach(function(c){(c.log||[]).forEach(function(l){
         if(l.date){var dp=l.date.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr)monthInteractions++;}
-        if(l.quote){
-          if((l.quote.status==="Quote"||l.quote.status==="Confirmed")){openQuotes++;openQuoteVal+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);}
-          if(l.quote.status==="Collected"){var useDate2=l.quote.collectedDate||l.date;if(useDate2){var dp=useDate2.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr){var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);monthSales+=v;monthSalesCount++;var cat=l.quote.category||"Other";productMap[cat]=(productMap[cat]||0)+v;}}}
-        }
+        if(isOpenQuoteEntry(l)){openQuotes++;openQuoteVal+=recordValue(l);}
+        if(isSaleEntry(l)){var useDate2=recordDisplayDate(l);if(useDate2){var dp2=useDate2.split("/");if(dp2.length===3&&parseInt(dp2[1])-1===mn&&parseInt(dp2[2])===yr){var v=recordValue(l);monthSales+=v;monthSalesCount++;var cat=recordProduct(l)||"Other";productMap[cat]=(productMap[cat]||0)+v;}}}
       });});
-      var topClients=[];clients.forEach(function(c){var sp=0;(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Collected"){var useDate3=l.quote.collectedDate||l.date;if(useDate3){var dp=useDate3.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr)sp+=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);}}});if(sp>0)topClients.push({name:c.name,spend:sp});});
+      var topClients=[];clients.forEach(function(c){var sp=0;(c.log||[]).forEach(function(l){if(isSaleEntry(l)){var useDate3=recordDisplayDate(l);if(useDate3){var dp3=useDate3.split("/");if(dp3.length===3&&parseInt(dp3[1])-1===mn&&parseInt(dp3[2])===yr)sp+=recordValue(l);}}});if(sp>0)topClients.push({name:c.name,spend:sp});});
       topClients.sort(function(a,b){return b.spend-a.spend;}).splice(5);
 
       var hdr=document.createElement("div");hdr.style.cssText="font-size:13px;font-weight:700;margin-bottom:14px";hdr.textContent=mnames[mn]+" "+yr+" Snapshot";body.appendChild(hdr);
@@ -8325,7 +7756,7 @@ function showMonthlyReport() {
 
     } else if(idx===1) {
       // ── LOST QUOTES ──
-      var lost=[];clients.forEach(function(c){(c.log||[]).forEach(function(l){if(l.quote&&l.quote.status==="Lost"){var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);lost.push({client:c.name,value:v,reason:l.quote.lostReason||"No reason given",date:l.date||"",products:l.quote.products||""});}});});
+      var lost=[];clients.forEach(function(c){(c.log||[]).forEach(function(l){if(isPastQuoteEntry(l)&&l.quote.status==="Lost"){var v=recordValue(l);lost.push({client:c.name,value:v,reason:l.quote.lostReason||"No reason given",date:l.date||"",products:l.quote.products||""});}});});
       lost.sort(function(a,b){return b.value-a.value;});
       var totalLost=lost.reduce(function(s,q){return s+q.value;},0);
       var reasonMap={};lost.forEach(function(q){var r=q.reason.split(" - ")[0];reasonMap[r]=(reasonMap[r]||0)+1;});
@@ -8412,16 +7843,14 @@ function showMonthlyReport() {
       var hdr=document.createElement("div");hdr.style.cssText="font-size:13px;font-weight:700;margin-bottom:14px";hdr.textContent="Product Mix Report";body.appendChild(hdr);
       var catRev={};var catCount={};var catPipeline={};
       clients.forEach(function(c){(c.log||[]).forEach(function(l){
-        if(l.quote){
-          var cat=l.quote.category||l.quote.products||"Other";if(!cat)cat="Other";
-          var v=(parseFloat(String(l.quote.value||"0").replace(/[^0-9.]/g,""))||0);
-          if(l.quote.status==="Collected"){catRev[cat]=(catRev[cat]||0)+v;catCount[cat]=(catCount[cat]||0)+1;}
-          if(l.quote.status==="Quote"||l.quote.status==="Confirmed"){catPipeline[cat]=(catPipeline[cat]||0)+v;}
-        }
+        var cat=recordProduct(l);if(!cat)cat="Other";
+        var v=recordValue(l);
+        if(isSaleEntry(l)){catRev[cat]=(catRev[cat]||0)+v;catCount[cat]=(catCount[cat]||0)+1;}
+        if(isOpenQuoteEntry(l)){catPipeline[cat]=(catPipeline[cat]||0)+v;}
       });});
       var totalRev=Object.values(catRev).reduce(function(s,v){return s+v;},0);
       var ss=rptSection("Revenue by Product");
-      if(!Object.keys(catRev).length){var e=document.createElement("div");e.style.cssText="text-align:center;padding:20px;color:var(--muted)";e.textContent="No paid sales logged yet";ss.appendChild(e);}
+      if(!Object.keys(catRev).length){var e=document.createElement("div");e.style.cssText="text-align:center;padding:20px;color:var(--muted)";e.textContent="No sales logged yet";ss.appendChild(e);}
       else{Object.keys(catRev).sort(function(a,b){return catRev[b]-catRev[a];}).forEach(function(c,i){
         var row=document.createElement("div");row.style.cssText="padding:7px 0;border-bottom:1px solid var(--border)";
         var top=document.createElement("div");top.style.cssText="display:flex;align-items:center;gap:8px";
@@ -8851,7 +8280,7 @@ function showAdminPanel() {
 
   // QUOTES
   bd.appendChild(divider("Quotes"));
-  bd.appendChild(adminSection("\uD83D\uDDD1", "Wipe all quotes", "Permanently delete every quote from every client (Quote, Confirmed, Paid, Collected, Lost, Expired - all statuses). Plain interactions without a quote attached are untouched. Cannot be undone.", "Wipe All Quotes", "#c0392b", function(){
+  bd.appendChild(adminSection("\uD83D\uDDD1", "Wipe all quotes", "Permanently delete quote-origin records from every client. Direct sales are kept. Converted quote-to-sale records are also removed because they retain their original quote record. Cannot be undone.", "Wipe All Quotes", "#c0392b", function(){
     openWipeQuotesConfirm();
   }));
 
@@ -9549,14 +8978,14 @@ navFns.forEach(function(fn) {
 
 // ── INIT ──────────────────────────────────────────────────────────
 function init(){
-  clients=loadClients();reps=loadReps();samples=loadSamples();birthdays=loadBirthdays();complaints=loadComplaints();
+  clients=loadClients();migrateSalesQuoteModelV2();reps=loadReps();samples=loadSamples();birthdays=loadBirthdays();complaints=loadComplaints();
   websites=loadWebsites();
   archivedClients=loadArchive();
   docs=loadDocs();
   enquiries=loadEnquiries();
   sourcing=loadSourcing();
   tasks=loadTasks();
-  footfallEntries=loadFootfallEntries();
+  footfallEntries=loadFootfallEntries();migrateFootfallCategoryNames();
   diaryEvents=loadDiary();
   activeFilter="All";activeId=null;editId=null;showLF=false;pendingDel=null;
   updateStats();renderList();showDash();
