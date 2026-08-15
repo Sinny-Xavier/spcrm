@@ -3073,9 +3073,9 @@ function getDailySalesData(year,month){
   return {days:days,monthTotal:monthTotal};
 }
 function getSalesData(year){
-  var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},prodQtrs={},yearTotal=0,months=Array(12).fill(0);
+  var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},prodQtrs={},subProd={},yearTotal=0,months=Array(12).fill(0);
   clients.forEach(function(c){(c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;var m=parseInt(dp[1]),v=recordValue(l),cat=recordProduct(l)||"Other",q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrs[q]+=v;yearTotal+=v;months[m-1]+=v;prodTotals[cat]=(prodTotals[cat]||0)+v;if(!prodQtrs[cat])prodQtrs[cat]={Q1:0,Q2:0,Q3:0,Q4:0};prodQtrs[cat][q]+=v;});});
-  return {qtrs:qtrs,prodTotals:prodTotals,prodQtrs:prodQtrs,yearTotal:yearTotal,months:months};
+  return {qtrs:qtrs,prodTotals:prodTotals,prodQtrs:prodQtrs,subProd:subProd,yearTotal:yearTotal,months:months};
 }
 function getYears(){
   var y={};y[new Date().getFullYear()]=1;clients.forEach(function(c){(c.log||[]).forEach(function(l){if(isSaleEntry(l)){var dp=recordDisplayDate(l).split("/");if(dp.length===3)y[parseInt(dp[2])]=1;}});});return Object.keys(y).map(Number).sort();
@@ -3084,7 +3084,7 @@ function getYears(){
 function showQuarterDetail(year, quarter) {
   var data = getSalesData(year);
   var qTotal = data.qtrs[quarter] || 0;
-  var qProd = data.qtrProd[quarter] || {};
+  var qProd = data.prodQtrs[quarter] || {};
   var topProducts = Object.keys(qProd).map(function(p){ return {name:p, value:qProd[p]}; }).filter(function(p){ return p.value>0; }).sort(function(a,b){ return b.value-a.value; });
   var monthly = getQuarterMonthlyBreakdown(year, quarter);
   var months = QUARTER_MONTHS[quarter];
@@ -3229,7 +3229,7 @@ function renderSalesView(){
     activeProd.forEach(function(p,pi){
       var hasSub = data.subProd[p] && Object.keys(data.subProd[p]).length > 0;
       var tr=document.createElement("tr");var rowTotal=data.prodTotals[p]||0;var pct=data.yearTotal>0?((rowTotal/data.yearTotal)*100).toFixed(1):"0.0";
-      [p,data.qtrProd.Q1[p]||0,data.qtrProd.Q2[p]||0,data.qtrProd.Q3[p]||0,data.qtrProd.Q4[p]||0,rowTotal,pct+"%"].forEach(function(val,ci){
+      [p,data.prodQtrs.Q1[p]||0,data.prodQtrs.Q2[p]||0,data.prodQtrs.Q3[p]||0,data.prodQtrs.Q4[p]||0,rowTotal,pct+"%"].forEach(function(val,ci){
         var td=document.createElement("td");td.style.textAlign=ci===0?"left":"right";if(ci===5){td.style.fontWeight="700";td.style.color="var(--gtxt)";}
         if(ci===0 && hasSub){
           td.style.cursor="pointer";td.style.userSelect="none";
