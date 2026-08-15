@@ -322,6 +322,18 @@ Supabase connection/authentication is intentionally unchanged in this cleanup bu
   </div>
 </div>
 
+<div id="gateTotpOverlay" style="position:fixed;inset:0;background:#002680;z-index:9999;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:12px;padding:32px 36px;max-width:360px;width:100%;text-align:center;border-top:4px solid #C0392B">
+    <div style="width:64px;height:40px;background:#FFB900;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;color:#002680;margin:0 auto 14px">&#128272;</div>
+    <h2 style="font-size:16px;font-weight:700;color:#1a2233;margin-bottom:3px">Verification code</h2>
+    <p style="font-size:11px;color:#6b7a95;margin-bottom:20px">Enter the 6-digit code from your authenticator app</p>
+    <input id="gateTotpInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456" autocomplete="one-time-code" autocorrect="off" autocapitalize="none" spellcheck="false" style="width:100%;padding:11px 14px;border:2px solid #d8dde6;border-radius:6px;font-size:22px;font-family:inherit;outline:none;text-align:center;letter-spacing:6px;margin-bottom:6px">
+    <div id="gateTotpError" style="font-size:11px;color:#C0392B;margin-bottom:7px;display:none">Incorrect code &mdash; try again</div>
+    <button onclick="checkTotp()" style="width:100%;padding:9px;background:#FFB900;border:none;border-radius:6px;color:#1a1a1a;font-size:13px;font-weight:700;cursor:pointer">Verify</button>
+    <p id="gateTotpBack" style="font-size:9px;color:#8a97ad;margin-top:14px;cursor:pointer;text-decoration:underline">&larr; Back to password</p>
+  </div>
+</div>
+
 <header class="hdr">
   <div class="hdr-top">
     <div style="display:flex;flex-direction:row;align-items:center;gap:10px;flex-shrink:0">
@@ -1135,10 +1147,18 @@ function saveDocs() {
 
 // ── PASSWORD ──────────────────────────────────────────────────────
 document.getElementById("gateInput").addEventListener("keydown",function(e){if(e.key==="Enter")checkPassword();});
+document.getElementById("gateTotpInput").addEventListener("keydown",function(e){if(e.key==="Enter")checkTotp();});
+document.getElementById("gateTotpBack").addEventListener("click",function(){
+  document.getElementById("gateTotpOverlay").style.display="none";
+  document.getElementById("gateOverlay").style.display="flex";
+  document.getElementById("gateInput").value="";
+  document.getElementById("gateInput").focus();
+});
 function logOut() {
   if(confirm("Log out of CRM?")) {
     try { sessionStorage.removeItem("sftc_auth"); } catch(e) {}
     document.getElementById("gateOverlay").style.display = "flex";
+    document.getElementById("gateTotpOverlay").style.display = "none";
     document.getElementById("gateInput").value = "";
     toast("Logged out \u2713");
   }
@@ -1147,37 +1167,63 @@ function logOut() {
 
 function checkPassword(){
   if(document.getElementById("gateInput").value===getCurrentPassword()){
-    document.getElementById("gateOverlay").style.display="none";
-    try{sessionStorage.setItem("sftc_auth","1");}catch(e){}
-    // Test Supabase connection
-    setTimeout(async function(){
-      try {
-        var testUrl = "https://ogkyemjiosgedwgqfvyy.supabase.co/rest/v1/clients?select=id&limit=1";
-        var testKey = SB_KEY;
-        var r = await fetch(testUrl, {
-          headers:{"apikey":testKey,"Authorization":"Bearer "+testKey,"Accept":"application/json"}
-        });
-        var txt = await r.text();
-        if(r.ok){ 
-          toast("\u2601\uFE0F Cloud connected! \u2713");
-          try{document.getElementById("sbStatus").textContent="\u2601\uFE0F";}catch(e){}
-          try{document.getElementById("sbStatus").title="Cloud connected";}catch(e){}
-        } else { 
-          console.warn("Supabase test failed:", r.status, txt);
-          toast("\u26A0\uFE0F Cloud error "+r.status+" - "+txt.substring(0,40));
-          try{document.getElementById("sbStatus").textContent="\u26A0\uFE0F";}catch(e){}
-          document.getElementById("sbStatus").title="Error "+r.status;
-        }
-      } catch(e){ 
-        console.warn("Connection test error:", e);
-        toast("\u26A0\uFE0F Cloud offline - saving locally only");
-      }
-    }, 1500);
+    document.getElementById("gateError").style.display="none";
+    if (isTotpEnabled() && getTotpSecret()) {
+      document.getElementById("gateOverlay").style.display="none";
+      document.getElementById("gateTotpOverlay").style.display="flex";
+      document.getElementById("gateTotpError").style.display="none";
+      document.getElementById("gateTotpInput").value="";
+      setTimeout(function(){document.getElementById("gateTotpInput").focus();},80);
+    } else {
+      grantAccess();
+    }
   }else{
     document.getElementById("gateError").style.display="block";
     document.getElementById("gateInput").value="";
     document.getElementById("gateInput").focus();
   }
+}
+async function checkTotp(){
+  var code = document.getElementById("gateTotpInput").value;
+  var ok = false;
+  try { ok = await totpVerify(getTotpSecret(), code); } catch(e) { console.warn("TOTP verify failed", e); }
+  if (ok) {
+    document.getElementById("gateTotpOverlay").style.display="none";
+    grantAccess();
+  } else {
+    document.getElementById("gateTotpError").style.display="block";
+    document.getElementById("gateTotpInput").value="";
+    document.getElementById("gateTotpInput").focus();
+  }
+}
+function grantAccess(){
+  document.getElementById("gateOverlay").style.display="none";
+  document.getElementById("gateTotpOverlay").style.display="none";
+  try{sessionStorage.setItem("sftc_auth","1");}catch(e){}
+  // Test Supabase connection
+  setTimeout(async function(){
+    try {
+      var testUrl = "https://ogkyemjiosgedwgqfvyy.supabase.co/rest/v1/clients?select=id&limit=1";
+      var testKey = SB_KEY;
+      var r = await fetch(testUrl, {
+        headers:{"apikey":testKey,"Authorization":"Bearer "+testKey,"Accept":"application/json"}
+      });
+      var txt = await r.text();
+      if(r.ok){ 
+        toast("\u2601\uFE0F Cloud connected! \u2713");
+        try{document.getElementById("sbStatus").textContent="\u2601\uFE0F";}catch(e){}
+        try{document.getElementById("sbStatus").title="Cloud connected";}catch(e){}
+      } else { 
+        console.warn("Supabase test failed:", r.status, txt);
+        toast("\u26A0\uFE0F Cloud error "+r.status+" - "+txt.substring(0,40));
+        try{document.getElementById("sbStatus").textContent="\u26A0\uFE0F";}catch(e){}
+        document.getElementById("sbStatus").title="Error "+r.status;
+      }
+    } catch(e){ 
+      console.warn("Connection test error:", e);
+      toast("\u26A0\uFE0F Cloud offline - saving locally only");
+    }
+  }, 1500);
 }
 try{if(sessionStorage.getItem("sftc_auth")==="1"){var g=document.getElementById("gateOverlay");if(g)g.style.display="none";}}catch(e){}
 
@@ -7371,6 +7417,86 @@ async function syncPasswordFromCloud(){
 }
 syncPasswordFromCloud();
 
+// ── TWO-FACTOR AUTHENTICATION (TOTP, RFC 6238 — compatible with Google Authenticator) ──
+var TOTP_SECRET_STORE = "spcrm_totp_secret_v1";
+var TOTP_ENABLED_STORE = "spcrm_totp_enabled_v1";
+var TOTP_ISSUER = "Sinbad's Black Book";
+var BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+function base32Encode(bytes){
+  var bits=""; for (var i=0;i<bytes.length;i++){ bits+=bytes[i].toString(2).padStart(8,"0"); }
+  var out=""; var i2;
+  for (i2=0; i2+5<=bits.length; i2+=5){ out+=BASE32_ALPHABET[parseInt(bits.substring(i2,i2+5),2)]; }
+  if (i2<bits.length){ var rem=(bits.substring(i2)+"00000").substring(0,5); out+=BASE32_ALPHABET[parseInt(rem,2)]; }
+  return out;
+}
+function base32Decode(str){
+  str=(str||"").replace(/=+$/,"").toUpperCase().replace(/[^A-Z2-7]/g,"");
+  var bits=""; for (var i=0;i<str.length;i++){ var v=BASE32_ALPHABET.indexOf(str[i]); if (v===-1) continue; bits+=v.toString(2).padStart(5,"0"); }
+  var bytes=[]; for (var j=0;j+8<=bits.length;j+=8){ bytes.push(parseInt(bits.substring(j,j+8),2)); }
+  return new Uint8Array(bytes);
+}
+function generateTotpSecret(){
+  var randBytes=new Uint8Array(20); crypto.getRandomValues(randBytes);
+  return base32Encode(randBytes);
+}
+function getTotpSecret(){
+  try { return localStorage.getItem(TOTP_SECRET_STORE)||""; } catch(e) { return ""; }
+}
+function isTotpEnabled(){
+  try { return localStorage.getItem(TOTP_ENABLED_STORE)==="1"; } catch(e) { return false; }
+}
+function saveTotpSettings(secret, enabled){
+  try {
+    localStorage.setItem(TOTP_SECRET_STORE, secret||"");
+    localStorage.setItem(TOTP_ENABLED_STORE, enabled?"1":"0");
+  } catch(e) {}
+  sbUpsert("settings","totp_secret",{key:"totp_secret",value:secret||""});
+  sbUpsert("settings","totp_enabled",{key:"totp_enabled",value:enabled?"1":"0"});
+}
+async function syncTotpFromCloud(){
+  try{
+    var rows=await sbGet("settings");
+    if(rows){
+      var secretRow=rows.find(function(r){return r&&r.key==="totp_secret";});
+      var enabledRow=rows.find(function(r){return r&&r.key==="totp_enabled";});
+      if(secretRow&&secretRow.value){ try{localStorage.setItem(TOTP_SECRET_STORE,secretRow.value);}catch(e){} }
+      if(enabledRow&&typeof enabledRow.value!=="undefined"){ try{localStorage.setItem(TOTP_ENABLED_STORE,enabledRow.value);}catch(e){} }
+    }
+  }catch(e){ console.warn("2FA cloud sync failed", e); }
+}
+syncTotpFromCloud();
+
+// Generates the 6-digit code for a given 30-second time step (defaults to "now").
+async function totpGenerate(secretBase32, forCounter){
+  var keyBytes = base32Decode(secretBase32);
+  var counter = (typeof forCounter==="number") ? forCounter : Math.floor(Date.now()/1000/30);
+  var counterBuf = new ArrayBuffer(8);
+  var view = new DataView(counterBuf);
+  view.setUint32(0, Math.floor(counter/0x100000000));
+  view.setUint32(4, counter>>>0);
+  var cryptoKey = await crypto.subtle.importKey("raw", keyBytes, {name:"HMAC", hash:"SHA-1"}, false, ["sign"]);
+  var sig = new Uint8Array(await crypto.subtle.sign("HMAC", cryptoKey, counterBuf));
+  var offset = sig[sig.length-1] & 0xf;
+  var code = ((sig[offset]&0x7f)<<24) | ((sig[offset+1]&0xff)<<16) | ((sig[offset+2]&0xff)<<8) | (sig[offset+3]&0xff);
+  code = code % 1000000;
+  return String(code).padStart(6,"0");
+}
+// Checks the entered code against the current time step, plus one step either side to allow for clock drift.
+async function totpVerify(secretBase32, token){
+  token=(token||"").trim();
+  if (!/^\d{6}$/.test(token) || !secretBase32) return false;
+  var counter = Math.floor(Date.now()/1000/30);
+  for (var delta=-1; delta<=1; delta++){
+    if ((await totpGenerate(secretBase32, counter+delta))===token) return true;
+  }
+  return false;
+}
+function totpOtpauthUri(secretBase32, accountLabel){
+  return "otpauth://totp/"+encodeURIComponent(TOTP_ISSUER)+":"+encodeURIComponent(accountLabel||"admin")+
+    "?secret="+secretBase32+"&issuer="+encodeURIComponent(TOTP_ISSUER)+"&algorithm=SHA1&digits=6&period=30";
+}
+
 function showChangePassword() {
   var overlay = document.createElement("div");
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
@@ -7421,6 +7547,108 @@ function showChangePassword() {
   foot.appendChild(cancelB); foot.appendChild(saveB);
   box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
   setTimeout(function(){ document.getElementById("pw_current").focus(); }, 100);
+}
+
+
+// ── TWO-FACTOR AUTHENTICATION SETUP ─────────────────────────────────
+function showTotpSetup() {
+  if (isTotpEnabled() && getTotpSecret()) { showTotpDisable(); return; }
+
+  var pendingSecret = generateTotpSecret();
+  var uri = totpOtpauthUri(pendingSecret, "admin");
+
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:420px;border-top:3px solid var(--navy)";
+  var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy);padding:13px 16px;display:flex;align-items:center;justify-content:space-between";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:13px;font-weight:700;color:#fff"; bht.textContent = "\uD83D\uDD10 Set Up Two-Factor Authentication";
+  var cx = document.createElement("button"); cx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:26px;height:26px;color:#fff;font-size:17px;cursor:pointer;line-height:1"; cx.textContent = "\u00d7";
+  cx.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  bh.appendChild(bht); bh.appendChild(cx); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:16px;display:flex;flex-direction:column;gap:12px";
+
+  var step1 = document.createElement("div");
+  step1.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px">1. Add this account to your authenticator app</div>'+
+    '<div style="font-size:11px;color:var(--muted);margin-bottom:8px">In Google Authenticator: tap <b>+</b> \u2192 <b>Enter a setup key</b>. Use the details below.</div>';
+  bd.appendChild(step1);
+
+  function mkRow(label, value){
+    var row=document.createElement("div"); row.style.cssText="background:var(--alt);border-radius:var(--rs);padding:8px 10px";
+    var l=document.createElement("div"); l.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; l.textContent=label;
+    var v=document.createElement("div"); v.style.cssText="font-size:13px;font-family:monospace;color:var(--text);word-break:break-all;user-select:all"; v.textContent=value;
+    row.appendChild(l); row.appendChild(v); return row;
+  }
+  bd.appendChild(mkRow("Account name", TOTP_ISSUER+" (admin)"));
+  bd.appendChild(mkRow("Your setup key", pendingSecret.match(/.{1,4}/g).join(" ")));
+  var typeNote = document.createElement("div"); typeNote.style.cssText="font-size:10px;color:var(--muted)"; typeNote.textContent="Type of key: Time based";
+  bd.appendChild(typeNote);
+
+  var step2 = document.createElement("div"); step2.style.cssText="margin-top:4px";
+  step2.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px">2. Enter the 6-digit code it shows you</div>';
+  bd.appendChild(step2);
+
+  var codeInp = document.createElement("input"); codeInp.id="totp_setup_code"; codeInp.type="text"; codeInp.inputMode="numeric"; codeInp.maxLength=6; codeInp.placeholder="123456";
+  codeInp.style.cssText="width:100%;padding:9px;border:2px solid var(--border);border-radius:var(--rs);font-size:18px;font-family:monospace;text-align:center;letter-spacing:5px;outline:none";
+  bd.appendChild(codeInp);
+
+  var errMsg = document.createElement("div"); errMsg.style.cssText="font-size:11px;color:var(--red);display:none"; errMsg.textContent="That code didn't match — check the app and try again.";
+  bd.appendChild(errMsg);
+
+  box.appendChild(bd);
+
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
+  var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:7px 12px;background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
+  cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  var enableB = document.createElement("button"); enableB.style.cssText = "padding:7px 16px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; enableB.textContent = "Verify & enable";
+  enableB.addEventListener("click", async function(){
+    var ok = await totpVerify(pendingSecret, codeInp.value);
+    if (!ok) { errMsg.style.display="block"; codeInp.value=""; codeInp.focus(); return; }
+    saveTotpSettings(pendingSecret, true);
+    document.body.removeChild(overlay);
+    toast("\uD83D\uDD10 Two-factor authentication enabled \u2713");
+  });
+  foot.appendChild(cancelB); foot.appendChild(enableB);
+  box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
+  setTimeout(function(){ codeInp.focus(); }, 100);
+}
+
+function showTotpDisable() {
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:380px;border-top:3px solid var(--red)";
+  var bh = document.createElement("div"); bh.style.cssText = "background:var(--navy);padding:13px 16px;display:flex;align-items:center;justify-content:space-between";
+  var bht = document.createElement("h2"); bht.style.cssText = "font-size:13px;font-weight:700;color:#fff"; bht.textContent = "\uD83D\uDD10 Two-Factor Authentication";
+  var cx = document.createElement("button"); cx.style.cssText = "background:rgba(255,255,255,.1);border:none;border-radius:4px;width:26px;height:26px;color:#fff;font-size:17px;cursor:pointer;line-height:1"; cx.textContent = "\u00d7";
+  cx.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  bh.appendChild(bht); bh.appendChild(cx); box.appendChild(bh);
+
+  var bd = document.createElement("div"); bd.style.cssText = "padding:16px;display:flex;flex-direction:column;gap:10px";
+  var note = document.createElement("div"); note.style.cssText="font-size:12px;color:var(--text)"; note.textContent="2FA is currently ON. Enter a current code from your authenticator app to turn it off.";
+  bd.appendChild(note);
+  var codeInp = document.createElement("input"); codeInp.id="totp_disable_code"; codeInp.type="text"; codeInp.inputMode="numeric"; codeInp.maxLength=6; codeInp.placeholder="123456";
+  codeInp.style.cssText="width:100%;padding:9px;border:2px solid var(--border);border-radius:var(--rs);font-size:18px;font-family:monospace;text-align:center;letter-spacing:5px;outline:none";
+  bd.appendChild(codeInp);
+  var errMsg = document.createElement("div"); errMsg.style.cssText="font-size:11px;color:var(--red);display:none"; errMsg.textContent="Incorrect code.";
+  bd.appendChild(errMsg);
+  box.appendChild(bd);
+
+  var foot = document.createElement("div"); foot.style.cssText = "padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
+  var cancelB = document.createElement("button"); cancelB.style.cssText = "padding:7px 12px;background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer"; cancelB.textContent = "Cancel";
+  cancelB.addEventListener("click", function(){ document.body.removeChild(overlay); });
+  var disableB = document.createElement("button"); disableB.style.cssText = "padding:7px 16px;background:var(--red);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer"; disableB.textContent = "Turn off 2FA";
+  disableB.addEventListener("click", async function(){
+    var ok = await totpVerify(getTotpSecret(), codeInp.value);
+    if (!ok) { errMsg.style.display="block"; codeInp.value=""; codeInp.focus(); return; }
+    saveTotpSettings("", false);
+    document.body.removeChild(overlay);
+    toast("Two-factor authentication turned off");
+  });
+  foot.appendChild(cancelB); foot.appendChild(disableB);
+  box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
+  setTimeout(function(){ codeInp.focus(); }, 100);
 }
 
 
@@ -8374,6 +8602,11 @@ function showAdminPanel() {
   bd.appendChild(adminSection("\uD83D\uDD12", "Change password", "Update your CRM login password", "Change", "var(--navy)", function(ov){
     document.body.removeChild(ov);
     showChangePassword();
+  }));
+
+  bd.appendChild(adminSection("\uD83D\uDD10", "Two-factor authentication", isTotpEnabled()?"Enabled — an authenticator app code is required at login, in addition to your password.":"Add a Google Authenticator-style code as a second step at login, on top of your password.", isTotpEnabled()?"Manage":"Set up", isTotpEnabled()?"#2ecc71":"var(--navy)", function(ov){
+    document.body.removeChild(ov);
+    showTotpSetup();
   }));
 
   bd.appendChild(adminSection("\uD83D\uDCF7", "Business card scanner", "Add your Anthropic API key to enable AI business card scanning (console.anthropic.com)", getApiKey()?"Key saved \u2713":"Add API key", getApiKey()?"#2ecc71":"#e67e22", function(){
