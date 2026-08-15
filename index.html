@@ -43,12 +43,6 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .hs.alert b{color:#ff9999}
 .app{display:flex;height:calc(100vh - 88px);overflow:hidden;min-height:0}
 .sb{position:fixed;left:0;top:0;bottom:0;width:300px;max-width:88vw;background:var(--surface);border-right:2px solid var(--border);display:none;flex-direction:column;z-index:160;box-shadow:4px 0 24px rgba(0,0,0,.18);transform:translateX(-100%);transition:transform .2s ease;overflow:hidden}
-.sb.mob-open{display:flex;transform:translateX(0)}
-.sb-backdrop{position:fixed;inset:0;background:rgba(10,15,25,.45);z-index:155;display:none}
-.sb-backdrop.show{display:block}
-.mob-search-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:2px solid var(--border)}
-.mob-search-bar input{flex:1;min-width:0;padding:8px 12px;border:2px solid var(--border);border-radius:20px;font-size:13px;outline:none;font-family:inherit;background:var(--alt)}
-.mob-menu-btn{padding:8px 14px;background:var(--navy);border:none;border-radius:20px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .sb-top{padding:10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:7px}
 .srch{display:flex;align-items:center;gap:6px;background:var(--alt);border:2px solid var(--border);border-radius:var(--rs);padding:6px 9px}
 .srch input{background:none;border:none;outline:none;font-size:12px;color:var(--text);flex:1}
@@ -256,10 +250,6 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   .formv { padding:12px; }
   .stat-row.cols4 { grid-template-columns:1fr 1fr; }
 }
-@media (min-width:769px) {
-  .mob-search-bar { padding:10px 16px; }
-}
-
 @media (max-width:480px) {
   .hdr-nav { justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px; }
   .nav-btn { font-size:9px;padding:4px 7px;white-space:nowrap; }
@@ -1423,7 +1413,6 @@ function loadClients(){
   }catch(e){}
   return [];
 }
-function copyC(d){return{id:d.id,binder:d.binder,name:d.name,contact:d.contact||"",manager:d.manager||"Sinbad",mobile:d.mobile||"",contact2:d.contact2||"",mobile2:d.mobile2||"",address:d.address||"",product:d.product||"",spend:d.spend||"",priority:d.priority||"",status:d.status||"Prospect",interactionType:d.interactionType||"",lastContact:d.lastContact||"",followup:d.followup||"",notes:d.notes||"",additionalNotes:d.additionalNotes||"",competitorNotes:d.competitorNotes||"",wontBuy:d.wontBuy||"",keyDates:d.keyDates||"",log:[]}}
 function loadReps(){
   try{var r=localStorage.getItem(RSTORE);if(r){var s=JSON.parse(r);if(s&&s.length>0)return s;}}catch(e){}
   var d=JSON.parse(JSON.stringify(DEFAULT_REPS));try{localStorage.setItem(RSTORE,JSON.stringify(d));}catch(e){}return d;
@@ -5019,14 +5008,6 @@ function showQuotes() {
   activeId = null; renderList(); showView("quotes"); renderQuotesView();
 }
 
-function scrollToDash(section) {
-  showDash();
-  setTimeout(function(){
-    var el = document.getElementById("dash-"+section);
-    if (el) el.scrollIntoView({behavior:"smooth", block:"start"});
-  }, 100);
-}
-
 function renderQuotesView(){
   var qv=document.getElementById("quotesView");qv.innerHTML="",rows=[];
   clients.forEach(function(c){(c.log||[]).forEach(function(l,idx){if(isQuoteEntry(l))rows.push({client:c,log:l,idx:idx,val:recordValue(l)});});});
@@ -7648,13 +7629,6 @@ function showTotpDisable() {
 
 
 // ── AUTO PRIORITY ─────────────────────────────────────────────────
-function parseUKDate(s){
-  if(!s) return null;
-  var p=String(s).split("/");
-  if(p.length!==3) return null;
-  var d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
-  return isNaN(d.getTime())?null:d;
-}
 function calcAnnualSpend(c){
   var cutoff=new Date();cutoff.setFullYear(cutoff.getFullYear()-1);var t=0;
   (c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length===3){var dt=new Date(parseInt(dp[2]),parseInt(dp[1])-1,parseInt(dp[0]));if(dt>=cutoff)t+=recordValue(l);}});
@@ -9150,35 +9124,6 @@ function showChartModal(title, labels, values) {
 
 
 // ── MOBILE ────────────────────────────────────────────────────────
-function isMobile() { return window.innerWidth <= 768; }
-
-function toggleMobSidebar() {
-  var sb = document.getElementById("sidebar");
-  var btn = document.getElementById("mobMenuBtn");
-  var bd = document.getElementById("sbBackdrop");
-  if (sb.classList.contains("mob-open")) {
-    sb.classList.remove("mob-open");
-    bd.classList.remove("show");
-    btn.textContent = "\u2261 Clients";
-  } else {
-    var hdrH = document.querySelector(".hdr").offsetHeight + document.getElementById("mobBar").offsetHeight;
-    sb.style.top = hdrH + "px";
-    sb.classList.add("mob-open");
-    bd.classList.add("show");
-    btn.textContent = "\u2715 Close";
-    sb.scrollTop = 0;
-  }
-}
-
-function mobSearch(val) {
-  document.getElementById("sq").value = val;
-  renderList();
-  if (val.length > 0) {
-    var sb = document.getElementById("sidebar");
-    if (!sb.classList.contains("mob-open")) toggleMobSidebar();
-  }
-}
-
 function closeMobSidebar() {
   var sb = document.getElementById("sidebar");
   if (sb && sb.classList.contains("mob-open")) {
