@@ -2607,13 +2607,13 @@ function showForm(id){
   function mkS(id2,opts,val){var s=document.createElement("select");s.id=id2;opts.forEach(function(o){var op=document.createElement("option");op.value=o;op.textContent=o;if(o===val)op.selected=true;s.appendChild(op);});return s;}
 
   var g1=mkSec("Identity");
+  mkF(g1,"Account name *",mkI("e_name",c?c.name:"","Company or client name"));
   mkF(g1,"Binder ref",mkI("e_binder",c?c.binder:nextId(),""));
-  mkF(g1,"Account manager",mkI("e_mgr",c?(c.manager||"FSG"):"",""));
   var srcSel=document.createElement("select");srcSel.id="e_source";srcSel.style.cssText="width:100%;padding:6px 8px;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;color:var(--text);outline:none";
   [""].concat(CLIENT_CATS).forEach(function(s2){var opt=document.createElement("option");opt.value=s2;opt.textContent=s2||"-- Select source --";if(c&&c.source===s2)opt.selected=true;srcSel.appendChild(opt);});
   mkF(g1,"Customer source",srcSel);
+  mkF(g1,"Account manager",mkI("e_mgr",c?(c.manager||"FSG"):"",""));
   mkF(g1,"Area",mkI("e_addr",c?c.address:"","e.g. Leeds, Sheffield"));
-  mkF(g1,"Account name *",mkI("e_name",c?c.name:"","Company or client name"));
   mkF(g1,"Account opened",mkI("e_opened",c?ti(c.dateOpened||""):"","","date"));
   var dupWarnWrap = document.createElement("div"); dupWarnWrap.className = "ff s2"; dupWarnWrap.style.display = "none";
   var dupWarnBox = document.createElement("div"); dupWarnBox.style.cssText = "background:#fff4e0;border:2px solid #f0c060;border-radius:var(--rs);padding:9px 11px;font-size:11px;color:#8a5a00";
