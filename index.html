@@ -90,7 +90,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .kpi-val{font-size:24px;font-weight:700}
 .kpi-sub{font-size:10px;color:var(--muted);margin-top:2px}
 .kv-blue{color:var(--navy)} .kv-green{color:var(--gtxt)} .kv-red{color:var(--red)} .kv-amber{color:var(--atxt)}
-.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .diary-cell{min-width:0;height:80px}
 @media (max-width:600px){.diary-cell{height:64px;padding:2px !important}}
 .dash-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px}
@@ -228,6 +228,9 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .sales-tbl .total-row td{background:#e8edf6;font-weight:700;color:var(--navy);border-top:2px solid var(--border)}
 
 /* ── MOBILE LAYOUT ──────────────────────────────────────────────── */
+@media (max-width:1150px) and (min-width:769px) {
+  .dash-grid { grid-template-columns:1fr 1fr; }
+}
 @media (max-width: 768px) {
   .hdr-top { padding:6px 10px; }
   .hdr-top h1 { font-size:11px; }
@@ -251,8 +254,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   .stat-row.cols4 { grid-template-columns:1fr 1fr; }
 }
 @media (max-width:480px) {
-  .hdr-nav { justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px; }
-  .nav-btn { font-size:9px;padding:4px 7px;white-space:nowrap; }
+  .hdr-nav { justify-content:flex-start;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px; }  .nav-btn { font-size:9px;padding:4px 7px;white-space:nowrap; }
   .nav-btn-home { font-size:10px;padding:6px 11px; }
   .kpi-val { font-size:18px; }
   .ci { padding:10px 12px; }
@@ -1788,7 +1790,6 @@ function renderDash(){
     el.addEventListener("click",(function(id){return function(){openC(id);};})(c.id));return el;
   });
   dg.appendChild(coldCard);
-  dv.appendChild(dg);
   // Diary events - within 5 working days + overdue on dashboard
   function workingDaysFromNow(e) {
     var evDate = new Date(e.year, e.month, e.day);
@@ -1814,9 +1815,10 @@ function renderDash(){
   if(allDiaryEvts.length) {
     var todayEvts = allDiaryEvts; var overdueEvts = [];
     var diaryPanel = document.createElement("div");
-    diaryPanel.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:16px;margin-top:16px;border-left:4px solid #e8a020";
+    diaryPanel.className = "dash-card";
+    diaryPanel.style.cssText = "border-left:4px solid #e8a020";
     var dpHdr = document.createElement("div"); dpHdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)";
-    var dpTitle = document.createElement("div"); dpTitle.style.cssText = "font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; dpTitle.textContent = "Diary — Today";
+    var dpTitle = document.createElement("div"); dpTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; dpTitle.textContent = "Diary — Today";
     var dpBadge = document.createElement("span"); dpBadge.style.cssText = "background:#e8a020;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px"; dpBadge.textContent = allDiaryEvts.length+" event"+(allDiaryEvts.length!==1?"s":"");
     dpHdr.appendChild(dpTitle); dpHdr.appendChild(dpBadge); diaryPanel.appendChild(dpHdr);
     var typeColors2 = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Anniversary":"#c0392b","Holiday":"#16a085","Other":"#7f8c8d"};
@@ -1841,7 +1843,7 @@ function renderDash(){
       diaryPanel.appendChild(er);
     });
     var dpLink = document.createElement("div"); dpLink.style.cssText="font-size:11px;color:var(--navy);cursor:pointer;margin-top:6px;text-align:right"; dpLink.textContent="Open diary →"; dpLink.addEventListener("click",showDiary); diaryPanel.appendChild(dpLink);
-    dv.appendChild(diaryPanel);
+    dg.appendChild(diaryPanel);
   }
 
   // Upcoming birthdays on dashboard
@@ -1851,9 +1853,10 @@ function renderDash(){
   }).sort(function(a,b){ return daysUntilBday(a.date)-daysUntilBday(b.date); });
   if (upcomingBdays.length) {
     var bdPanel = document.createElement("div");
-    bdPanel.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-top:16px;border-left:4px solid #e8a020";
+    bdPanel.className = "dash-card";
+    bdPanel.style.cssText = "border-left:4px solid #e8a020";
     var bdHdr = document.createElement("div"); bdHdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)";
-    var bdTitle = document.createElement("div"); bdTitle.style.cssText = "font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; bdTitle.textContent = "\uD83C\uDF82 Birthdays coming up";
+    var bdTitle = document.createElement("div"); bdTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; bdTitle.textContent = "\uD83C\uDF82 Birthdays coming up";
     var bdBadge = document.createElement("span"); bdBadge.style.cssText = "background:#e8a020;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px"; bdBadge.textContent = upcomingBdays.length;
     bdHdr.appendChild(bdTitle); bdHdr.appendChild(bdBadge); bdPanel.appendChild(bdHdr);
     upcomingBdays.forEach(function(b){
@@ -1869,7 +1872,7 @@ function renderDash(){
       row.appendChild(av); row.appendChild(info); row.appendChild(badge);
       bdPanel.appendChild(row);
     });
-    dv.appendChild(bdPanel);
+    dg.appendChild(bdPanel);
   }
 
   // Rep visits overdue on dashboard
@@ -1896,9 +1899,10 @@ function renderDash(){
 
   if(repVisitsDue.length){
     var rvPanel=document.createElement("div");
-    rvPanel.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px 16px;margin-top:16px;border-left:4px solid #9b59b6";
+    rvPanel.className="dash-card";
+    rvPanel.style.cssText="border-left:4px solid #9b59b6";
     var rvHdr=document.createElement("div");rvHdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)";
-    var rvTitle=document.createElement("div");rvTitle.style.cssText="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";rvTitle.textContent="\uD83E\uDD1D Rep visits overdue";
+    var rvTitle=document.createElement("div");rvTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";rvTitle.textContent="\uD83E\uDD1D Rep visits overdue";
     var rvBadge=document.createElement("span");rvBadge.style.cssText="background:#9b59b6;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px";rvBadge.textContent=repVisitsDue.length+" reps";
     rvHdr.appendChild(rvTitle);rvHdr.appendChild(rvBadge);rvPanel.appendChild(rvHdr);
     repVisitsDue.forEach(function(r){
@@ -1916,16 +1920,17 @@ function renderDash(){
       row.appendChild(av);row.appendChild(info);row.appendChild(badge);rvPanel.appendChild(row);
     });
     var rvLnk=document.createElement("div");rvLnk.style.cssText="font-size:11px;color:var(--navy);cursor:pointer;margin-top:6px;text-align:right";rvLnk.textContent="View all reps \u2192";rvLnk.addEventListener("click",showReps);rvPanel.appendChild(rvLnk);
-    dv.appendChild(rvPanel);
+    dg.appendChild(rvPanel);
   }
 
   // Samples awaiting from reps panel
   var pendingSamples=samples.filter(function(s){return s.repId&&s.status==="Sent - Awaiting Return";});
   if(pendingSamples.length){
     var smpPanel=document.createElement("div");
-    smpPanel.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:16px;margin-top:16px;border-left:4px solid #305CDE";
+    smpPanel.className="dash-card";
+    smpPanel.style.cssText="border-left:4px solid #305CDE";
     var smpHdr=document.createElement("div");smpHdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)";
-    var smpTitle=document.createElement("div");smpTitle.style.cssText="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";smpTitle.textContent="Samples awaiting from reps";
+    var smpTitle=document.createElement("div");smpTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";smpTitle.textContent="Samples awaiting from reps";
     var smpBadge=document.createElement("span");smpBadge.style.cssText="background:var(--navy);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px";smpBadge.textContent=pendingSamples.length+" pending";
     smpHdr.appendChild(smpTitle);smpHdr.appendChild(smpBadge);smpPanel.appendChild(smpHdr);
     var byRep={};
@@ -1948,8 +1953,9 @@ function renderDash(){
       smpPanel.appendChild(rg);
     });
     var smpLnk=document.createElement("div");smpLnk.style.cssText="font-size:11px;color:var(--navy);cursor:pointer;margin-top:6px;text-align:right";smpLnk.textContent="View all samples →";smpLnk.addEventListener("click",showSamples);smpPanel.appendChild(smpLnk);
-    dv.appendChild(smpPanel);
+    dg.appendChild(smpPanel);
   }
+  dv.appendChild(dg);
 }
 
 
@@ -7138,6 +7144,7 @@ function showSourcingForm(existingId, prefillClientId, prefillRepId) {
     if (!clientName && !product) { toast("Please enter at least a client or product"); return; }
     var matchedClient = clients.find(function(c){ return c.name.trim().toLowerCase()===clientName.toLowerCase(); });
     var today = new Date();
+    var prevStatus = existing ? existing.status : null;
     var rec = existing || { id: "SRC-"+Date.now(), createdDate: String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+today.getFullYear() };
     rec.client = clientName;
     rec.clientId = matchedClient ? matchedClient.id : (existing ? existing.clientId : null);
@@ -7165,9 +7172,45 @@ function showSourcingForm(existingId, prefillClientId, prefillRepId) {
     rec.notes = notesInp.value.trim();
     if (!existing) sourcing.push(rec);
     saveSourcing();
+
+    // The moment a special order is marked Ordered (and wasn't already), log it as a sale
+    // on the linked client automatically, so it shows up in their history and in Sales Intelligence.
+    var saleMsg = existing ? "Special order enquiry updated \u2713" : "Special order enquiry saved \u2713";
+    if (rec.status === "Ordered" && prevStatus !== "Ordered") {
+      var linkedClient = rec.clientId ? clients.find(function(cl){ return cl.id === rec.clientId; }) : null;
+      if (linkedClient) {
+        var saleVal = rec.sellInc || rec.sellEx || "0";
+        var prodLabel = rec.product || "Special Order";
+        var detailBits = [rec.productName, rec.colour, rec.colourNo].filter(Boolean).join(" ");
+        var dateStr = String(today.getDate()).padStart(2,"0")+"/"+String(today.getMonth()+1).padStart(2,"0")+"/"+today.getFullYear();
+        if (!linkedClient.log) linkedClient.log = [];
+        linkedClient.log.unshift({
+          date: dateStr,
+          type: "Sale",
+          note: prodLabel + (detailBits ? " \u2014 " + detailBits : "") + " \u2014 \u00a3" + (parseFloat(saleVal)||0).toLocaleString("en-GB") + " (Special order)",
+          sale: {
+            ref: "SRC-SALE-" + Date.now(),
+            value: saleVal,
+            products: prodLabel + (detailBits ? " (" + detailBits + ")" : ""),
+            category: prodLabel,
+            status: "Ordered",
+            paidDate: dateStr,
+            collectedDate: dateStr,
+            source: "Special Order"
+          }
+        });
+        linkedClient.lastContact = dateStr;
+        linkedClient.interactionType = "Sale";
+        saveC();
+        saleMsg = "Marked Ordered \u2014 logged as a sale on " + linkedClient.name + " \u2713";
+      } else {
+        saleMsg = "Marked Ordered \u2014 no matching client found, so no sale was logged";
+      }
+    }
+
     document.body.removeChild(overlay);
     renderSourcingView();
-    toast(existing ? "Special order enquiry updated \u2713" : "Special order enquiry saved \u2713");
+    toast(saleMsg);
   });
   foot.appendChild(cancelB); foot.appendChild(saveB);
   box.appendChild(foot); overlay.appendChild(box); document.body.appendChild(overlay);
