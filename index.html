@@ -168,6 +168,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .fsec{background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:10px}
 .fstitle{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,240px));gap:9px 14px}
+.fgrid-5{grid-template-columns:repeat(5,1fr) !important}
 .fgrid .s2{grid-column:1/-1}
 .ff label{display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px}
 .ff input,.ff select,.ff textarea{width:100%;padding:6px 8px;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;color:var(--text);background:var(--surface);outline:none}
@@ -246,6 +247,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
   .dash-grid { grid-template-columns:1fr;gap:10px; }
   .sec-grid { grid-template-columns:1fr; }
   .fgrid { grid-template-columns:1fr; }
+  .fgrid-5 { grid-template-columns:1fr !important; }
   .fgrid .s2 { grid-column:1; }
   .det-hdr { padding:10px 12px; }
   .page { padding:12px; }
@@ -2607,6 +2609,7 @@ function showForm(id){
   function mkS(id2,opts,val){var s=document.createElement("select");s.id=id2;opts.forEach(function(o){var op=document.createElement("option");op.value=o;op.textContent=o;if(o===val)op.selected=true;s.appendChild(op);});return s;}
 
   var g1=mkSec("Identity");
+  g1.classList.add("fgrid-5");
   mkF(g1,"Account name *",mkI("e_name",c?c.name:"","Company or client name"));
   mkF(g1,"Binder ref",mkI("e_binder",c?c.binder:nextId(),""));
   var srcSel=document.createElement("select");srcSel.id="e_source";srcSel.style.cssText="width:100%;padding:6px 8px;border:2px solid var(--border);border-radius:var(--rs);font-size:11px;font-family:inherit;color:var(--text);outline:none";
@@ -2614,17 +2617,20 @@ function showForm(id){
   mkF(g1,"Customer source",srcSel);
   mkF(g1,"Account manager",mkI("e_mgr",c?(c.manager||"FSG"):"",""));
   mkF(g1,"Area",mkI("e_addr",c?c.address:"","e.g. Leeds, Sheffield"));
-  mkF(g1,"Account opened",mkI("e_opened",c?ti(c.dateOpened||""):"","","date"));
+
+  var g1b=document.createElement("div"); g1b.className="fgrid fgrid-5"; g1b.style.cssText="margin-top:9px";
+  g1.parentElement.appendChild(g1b);
+  mkF(g1b,"Primary contact name",mkI("e_contact",c?c.contact:"","Primary contact person"));
+  var e_mob=mkI("e_mob",c?c.mobile:"","07700 000000","tel"); e_mob.maxLength=14;
+  mkF(g1b,"Primary contact number",e_mob);
+  mkF(g1b,"Secondary contact name",mkI("e_contact2",c?c.contact2:"","Secondary contact person (optional)"));
+  var e_mob2=mkI("e_mob2",c?c.mobile2:"","07700 000000","tel"); e_mob2.maxLength=14;
+  mkF(g1b,"Secondary contact number",e_mob2);
+  mkF(g1b,"Account opened",mkI("e_opened",c?ti(c.dateOpened||""):"","","date"));
   var dupWarnWrap = document.createElement("div"); dupWarnWrap.className = "ff s2"; dupWarnWrap.style.display = "none";
   var dupWarnBox = document.createElement("div"); dupWarnBox.style.cssText = "background:#fff4e0;border:2px solid #f0c060;border-radius:var(--rs);padding:9px 11px;font-size:11px;color:#8a5a00";
   dupWarnWrap.appendChild(dupWarnBox);
-  g1.appendChild(dupWarnWrap);
-  mkF(g1,"Primary contact name",mkI("e_contact",c?c.contact:"","Primary contact person"));
-  var e_mob=mkI("e_mob",c?c.mobile:"","07700 000000","tel"); e_mob.maxLength=14;
-  mkF(g1,"Primary contact number",e_mob);
-  mkF(g1,"Secondary contact name",mkI("e_contact2",c?c.contact2:"","Secondary contact person (optional)"));
-  var e_mob2=mkI("e_mob2",c?c.mobile2:"","07700 000000","tel"); e_mob2.maxLength=14;
-  mkF(g1,"Secondary contact number",e_mob2);
+  g1b.appendChild(dupWarnWrap);
 
   var g3=mkSec("Intelligence");
   mkF(g3,"Status",mkS("e_stat",["Active","Prospect","On Hold","Lost","Closed"],c?c.status:"Prospect"));
