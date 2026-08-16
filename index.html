@@ -86,27 +86,27 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .page-title{font-size:16px;font-weight:700;margin-bottom:16px}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .kpi{background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px 16px}
-.kpi-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
-.kpi-val{font-size:24px;font-weight:700}
-.kpi-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.kpi-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
+.kpi-val{font-size:26px;font-weight:700}
+.kpi-sub{font-size:12px;color:var(--muted);margin-top:2px}
 .kv-blue{color:var(--navy)} .kv-green{color:var(--gtxt)} .kv-red{color:var(--red)} .kv-amber{color:var(--atxt)}
 .dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .diary-cell{min-width:0;height:80px}
 @media (max-width:600px){.diary-cell{height:64px;padding:2px !important}}
 .dash-card{background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px}
-.dash-card-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
-.fu-item{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.dash-card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.fu-item{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer}
 .fu-item:last-child,.top-item:last-child,.cold-item:last-child{border-bottom:none}
 .fu-item:hover,.top-item:hover,.cold-item:hover{background:var(--alt)}
-.fu-av{width:26px;height:26px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
-.fu-name{font-weight:700;font-size:11px}
-.fu-date{font-size:9px;color:var(--muted)}
-.fu-badge{margin-left:auto;font-size:9px;padding:2px 6px;border-radius:20px;flex-shrink:0}
-.top-item{display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer}
-.top-rank{width:18px;font-size:10px;font-weight:700;color:var(--muted);text-align:center}
-.cold-item{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer}
-.cold-days{font-size:9px;background:var(--rbg);color:var(--rtxt);padding:2px 6px;border-radius:20px;margin-left:auto}
-.empty-dash{padding:14px 0;text-align:center;color:var(--muted);font-size:11px}
+.fu-av{width:30px;height:30px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.fu-name{font-weight:700;font-size:14px}
+.fu-date{font-size:11px;color:var(--muted)}
+.fu-badge{margin-left:auto;font-size:11px;padding:3px 8px;border-radius:20px;flex-shrink:0}
+.top-item{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.top-rank{width:18px;font-size:12px;font-weight:700;color:var(--muted);text-align:center}
+.cold-item{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.cold-days{font-size:11px;background:var(--rbg);color:var(--rtxt);padding:3px 8px;border-radius:20px;margin-left:auto}
+.empty-dash{padding:14px 0;text-align:center;color:var(--muted);font-size:13px}
 .det-hdr{background:var(--navy3);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;border-bottom:3px solid var(--red3)}
 .det-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
 .det-av{width:42px;height:42px;border-radius:50%;background:var(--red3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff}
@@ -1818,7 +1818,7 @@ function renderDash(){
     diaryPanel.className = "dash-card";
     diaryPanel.style.cssText = "border-left:4px solid #e8a020";
     var dpHdr = document.createElement("div"); dpHdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)";
-    var dpTitle = document.createElement("div"); dpTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; dpTitle.textContent = "Diary — Today";
+    var dpTitle = document.createElement("div"); dpTitle.style.cssText = "font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; dpTitle.textContent = "Diary — Today";
     var dpBadge = document.createElement("span"); dpBadge.style.cssText = "background:#e8a020;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px"; dpBadge.textContent = allDiaryEvts.length+" event"+(allDiaryEvts.length!==1?"s":"");
     dpHdr.appendChild(dpTitle); dpHdr.appendChild(dpBadge); diaryPanel.appendChild(dpHdr);
     var typeColors2 = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Anniversary":"#c0392b","Holiday":"#16a085","Other":"#7f8c8d"};
@@ -1856,7 +1856,7 @@ function renderDash(){
     bdPanel.className = "dash-card";
     bdPanel.style.cssText = "border-left:4px solid #e8a020";
     var bdHdr = document.createElement("div"); bdHdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)";
-    var bdTitle = document.createElement("div"); bdTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; bdTitle.textContent = "\uD83C\uDF82 Birthdays coming up";
+    var bdTitle = document.createElement("div"); bdTitle.style.cssText = "font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; bdTitle.textContent = "\uD83C\uDF82 Birthdays coming up";
     var bdBadge = document.createElement("span"); bdBadge.style.cssText = "background:#e8a020;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px"; bdBadge.textContent = upcomingBdays.length;
     bdHdr.appendChild(bdTitle); bdHdr.appendChild(bdBadge); bdPanel.appendChild(bdHdr);
     upcomingBdays.forEach(function(b){
@@ -1902,7 +1902,7 @@ function renderDash(){
     rvPanel.className="dash-card";
     rvPanel.style.cssText="border-left:4px solid #9b59b6";
     var rvHdr=document.createElement("div");rvHdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)";
-    var rvTitle=document.createElement("div");rvTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";rvTitle.textContent="\uD83E\uDD1D Rep visits overdue";
+    var rvTitle=document.createElement("div");rvTitle.style.cssText="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";rvTitle.textContent="\uD83E\uDD1D Rep visits overdue";
     var rvBadge=document.createElement("span");rvBadge.style.cssText="background:#9b59b6;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px";rvBadge.textContent=repVisitsDue.length+" reps";
     rvHdr.appendChild(rvTitle);rvHdr.appendChild(rvBadge);rvPanel.appendChild(rvHdr);
     repVisitsDue.forEach(function(r){
@@ -1930,7 +1930,7 @@ function renderDash(){
     smpPanel.className="dash-card";
     smpPanel.style.cssText="border-left:4px solid #305CDE";
     var smpHdr=document.createElement("div");smpHdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)";
-    var smpTitle=document.createElement("div");smpTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";smpTitle.textContent="Samples awaiting from reps";
+    var smpTitle=document.createElement("div");smpTitle.style.cssText="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";smpTitle.textContent="Samples awaiting from reps";
     var smpBadge=document.createElement("span");smpBadge.style.cssText="background:var(--navy);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px";smpBadge.textContent=pendingSamples.length+" pending";
     smpHdr.appendChild(smpTitle);smpHdr.appendChild(smpBadge);smpPanel.appendChild(smpHdr);
     var byRep={};
