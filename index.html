@@ -1979,6 +1979,14 @@ function isQuoteEntry(entry){return isOpenQuoteEntry(entry)||isPastQuoteEntry(en
 function statusIsSale(status){return SALE_STATUSES.indexOf(status)>-1;}
 function recordValue(entry){var r=logRecord(entry);return r?(parseFloat(String(r.value||"0").replace(/[^0-9.]/g,""))||0):0;}
 function recordProduct(entry){var r=logRecord(entry);return r?(r.category||r.products||"Other"):"Other";}
+// Sub-categorized sales (e.g. "Tools: Trowel", "LVT: Karndean") need to roll up to their parent
+// category for reporting, or they silently vanish from the Sales Intelligence breakdown/pie chart
+// while still counting toward the grand total — this strips the ": subcategory" part back off.
+function baseProductCategory(cat){
+  if(!cat) return "Other";
+  var idx = cat.indexOf(": ");
+  return idx > -1 ? cat.slice(0, idx) : cat;
+}
 function recordDisplayDate(entry){var r=logRecord(entry)||{};return r.collectedDate||r.paidDate||r.orderedDate||entry.date||"";}
 
 // Legacy-data compatibility only. Safe to keep until all old records have migrated.
@@ -2113,6 +2121,7 @@ function renderDet(){
     alb.textContent="+ Log an interaction";alb.addEventListener("click",function(){showLF=true;renderDet();});
     btnRow.appendChild(alb);logSec.appendChild(btnRow);
   }
+  var builtLogEntries=[];
   (c.log||[]).forEach(function(l,idx){
     var bucket=isSaleEntry(l)?"Sales / Orders":isOpenQuoteEntry(l)?"Open Quotes":isPastQuoteEntry(l)?"Past Quotes":"Interactions";
     var hideForTab=detLogTab!==bucket;
@@ -2165,12 +2174,46 @@ function renderDet(){
       qsel.addEventListener("change",(function(i){return function(e){setQuoteOrSaleStatus(c.id,i,e.target.value,function(){renderDet();});};})(idx));
       qsr.appendChild(qsl);qsr.appendChild(qsel);qbox.appendChild(qsr);entry.appendChild(qbox);
     }
-    logSec.appendChild(entry);
+    builtLogEntries.push({el:entry, l:l, bucket:bucket, hideForTab:hideForTab});
+  });
+  // Ring together items logged in the same transaction (matching the sourcing sheet's linked-job style),
+  // using the same close-in-time logic as the daily sales popup — so a genuinely separate later visit by
+  // this client stays as its own entry rather than getting merged in.
+  var txnId=0, prevTs=null;
+  builtLogEntries.forEach(function(be){
+    if(be.bucket!=="Sales / Orders"){ prevTs=null; return; }
+    var ts=saleRefTimestamp(logRecord(be.l));
+    if(prevTs===null || ts===null || Math.abs(prevTs-ts)>10*60*1000) txnId++;
+    be.txnKey=c.id+"-"+txnId;
+    prevTs=ts;
+  });
+  var groupingActive = detLogTab==="Sales / Orders";
+  var txnCounts={};
+  if(groupingActive){
+    builtLogEntries.forEach(function(be){ if(be.bucket==="Sales / Orders" && !be.hideForTab) txnCounts[be.txnKey]=(txnCounts[be.txnKey]||0)+1; });
+  }
+  var renderedTxns={};
+  builtLogEntries.forEach(function(be){
+    if(groupingActive && be.bucket==="Sales / Orders" && !be.hideForTab && txnCounts[be.txnKey]>1){
+      if(renderedTxns[be.txnKey]) return;
+      renderedTxns[be.txnKey]=true;
+      var sameTxn=builtLogEntries.filter(function(x){ return x.bucket==="Sales / Orders" && !x.hideForTab && x.txnKey===be.txnKey; });
+      var txnTotal=sameTxn.reduce(function(s,x){ return s+recordValue(x.l); },0);
+      var ringWrap=document.createElement("div"); ringWrap.style.cssText="border:2px solid #e6a15c;background:#fffaf3;border-radius:var(--r);padding:12px;margin-bottom:10px";
+      var ringHdr=document.createElement("div"); ringHdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px";
+      var ringLbl=document.createElement("div"); ringLbl.style.cssText="font-size:10px;font-weight:700;color:#a5590f;text-transform:uppercase;letter-spacing:.4px"; ringLbl.textContent=sameTxn.length+" items, same transaction \u2014 "+be.l.date;
+      var ringTot=document.createElement("div"); ringTot.style.cssText="font-size:13px;font-weight:700;color:var(--gtxt)"; ringTot.textContent=money(txnTotal);
+      ringHdr.appendChild(ringLbl); ringHdr.appendChild(ringTot); ringWrap.appendChild(ringHdr);
+      sameTxn.forEach(function(x){ ringWrap.appendChild(x.el); });
+      logSec.appendChild(ringWrap);
+    } else {
+      logSec.appendChild(be.el);
+    }
   });
   var visibleLogCount=(c.log||[]).filter(function(l){var b=isSaleEntry(l)?"Sales / Orders":isOpenQuoteEntry(l)?"Open Quotes":isPastQuoteEntry(l)?"Past Quotes":"Interactions";return b===detLogTab;}).length;
   if(!visibleLogCount){var nl=document.createElement("p");nl.style.cssText="font-size:11px;color:var(--muted);margin-bottom:7px";nl.textContent=detLogTab==="Sales / Orders"?"No sales or orders yet.":detLogTab==="Open Quotes"?"No open quotes.":detLogTab==="Past Quotes"?"No lost or expired quotes.":"No interactions logged yet.";logSec.appendChild(nl);}grid.appendChild(logSec);
   var prodMap={},qtrMap={Q1:0,Q2:0,Q3:0,Q4:0};
-  (c.log||[]).forEach(function(l){if(isSaleEntry(l)){var v=recordValue(l);var prod=recordProduct(l);prodMap[prod]=(prodMap[prod]||0)+v;var useDate=recordDisplayDate(l);if(useDate){var dp=useDate.split("/");if(dp.length===3){var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrMap[q]=(qtrMap[q]||0)+v;}}}}); 
+  (c.log||[]).forEach(function(l){if(isSaleEntry(l)){var v=recordValue(l);var prod=baseProductCategory(recordProduct(l));prodMap[prod]=(prodMap[prod]||0)+v;var useDate=recordDisplayDate(l);if(useDate){var dp=useDate.split("/");if(dp.length===3){var m=parseInt(dp[1]);var q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrMap[q]=(qtrMap[q]||0)+v;}}}}); 
   var hasProd=Object.keys(prodMap).length>0,hasQtr=Object.values(qtrMap).some(function(v){return v>0;});
   if(hasProd||hasQtr){
     var cs=document.createElement("div");cs.className="sec full";var ct=document.createElement("span");ct.className="stag t-ch";ct.textContent="Sales intelligence";cs.appendChild(ct);
@@ -3087,7 +3130,7 @@ function getDailySalesData(year,month){
 }
 function getSalesData(year){
   var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},prodQtrs={Q1:{},Q2:{},Q3:{},Q4:{}},subProd={},yearTotal=0,months=Array(12).fill(0);
-  clients.forEach(function(c){(c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;var m=parseInt(dp[1]),v=recordValue(l),cat=recordProduct(l)||"Other",q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrs[q]+=v;yearTotal+=v;months[m-1]+=v;prodTotals[cat]=(prodTotals[cat]||0)+v;prodQtrs[q][cat]=(prodQtrs[q][cat]||0)+v;});});
+  clients.forEach(function(c){(c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;var m=parseInt(dp[1]),v=recordValue(l),cat=baseProductCategory(recordProduct(l))||"Other",q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrs[q]+=v;yearTotal+=v;months[m-1]+=v;prodTotals[cat]=(prodTotals[cat]||0)+v;prodQtrs[q][cat]=(prodQtrs[q][cat]||0)+v;});});
   return {qtrs:qtrs,prodTotals:prodTotals,prodQtrs:prodQtrs,subProd:subProd,yearTotal:yearTotal,months:months};
 }
 function getYears(){
@@ -3213,7 +3256,10 @@ function renderSalesView(){
   var rankedDays=dailyData.days.map(function(v,i){return{day:i+1,value:v};}).filter(function(d){return d.value>0;}).sort(function(a,b){return b.value-a.value;});
   if(!rankedDays.length){var noD=document.createElement("div");noD.style.cssText="font-size:11px;color:var(--muted);padding:8px 0";noD.textContent="No collected sales this month yet";dListWrap.appendChild(noD);}
   else{rankedDays.forEach(function(d){
-    var row=document.createElement("div");row.style.cssText="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px";
+    var row=document.createElement("div");row.style.cssText="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;cursor:pointer";
+    row.addEventListener("mouseenter",function(){row.style.background="var(--alt)";});
+    row.addEventListener("mouseleave",function(){row.style.background="";});
+    row.addEventListener("click",function(){showDaySalesDetail(currentSalesYear,currentSalesMonth,d.day);});
     var dLbl=document.createElement("span");dLbl.style.cssText="color:var(--muted)";dLbl.textContent=d.day+" "+monthNames[currentSalesMonth].slice(0,3);
     var dVal=document.createElement("span");dVal.style.cssText="font-weight:700;color:var(--navy)";dVal.textContent="\u00a3"+d.value.toLocaleString("en-GB");
     row.appendChild(dLbl);row.appendChild(dVal);dListWrap.appendChild(row);
@@ -7996,7 +8042,7 @@ function showMonthlyReport() {
       clients.forEach(function(c){(c.log||[]).forEach(function(l){
         if(l.date){var dp=l.date.split("/");if(dp.length===3&&parseInt(dp[1])-1===mn&&parseInt(dp[2])===yr)monthInteractions++;}
         if(isOpenQuoteEntry(l)){openQuotes++;openQuoteVal+=recordValue(l);}
-        if(isSaleEntry(l)){var useDate2=recordDisplayDate(l);if(useDate2){var dp2=useDate2.split("/");if(dp2.length===3&&parseInt(dp2[1])-1===mn&&parseInt(dp2[2])===yr){var v=recordValue(l);monthSales+=v;monthSalesCount++;var cat=recordProduct(l)||"Other";productMap[cat]=(productMap[cat]||0)+v;}}}
+        if(isSaleEntry(l)){var useDate2=recordDisplayDate(l);if(useDate2){var dp2=useDate2.split("/");if(dp2.length===3&&parseInt(dp2[1])-1===mn&&parseInt(dp2[2])===yr){var v=recordValue(l);monthSales+=v;monthSalesCount++;var cat=baseProductCategory(recordProduct(l))||"Other";productMap[cat]=(productMap[cat]||0)+v;}}}
       });});
       var topClients=[];clients.forEach(function(c){var sp=0;(c.log||[]).forEach(function(l){if(isSaleEntry(l)){var useDate3=recordDisplayDate(l);if(useDate3){var dp3=useDate3.split("/");if(dp3.length===3&&parseInt(dp3[1])-1===mn&&parseInt(dp3[2])===yr)sp+=recordValue(l);}}});if(sp>0)topClients.push({name:c.name,spend:sp});});
       topClients.sort(function(a,b){return b.spend-a.spend;}).splice(5);
@@ -8098,7 +8144,7 @@ function showMonthlyReport() {
       var hdr=document.createElement("div");hdr.style.cssText="font-size:13px;font-weight:700;margin-bottom:14px";hdr.textContent="Product Mix Report";body.appendChild(hdr);
       var catRev={};var catCount={};var catPipeline={};
       clients.forEach(function(c){(c.log||[]).forEach(function(l){
-        var cat=recordProduct(l);if(!cat)cat="Other";
+        var cat=baseProductCategory(recordProduct(l));if(!cat)cat="Other";
         var v=recordValue(l);
         if(isSaleEntry(l)){catRev[cat]=(catRev[cat]||0)+v;catCount[cat]=(catCount[cat]||0)+1;}
         if(isOpenQuoteEntry(l)){catPipeline[cat]=(catPipeline[cat]||0)+v;}
@@ -9061,6 +9107,94 @@ function mkBarChart(id, data4) {
   };
   chartInstances[id] = new Chart(ctx.getContext("2d"), cfg);
 }
+// Returns every individual sale recorded on a specific date, with client name and product — used by the daily-sales drill-down.
+// Sale refs are stamped "SALE-<timestamp>", so entries logged within a few minutes of each other
+// (same "Save and add another product" session) can be told apart from a genuinely separate later
+// visit by the same customer — that's what "one transaction" means here, not just "same client, same day".
+function saleRefTimestamp(rec){
+  if(!rec||!rec.ref) return null;
+  var m = /-(\d+)$/.exec(rec.ref);
+  return m ? parseInt(m[1],10) : null;
+}
+function getDaySaleDetail(year, month, day){
+  var dd = String(day).padStart(2,"0"), mm = String(month+1).padStart(2,"0");
+  var targetDate = dd+"/"+mm+"/"+year;
+  var TXN_GAP_MS = 10*60*1000; // entries within 10 minutes of each other count as one transaction
+  var results = [];
+  clients.forEach(function(c){
+    var log = c.log||[];
+    var txnId = 0, prevTs = null;
+    for(var i=0;i<log.length;i++){
+      var l = log[i];
+      if(!isSaleEntry(l) || recordDisplayDate(l)!==targetDate){ prevTs=null; continue; }
+      var ts = saleRefTimestamp(logRecord(l));
+      if(prevTs===null || ts===null || Math.abs(prevTs-ts)>TXN_GAP_MS) txnId++;
+      results.push({clientId:c.id, name:c.name, value:recordValue(l), product:recordProduct(l), txnKey:c.id+"-"+txnId});
+      prevTs = ts;
+    }
+  });
+  return results;
+}
+function showDaySalesDetail(year, month, day){
+  var monthNames=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var items = getDaySaleDetail(year, month, day);
+  var dateLabel = day+" "+monthNames[month]+" "+year;
+  var overlay = document.createElement("div");
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:250;display:flex;align-items:center;justify-content:center;padding:16px";
+  var box = document.createElement("div");
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:420px;max-height:80vh;overflow-y:auto;border-top:3px solid var(--navy)";
+  var hdr = document.createElement("div"); hdr.style.cssText="background:var(--navy);padding:13px 16px;display:flex;align-items:center;justify-content:space-between";
+  var title = document.createElement("div"); title.style.cssText="font-size:13px;font-weight:700;color:#fff"; title.textContent = dateLabel;
+  var cx = document.createElement("button"); cx.style.cssText="background:rgba(255,255,255,.1);border:none;border-radius:4px;width:26px;height:26px;color:#fff;font-size:17px;cursor:pointer;line-height:1"; cx.textContent="\u00d7";
+  cx.addEventListener("click", function(){document.body.removeChild(overlay);});
+  hdr.appendChild(title); hdr.appendChild(cx); box.appendChild(hdr);
+  var totalVal = items.reduce(function(a,b){return a+b.value;},0);
+  var sub = document.createElement("div"); sub.style.cssText="padding:10px 16px 0;font-size:12px;color:var(--muted)"; sub.textContent = items.length+" sale"+(items.length===1?"":"s")+" \u2014 \u00a3"+totalVal.toLocaleString("en-GB")+" total";
+  box.appendChild(sub);
+  var body = document.createElement("div"); body.style.cssText="padding:12px 16px 16px";
+  if(!items.length){
+    var none = document.createElement("div"); none.style.cssText="font-size:12px;color:var(--muted);padding:12px 0;text-align:center"; none.textContent="No sales recorded this day.";
+    body.appendChild(none);
+  } else {
+    function buildItemRow(it, showName){
+      var row = document.createElement("div"); row.style.cssText="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)";
+      var left = document.createElement("div");
+      if(showName){ var nm = document.createElement("div"); nm.style.cssText="font-weight:700;font-size:13px;color:var(--text)"; nm.textContent = it.name; left.appendChild(nm); }
+      if(it.product){ var pr = document.createElement("div"); pr.style.cssText="font-size:11px;color:var(--muted)"; pr.textContent = it.product; left.appendChild(pr); }
+      var val = document.createElement("div"); val.style.cssText="font-weight:700;font-size:13px;color:var(--gtxt);flex-shrink:0;margin-left:10px"; val.textContent = "\u00a3"+it.value.toLocaleString("en-GB");
+      row.appendChild(left); row.appendChild(val);
+      return row;
+    }
+    // Ring together items entered in the same transaction (matching the sourcing sheet's linked-job style).
+    // Two sales for the same customer that were logged as separate transactions — e.g. a morning visit and
+    // a separate afternoon visit — stay as two separate rings, not merged into one.
+    var txnCounts = {};
+    items.forEach(function(it){ txnCounts[it.txnKey] = (txnCounts[it.txnKey]||0)+1; });
+    var renderedTxns = {};
+    items.forEach(function(it){
+      if(txnCounts[it.txnKey] > 1){
+        if(renderedTxns[it.txnKey]) return;
+        renderedTxns[it.txnKey] = true;
+        var groupItems = items.filter(function(x){ return x.txnKey===it.txnKey; });
+        var groupTotal = groupItems.reduce(function(a,b){return a+b.value;},0);
+        var groupWrap = document.createElement("div"); groupWrap.style.cssText="border:2px solid #e6a15c;background:#fffaf3;border-radius:var(--rs);padding:10px 12px;margin-bottom:10px";
+        var groupHdr = document.createElement("div"); groupHdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:8px";
+        var groupName = document.createElement("div"); groupName.style.cssText="font-weight:700;font-size:13px;color:var(--text)"; groupName.textContent = it.name;
+        var groupTot = document.createElement("div"); groupTot.style.cssText="font-weight:700;font-size:13px;color:var(--gtxt);flex-shrink:0"; groupTot.textContent = "\u00a3"+groupTotal.toLocaleString("en-GB");
+        groupHdr.appendChild(groupName); groupHdr.appendChild(groupTot); groupWrap.appendChild(groupHdr);
+        var groupSub = document.createElement("div"); groupSub.style.cssText="font-size:10px;font-weight:700;color:#a5590f;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px"; groupSub.textContent = groupItems.length+" items, same transaction";
+        groupWrap.appendChild(groupSub);
+        groupItems.forEach(function(gi){ var r=buildItemRow(gi,false); r.style.borderBottom="1px solid #f0ddc0"; groupWrap.appendChild(r); });
+        groupWrap.lastChild.style.borderBottom="none";
+        body.appendChild(groupWrap);
+      } else {
+        body.appendChild(buildItemRow(it, true));
+      }
+    });
+  }
+  box.appendChild(body);
+  overlay.appendChild(box); document.body.appendChild(overlay);
+}
 function mkDailyBarChart(id, dayValues, year, month) {
   var ctx = document.getElementById(id);
   if (!ctx) return;
@@ -9086,6 +9220,13 @@ function mkDailyBarChart(id, dayValues, year, month) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      onClick: function(evt, elements) {
+        if (!elements || !elements.length) return;
+        showDaySalesDetail(year, month, elements[0].index + 1);
+      },
+      onHover: function(evt, elements) {
+        evt.native.target.style.cursor = elements.length ? "pointer" : "default";
+      },
       plugins: { legend: { display: false } },
       scales: {
         y: { ticks: { callback: function(v) { return "£" + v.toLocaleString(); } } },
