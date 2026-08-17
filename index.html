@@ -48,7 +48,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 .srch input{background:none;border:none;outline:none;font-size:12px;color:var(--text);flex:1}
 .srch input::placeholder{color:var(--muted)}
 .fltrs{display:flex;gap:4px;flex-wrap:wrap}
-.fb{padding:3px 8px;border:2px solid var(--border);border-radius:20px;background:var(--surface);color:var(--muted);font-size:10px;cursor:pointer;font-weight:700}
+.fb{padding:8px 16px;border:2px solid var(--border);border-radius:20px;background:var(--surface);color:var(--muted);font-size:13px;cursor:pointer;font-weight:700}
 .fb.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .add-btn{width:100%;padding:7px;background:var(--red);border:none;border-radius:var(--rs);color:#1a1a1a;font-size:12px;font-weight:700;cursor:pointer}
 .add-btn:hover{background:var(--red3)}
@@ -1554,7 +1554,7 @@ function renderClientsView(searchTerm){
   var q=(searchTerm||"").toLowerCase();
   var statuses=["All","Active","Prospect","On Hold","Lost"];
   var clientsActiveStatus=window._clientsViewStatus||"All";
-  var fbar=document.createElement("div");fbar.style.cssText="display:flex;gap:6px;flex-wrap:wrap";
+  var fbar=document.createElement("div");fbar.style.cssText="display:flex;gap:8px;flex-wrap:wrap;align-items:center";
   statuses.forEach(function(s){
     var b=document.createElement("button");
     b.className="fb"+(clientsActiveStatus===s?" on":"");
