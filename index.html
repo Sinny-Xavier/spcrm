@@ -2080,7 +2080,7 @@ function renderDet(){
     var sourceColors = {"Existing Customer":"background:#e8edf6;color:#2348b0","Existing Customer (Dormant 12m+)":"background:#f0e6f6;color:#6b2d8b","New - Sinbad's Old Customer":"background:var(--gbg);color:var(--gtxt)","New - Walk In":"background:#e8f5e0;color:#2d6a0f","New - Referral":"background:#fff3e0;color:#854f0b","Fitter":"background:var(--lbg);color:var(--ltxt)"};
   var sourceHtml = c.source ? "<span style=\'font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;"+(sourceColors[c.source]||"background:var(--alt);color:var(--muted)")+"\'>"+c.source+"</span>" : "&mdash;";
   grid.appendChild(addSec("","t-id","Identity",[{label:"Binder ref",labelColor:"#2348b0",val:c.binder},{label:"Manager",labelColor:"#9b59b6",val:c.manager},{label:"Account name",labelColor:"#16324D",val:c.name,wide:true},{label:"Primary contact name",labelColor:"#2d6a0f",val:c.contact},{label:"Primary contact number",labelColor:"#0f7d5c",val:c.mobile},{label:"Secondary contact name",labelColor:"#2d6a0f",val:c.contact2},{label:"Secondary contact number",labelColor:"#0f7d5c",val:c.mobile2},{label:"Customer source",labelColor:"#c77800",html:sourceHtml},{label:"Area",labelColor:"#b8860b",val:c.address}],true));
-  grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",labelColor:"#2348b0",val:c.product,wide:true},{label:"Est. annual spend",labelColor:"#2d6a0f",html:(function(){var auto=calcAnnualSpend(c);if(auto>0){return "<span style='color:var(--gtxt);font-weight:700'>\u00a3"+auto.toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>(paid orders, last 12mo)</span>";}return c.spend?("\u00a3"+c.spend+" <span style='font-size:9px;color:var(--muted)'>(manual estimate)</span>"):"\u2014";})()},{label:"Priority",labelColor:"#e8a020",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",labelColor:"#16324D",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(isSaleEntry(l)){t+=recordValue(l);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",labelColor:"#0f7d5c",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(isSaleEntry(l))t+=recordValue(l);});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Additional notes",labelColor:"#9b59b6",val:c.additionalNotes||[c.wontBuy?("Won't buy: "+c.wontBuy):"",c.competitorNotes?("Competitor: "+c.competitorNotes):""].filter(Boolean).join(" | "),wide:true}],true));
+  grid.appendChild(addSec("","t-in","Intelligence",[{label:"Product interest",labelColor:"#2348b0",val:c.product,wide:true},{label:"Est. annual spend",labelColor:"#2d6a0f",html:(function(){var auto=calcAnnualSpend(c);if(auto>0){return "<span style='color:var(--gtxt);font-weight:700'>\u00a3"+auto.toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>(paid orders, last 12mo)</span>";}return c.spend?("\u00a3"+c.spend+" <span style='font-size:9px;color:var(--muted)'>(manual estimate)</span>"):"\u2014";})()},{label:"Priority",labelColor:"#e8a020",html:"<span style='color:#e8a020;font-size:13px'>"+(c.priority||"\u2014")+"</span>"},{label:"Avg order value",labelColor:"#16324D",html:(function(){var t=0,n=0;(c.log||[]).forEach(function(l){if(isSaleEntry(l)){t+=recordValue(l);n++;}});return n>0?"<span style='color:var(--gtxt);font-weight:700'>\u00a3"+(Math.round(t/n)).toLocaleString("en-GB")+"</span> <span style='font-size:9px;color:var(--muted)'>("+n+" sales)</span>":"\u2014";})()},{label:"Total paid sales",labelColor:"#0f7d5c",html:(function(){var t=0;(c.log||[]).forEach(function(l){if(isSaleEntry(l)){var rec=logRecord(l);if(rec&&rec.paidDate)t+=recordValue(l);}});return t>0?"<span style='color:var(--navy);font-weight:700'>\u00a3"+t.toLocaleString("en-GB")+"</span>":"\u2014";})()},{label:"Additional notes",labelColor:"#9b59b6",val:c.additionalNotes||[c.wontBuy?("Won't buy: "+c.wontBuy):"",c.competitorNotes?("Competitor: "+c.competitorNotes):""].filter(Boolean).join(" | "),wide:true}],true));
   var trackingSec=addSec("full","t-tr","Tracking",[{label:"Status",labelColor:"#2348b0",html:"<span class='pl "+scls(c.status)+"'>"+c.status+"</span>"},{label:"Interaction type",labelColor:"#9b59b6",val:c.interactionType},{label:"Last contacted",labelColor:"#2d6a0f",val:c.lastContact},{label:"Follow-up date",labelColor:"#c77800",html:"<span class='ftag "+(d<=0?"fdue":d<=3?"famb":"fok")+"'>"+(c.followup||"Not set")+"</span>"},{label:"Account opened",labelColor:"#16324D",val:c.dateOpened||"—"},{label:"Key dates",labelColor:"#b23a2e",val:c.keyDates,wide:true}],true);
   trackingSec.className+=" not-in-overview"; grid.appendChild(trackingSec);
   var notesSec=document.createElement("div");notesSec.className="sec full not-in-overview";
@@ -4142,6 +4142,18 @@ function showSaleForm(clientId, clientName) {
   dateInp.style.cssText = "width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
   bd.appendChild(mkF2("Date", dateInp));
 
+  // Not paid yet — collected/taken away today, payment to follow. Saves the separate trip through Quotes.
+  var unpaidWrap = document.createElement("div");
+  unpaidWrap.style.cssText = "display:flex;align-items:center;gap:7px;background:#fff4e0;border:2px solid #f0c060;border-radius:var(--rs);padding:8px 10px";
+  var unpaidChk = document.createElement("input");
+  unpaidChk.type = "checkbox"; unpaidChk.id = "sl_unpaid";
+  var unpaidLbl = document.createElement("label");
+  unpaidLbl.setAttribute("for", "sl_unpaid");
+  unpaidLbl.style.cssText = "font-size:11px;color:#8a5a00;font-weight:700;cursor:pointer";
+  unpaidLbl.textContent = "Collected \u2014 not paid yet (invoice / pay later)";
+  unpaidWrap.appendChild(unpaidChk); unpaidWrap.appendChild(unpaidLbl);
+  bd.appendChild(unpaidWrap);
+
   // Footfall link — preselect the likely visit type but allow a quick correction.
   var ffWrap=document.createElement("div");
   var ffLbl=document.createElement("label");ffLbl.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";ffLbl.textContent="Footfall visit type";
@@ -4191,6 +4203,7 @@ function showSaleForm(clientId, clientName) {
     var det = document.getElementById("sl_det").value.trim();
     var date = document.getElementById("sl_date").value;
     var another = document.getElementById("sl_another").checked;
+    var notPaidYet = document.getElementById("sl_unpaid").checked;
 
     if (!prod || !val) { toast("Please select a product and enter an amount"); return; }
 
@@ -4199,7 +4212,7 @@ function showSaleForm(clientId, clientName) {
     if (!c) return;
     if (!c.log) c.log = [];
 
-    var saleNote = prod + (det ? " — " + det : "") + " — £" + parseFloat(val).toLocaleString("en-GB");
+    var saleNote = prod + (det ? " — " + det : "") + " — £" + parseFloat(val).toLocaleString("en-GB") + (notPaidYet ? " (payment pending)" : "");
     c.log.unshift({
       date: fd(date),
       type: "Sale",
@@ -4210,7 +4223,7 @@ function showSaleForm(clientId, clientName) {
         products: prod + (det ? " (" + det + ")" : ""),
         category: prod,
         status: "Collected",
-        paidDate: fd(date),
+        paidDate: notPaidYet ? "" : fd(date),
         collectedDate: fd(date),
         source: "Direct Sale"
       }
@@ -4218,7 +4231,7 @@ function showSaleForm(clientId, clientName) {
     c.lastContact = fd(date);
     c.interactionType = "Sale";
     saveC();
-    toast("£ Sale logged ✓");
+    toast(notPaidYet ? "£ Sale logged \u2014 payment pending \u2713" : "£ Sale logged \u2713");
 
     if (!footfallBumped) {
       var selectedFootfall=document.getElementById("sl_footfall")?document.getElementById("sl_footfall").value:"";
@@ -7735,7 +7748,7 @@ function showTotpDisable() {
 // ── AUTO PRIORITY ─────────────────────────────────────────────────
 function calcAnnualSpend(c){
   var cutoff=new Date();cutoff.setFullYear(cutoff.getFullYear()-1);var t=0;
-  (c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length===3){var dt=new Date(parseInt(dp[2]),parseInt(dp[1])-1,parseInt(dp[0]));if(dt>=cutoff)t+=recordValue(l);}});
+  (c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var rec=logRecord(l);if(!rec||!rec.paidDate)return;var dp=recordDisplayDate(l).split("/");if(dp.length===3){var dt=new Date(parseInt(dp[2]),parseInt(dp[1])-1,parseInt(dp[0]));if(dt>=cutoff)t+=recordValue(l);}});
   return t;
 }
 function calcAutoPriority(c) {
