@@ -2765,6 +2765,18 @@ function submitForm(){
   var name=document.getElementById("e_name").value.trim();
   if(!name){toast("Account name is required");return;}
   var binder=document.getElementById("e_binder").value.trim();
+
+  // Guard against exactly the failure that lost the Cash Sale history: creating a "new" client whose
+  // Binder Ref matches an EXISTING client's ID would silently overwrite that client's entire record —
+  // name, history, everything — the next time it synced. Block it outright instead.
+  if(!editId){
+    var collision=clients.find(function(x){return x.id===binder;});
+    if(collision){
+      toast("\u26A0\uFE0F Binder ref already belongs to \""+collision.name+"\" \u2014 saving would overwrite them. Edit that client instead, or use a different binder ref.",true);
+      return;
+    }
+  }
+
   var data={
     id:editId||binder,binder:binder,name:name,
     contact:document.getElementById("e_contact").value.trim(),
