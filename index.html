@@ -1406,6 +1406,7 @@ var activeFilter="All",activeId=null,editId=null,showLF=false,pendingDel=null;
 var detLogTab="Sales / Orders";
 var currentSalesYear=new Date().getFullYear();
 var currentSalesMonth=new Date().getMonth();
+var currentSalesProcBy="All";
 
 function loadClients(){
   try{
@@ -1979,6 +1980,8 @@ function isQuoteEntry(entry){return isOpenQuoteEntry(entry)||isPastQuoteEntry(en
 function statusIsSale(status){return SALE_STATUSES.indexOf(status)>-1;}
 function recordValue(entry){var r=logRecord(entry);return r?(parseFloat(String(r.value||"0").replace(/[^0-9.]/g,""))||0):0;}
 function recordProduct(entry){var r=logRecord(entry);return r?(r.category||r.products||"Other"):"Other";}
+// Historical sales predate this field entirely — they were all genuinely Sinbad's, so that's the safe default.
+function recordProcessedBy(entry){var r=logRecord(entry);return (r&&r.processedBy)||"Sinbad";}
 // Sub-categorized sales (e.g. "Tools: Trowel", "LVT: Karndean") need to roll up to their parent
 // category for reporting, or they silently vanish from the Sales Intelligence breakdown/pie chart
 // while still counting toward the grand total — this strips the ": subcategory" part back off.
@@ -2156,7 +2159,8 @@ function renderDet(){
       function qf2(lbl2,val2,wide2){var f=document.createElement("div");if(wide2)f.style.gridColumn="1/-1";var fl=document.createElement("div");fl.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";fl.textContent=lbl2;var fv=document.createElement("div");fv.style.cssText="font-size:11px;color:var(--text)"+(wide2?";font-weight:700":"");fv.textContent=val2||"\u2014";f.appendChild(fl);f.appendChild(fv);return f;}
       qg.appendChild(qf2(saleSide?"Sale / Quote Ref":"Quote Ref",rec.ref));qg.appendChild(qf2("Value",money(rec.value)));qg.appendChild(qf2("Product",rec.products,true));qbox.appendChild(qg);
       if(rec.lostReason){var lrDiv=document.createElement("div");lrDiv.style.cssText="font-size:11px;color:var(--rtxt);background:var(--rbg);border-radius:var(--rs);padding:6px 9px;margin-top:7px";lrDiv.innerHTML="<strong>Lost reason:</strong> "+rec.lostReason;qbox.appendChild(lrDiv);}
-      if(rec.paidDate){var pdDiv=document.createElement("div");pdDiv.style.cssText="font-size:11px;color:#1a5c1a;background:#d0f0d0;border-radius:var(--rs);padding:6px 9px;margin-top:7px";pdDiv.innerHTML="<strong>Paid:</strong> "+rec.paidDate;qbox.appendChild(pdDiv);}
+      if(rec.houseBuildInvoiced){var hbDiv=document.createElement("div");hbDiv.style.cssText="font-size:11px;color:#a5590f;background:#fff4e0;border-radius:var(--rs);padding:6px 9px;margin-top:7px";hbDiv.innerHTML="<strong>\uD83C\uDFD7\uFE0F House Build:</strong> invoiced to their fitting account \u2014 "+rec.paidDate;qbox.appendChild(hbDiv);}
+      else if(rec.paidDate){var pdDiv=document.createElement("div");pdDiv.style.cssText="font-size:11px;color:#1a5c1a;background:#d0f0d0;border-radius:var(--rs);padding:6px 9px;margin-top:7px";pdDiv.innerHTML="<strong>Paid:</strong> "+rec.paidDate;qbox.appendChild(pdDiv);}
       if(rec.collectedDate){var cdDiv=document.createElement("div");cdDiv.style.cssText="font-size:11px;color:#0a4a7a;background:#d0e8f5;border-radius:var(--rs);padding:6px 9px;margin-top:7px";cdDiv.innerHTML="<strong>Collected:</strong> "+rec.collectedDate;qbox.appendChild(cdDiv);}
       if(l.quote&&rec.expiry){
         var expDateObj=new Date(rec.expiry);
@@ -3123,15 +3127,15 @@ function showRepForm(id){
 }
 
 // ── SALES ─────────────────────────────────────────────────────────
-function getDailySalesData(year,month){
+function getDailySalesData(year,month,procFilter){
   var dim=new Date(year,month+1,0).getDate(),days=Array(dim).fill(0),monthTotal=0;
-  clients.forEach(function(c){(c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length!==3)return;if(parseInt(dp[2])===year&&parseInt(dp[1])-1===month){var v=recordValue(l),d=parseInt(dp[0]);if(d>=1&&d<=dim){days[d-1]+=v;monthTotal+=v;}}});});
+  clients.forEach(function(c){(c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;if(procFilter&&procFilter!=="All"&&recordProcessedBy(l)!==procFilter)return;var dp=recordDisplayDate(l).split("/");if(dp.length!==3)return;if(parseInt(dp[2])===year&&parseInt(dp[1])-1===month){var v=recordValue(l),d=parseInt(dp[0]);if(d>=1&&d<=dim){days[d-1]+=v;monthTotal+=v;}}});});
   return {days:days,monthTotal:monthTotal};
 }
-function getSalesData(year){
-  var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},prodQtrs={Q1:{},Q2:{},Q3:{},Q4:{}},subProd={},yearTotal=0,months=Array(12).fill(0);
-  clients.forEach(function(c){(c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;var dp=recordDisplayDate(l).split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;var m=parseInt(dp[1]),v=recordValue(l),cat=baseProductCategory(recordProduct(l))||"Other",q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrs[q]+=v;yearTotal+=v;months[m-1]+=v;prodTotals[cat]=(prodTotals[cat]||0)+v;prodQtrs[q][cat]=(prodQtrs[q][cat]||0)+v;});});
-  return {qtrs:qtrs,prodTotals:prodTotals,prodQtrs:prodQtrs,subProd:subProd,yearTotal:yearTotal,months:months};
+function getSalesData(year,procFilter){
+  var qtrs={Q1:0,Q2:0,Q3:0,Q4:0},prodTotals={},prodQtrs={Q1:{},Q2:{},Q3:{},Q4:{}},subProd={},yearTotal=0,months=Array(12).fill(0),directTotal=0,orderedTotal=0;
+  clients.forEach(function(c){(c.log||[]).forEach(function(l){if(!isSaleEntry(l))return;if(procFilter&&procFilter!=="All"&&recordProcessedBy(l)!==procFilter)return;var dp=recordDisplayDate(l).split("/");if(dp.length!==3||parseInt(dp[2])!==year)return;var m=parseInt(dp[1]),v=recordValue(l),cat=baseProductCategory(recordProduct(l))||"Other",q=m<=3?"Q1":m<=6?"Q2":m<=9?"Q3":"Q4";qtrs[q]+=v;yearTotal+=v;months[m-1]+=v;prodTotals[cat]=(prodTotals[cat]||0)+v;prodQtrs[q][cat]=(prodQtrs[q][cat]||0)+v;if(isDirectSaleEntry(l))directTotal+=v;else orderedTotal+=v;});});
+  return {qtrs:qtrs,prodTotals:prodTotals,prodQtrs:prodQtrs,subProd:subProd,yearTotal:yearTotal,months:months,directTotal:directTotal,orderedTotal:orderedTotal};
 }
 function getYears(){
   var y={};y[new Date().getFullYear()]=1;clients.forEach(function(c){(c.log||[]).forEach(function(l){if(isSaleEntry(l)){var dp=recordDisplayDate(l).split("/");if(dp.length===3)y[parseInt(dp[2])]=1;}});});return Object.keys(y).map(Number).sort();
@@ -3140,13 +3144,13 @@ function getYears(){
 var QUARTER_MONTHS = {Q1:[1,2,3], Q2:[4,5,6], Q3:[7,8,9], Q4:[10,11,12]};
 var QUARTER_MONTH_NAMES = {Q1:["Jan","Feb","Mar"], Q2:["Apr","May","Jun"], Q3:["Jul","Aug","Sep"], Q4:["Oct","Nov","Dec"]};
 function getQuarterMonthlyBreakdown(year, quarter){
-  var data = getSalesData(year);
+  var data = getSalesData(year, currentSalesProcBy);
   var result = {};
   QUARTER_MONTHS[quarter].forEach(function(m){ result[m] = data.months[m-1] || 0; });
   return result;
 }
 function showQuarterDetail(year, quarter) {
-  var data = getSalesData(year);
+  var data = getSalesData(year, currentSalesProcBy);
   var qTotal = data.qtrs[quarter] || 0;
   var qProd = data.prodQtrs[quarter] || {};
   var topProducts = Object.keys(qProd).map(function(p){ return {name:p, value:qProd[p]}; }).filter(function(p){ return p.value>0; }).sort(function(a,b){ return b.value-a.value; });
@@ -3215,17 +3219,23 @@ function showQuarterDetail(year, quarter) {
 
 function renderSalesView(){
   var sv=document.getElementById("salesView");sv.innerHTML="";
-  var years=getYears();var data=getSalesData(currentSalesYear);
+  var years=getYears();var data=getSalesData(currentSalesYear,currentSalesProcBy);
   var hdr=document.createElement("div");hdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px";
   var title=document.createElement("div");title.className="page-title";title.textContent="Sales Intelligence";
   var ysel=document.createElement("div");ysel.className="no-print";ysel.style.cssText="display:flex;gap:5px;align-items:center";
   var yl=document.createElement("span");yl.style.cssText="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px";yl.textContent="Year:";ysel.appendChild(yl);
   years.forEach(function(y){var btn=document.createElement("button");btn.style.cssText="padding:4px 12px;border-radius:20px;border:2px solid var(--border);font-size:11px;font-weight:700;cursor:pointer;"+(y===currentSalesYear?"background:var(--navy);color:#fff;border-color:var(--navy)":"background:var(--surface);color:var(--muted)");btn.textContent=y;btn.addEventListener("click",function(){currentSalesYear=y;renderSalesView();});ysel.appendChild(btn);});
+  var procSelWrap=document.createElement("div");procSelWrap.className="no-print";procSelWrap.style.cssText="display:flex;gap:5px;align-items:center";
+  var procL=document.createElement("span");procL.style.cssText="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px";procL.textContent="Processed by:";procSelWrap.appendChild(procL);
+  var procFilterSel=document.createElement("select");procFilterSel.style.cssText="padding:4px 10px;border:2px solid var(--border);border-radius:20px;font-size:11px;font-weight:700;font-family:inherit;color:var(--text);cursor:pointer";
+  ["All","Sinbad","Sales Office"].forEach(function(pb){var o=document.createElement("option");o.value=pb;o.textContent=pb;if(pb===currentSalesProcBy)o.selected=true;procFilterSel.appendChild(o);});
+  procFilterSel.addEventListener("change",function(){currentSalesProcBy=this.value;renderSalesView();});
+  procSelWrap.appendChild(procFilterSel);
   var salesPrintBtn=document.createElement("button");salesPrintBtn.className="no-print";salesPrintBtn.style.cssText="padding:4px 12px;border-radius:20px;border:none;background:var(--navy);color:#fff;font-size:11px;font-weight:700;cursor:pointer";salesPrintBtn.textContent="\uD83D\uDDA8\uFE0F Print summary";
   salesPrintBtn.addEventListener("click",function(){ printSalesSummary(); });
   var newSaleBtn=document.createElement("button");newSaleBtn.className="no-print";newSaleBtn.style.cssText="padding:7px 16px;border-radius:20px;border:none;background:var(--gtxt);color:#fff;font-size:11px;font-weight:700;cursor:pointer";newSaleBtn.textContent="+ New sale";newSaleBtn.addEventListener("click",showQuickSale);
-  hdr.appendChild(title);hdr.appendChild(newSaleBtn);hdr.appendChild(salesPrintBtn);hdr.appendChild(ysel);sv.appendChild(hdr);
-  var kr=document.createElement("div");kr.style.cssText="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px";kr.id="salesKpiRow";
+  hdr.appendChild(title);hdr.appendChild(newSaleBtn);hdr.appendChild(salesPrintBtn);hdr.appendChild(procSelWrap);hdr.appendChild(ysel);sv.appendChild(hdr);
+  var kr=document.createElement("div");kr.style.cssText="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px";kr.id="salesKpiRow";
   [{l:currentSalesYear+" total",v:"\u00a3"+data.yearTotal.toLocaleString("en-GB"),c:"kv-blue",hi:true},{l:"Q1 Jan-Mar",v:"\u00a3"+data.qtrs.Q1.toLocaleString("en-GB"),c:"",q:"Q1"},{l:"Q2 Apr-Jun",v:"\u00a3"+data.qtrs.Q2.toLocaleString("en-GB"),c:"",q:"Q2"},{l:"Q3 Jul-Sep",v:"\u00a3"+data.qtrs.Q3.toLocaleString("en-GB"),c:"",q:"Q3"},{l:"Q4 Oct-Dec",v:"\u00a3"+data.qtrs.Q4.toLocaleString("en-GB"),c:"",q:"Q4"}].forEach(function(k){
     var card=document.createElement("div");card.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:13px 15px"+(k.hi?";border-top:3px solid var(--navy)":"");
     if(k.q){ card.style.cursor="pointer"; card.addEventListener("click",(function(qq){return function(){ showQuarterDetail(currentSalesYear, qq); }; })(k.q)); }
@@ -3233,8 +3243,13 @@ function renderSalesView(){
     var val=document.createElement("div");val.style.cssText="font-size:"+(k.hi?"22":"18")+"px;font-weight:700;color:"+(k.hi?"var(--navy)":"var(--text)");val.textContent=k.v;
     card.appendChild(lbl);card.appendChild(val);kr.appendChild(card);
   });sv.appendChild(kr);
+  // Orders taken (a quote you wrote up that converted) vs Direct sales (walk-in, no quote involved).
+  var breakdownRow=document.createElement("div");breakdownRow.style.cssText="display:flex;gap:16px;margin-bottom:20px;font-size:11px;color:var(--muted)";
+  var bd1=document.createElement("div");bd1.innerHTML="<strong style='color:var(--navy)'>Orders taken:</strong> \u00a3"+data.orderedTotal.toLocaleString("en-GB");
+  var bd2=document.createElement("div");bd2.innerHTML="<strong style='color:var(--navy)'>Direct sales:</strong> \u00a3"+data.directTotal.toLocaleString("en-GB");
+  breakdownRow.appendChild(bd1);breakdownRow.appendChild(bd2);sv.appendChild(breakdownRow);
   var monthNames=["January","February","March","April","May","June","July","August","September","October","November","December"];
-  var dailyData=getDailySalesData(currentSalesYear,currentSalesMonth);
+  var dailyData=getDailySalesData(currentSalesYear,currentSalesMonth,currentSalesProcBy);
   var dailyCard=document.createElement("div");dailyCard.className="not-in-sales-summary";dailyCard.style.cssText="background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
   var dHdr=document.createElement("div");dHdr.style.cssText="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px";
   var dTitle=document.createElement("div");dTitle.style.cssText="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)";dTitle.textContent="Daily sales \u2014 "+monthNames[currentSalesMonth]+" "+currentSalesYear+" (\u00a3"+dailyData.monthTotal.toLocaleString("en-GB")+")";
@@ -4142,17 +4157,34 @@ function showSaleForm(clientId, clientName) {
   dateInp.style.cssText = "width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
   bd.appendChild(mkF2("Date", dateInp));
 
-  // Not paid yet — collected/taken away today, payment to follow. Saves the separate trip through Quotes.
-  var unpaidWrap = document.createElement("div");
-  unpaidWrap.style.cssText = "display:flex;align-items:center;gap:7px;background:#fff4e0;border:2px solid #f0c060;border-radius:var(--rs);padding:8px 10px";
-  var unpaidChk = document.createElement("input");
-  unpaidChk.type = "checkbox"; unpaidChk.id = "sl_unpaid";
-  var unpaidLbl = document.createElement("label");
-  unpaidLbl.setAttribute("for", "sl_unpaid");
-  unpaidLbl.style.cssText = "font-size:11px;color:#8a5a00;font-weight:700;cursor:pointer";
-  unpaidLbl.textContent = "Collected \u2014 not paid yet (invoice / pay later)";
-  unpaidWrap.appendChild(unpaidChk); unpaidWrap.appendChild(unpaidLbl);
-  bd.appendChild(unpaidWrap);
+  // Payment status at the point of sale — these are mutually exclusive.
+  var paySection = document.createElement("div");
+  paySection.style.cssText = "background:#fff4e0;border:2px solid #f0c060;border-radius:var(--rs);padding:8px 10px;display:flex;flex-direction:column;gap:6px";
+  var payLbl = document.createElement("div"); payLbl.style.cssText = "font-size:9px;font-weight:700;text-transform:uppercase;color:#8a5a00;letter-spacing:.4px"; payLbl.textContent = "Payment";
+  paySection.appendChild(payLbl);
+  var payOptions = [
+    {id:"sl_pay_paid", val:"paid", label:"Paid \u0026 collected today", checked:true},
+    {id:"sl_pay_pending", val:"pending", label:"Collected \u2014 not paid yet (invoice / pay later)"},
+    {id:"sl_pay_housebuild", val:"housebuild", label:"House Build \u2014 invoiced to their fitting account"}
+  ];
+  var payRadioEls = [];
+  payOptions.forEach(function(opt){
+    var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:7px";
+    var radio = document.createElement("input"); radio.type = "radio"; radio.name = "sl_paymethod"; radio.id = opt.id; radio.value = opt.val; if(opt.checked) radio.checked = true;
+    var lbl = document.createElement("label"); lbl.setAttribute("for", opt.id); lbl.style.cssText = "font-size:11px;color:#8a5a00;font-weight:700;cursor:pointer"; lbl.textContent = opt.label;
+    row.appendChild(radio); row.appendChild(lbl); paySection.appendChild(row);
+    payRadioEls.push({opt:opt, el:radio});
+  });
+  bd.appendChild(paySection);
+
+  // Who actually processed this sale — trade counter code sometimes gets used by Sales Office too,
+  // so this keeps that separable from your own figures without any month-end reconciling.
+  var procWrap = document.createElement("div");
+  var procLbl = document.createElement("label"); procLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; procLbl.textContent = "Processed by";
+  var procSel = document.createElement("select"); procSel.id = "sl_procby"; procSel.style.cssText = "width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+  ["Sinbad","Sales Office"].forEach(function(pb){ var o=document.createElement("option"); o.value=pb; o.textContent=pb; procSel.appendChild(o); });
+  procWrap.appendChild(procLbl); procWrap.appendChild(procSel);
+  bd.appendChild(procWrap);
 
   // Footfall link — preselect the likely visit type but allow a quick correction.
   var ffWrap=document.createElement("div");
@@ -4162,6 +4194,15 @@ function showSaleForm(clientId, clientName) {
   FOOTFALL_CATS.forEach(function(cat){var opt=document.createElement("option");opt.value=cat;opt.textContent=cat;if(cat===ffDefault)opt.selected=true;ffSel.appendChild(opt);});
   var noFf=document.createElement("option");noFf.value="";noFf.textContent="Do not add to Footfall";ffSel.appendChild(noFf);
   ffWrap.appendChild(ffLbl);ffWrap.appendChild(ffSel);bd.appendChild(ffWrap);
+
+  // House Build sales are their own footfall category — switch the footfall guess to match, same idea
+  // as the Cash Sale default above, and switch it back if the payment method changes away from it again.
+  payRadioEls.forEach(function(pr){
+    pr.el.addEventListener("change", function(){
+      if(!pr.el.checked) return;
+      ffSel.value = (pr.opt.val==="housebuild") ? "House Build Fitters" : ffDefault;
+    });
+  });
 
   // Add another line checkbox
   var anotherWrap = document.createElement("div");
@@ -4203,7 +4244,8 @@ function showSaleForm(clientId, clientName) {
     var det = document.getElementById("sl_det").value.trim();
     var date = document.getElementById("sl_date").value;
     var another = document.getElementById("sl_another").checked;
-    var notPaidYet = document.getElementById("sl_unpaid").checked;
+    var payMethod = (document.querySelector('input[name="sl_paymethod"]:checked')||{}).value || "paid";
+    var procBy = document.getElementById("sl_procby").value;
 
     if (!prod || !val) { toast("Please select a product and enter an amount"); return; }
 
@@ -4212,7 +4254,8 @@ function showSaleForm(clientId, clientName) {
     if (!c) return;
     if (!c.log) c.log = [];
 
-    var saleNote = prod + (det ? " — " + det : "") + " — £" + parseFloat(val).toLocaleString("en-GB") + (notPaidYet ? " (payment pending)" : "");
+    var saleNoteSuffix = payMethod==="pending" ? " (payment pending)" : payMethod==="housebuild" ? " (House Build \u2014 invoiced to fitting account)" : "";
+    var saleNote = prod + (det ? " — " + det : "") + " — £" + parseFloat(val).toLocaleString("en-GB") + saleNoteSuffix;
     c.log.unshift({
       date: fd(date),
       type: "Sale",
@@ -4223,7 +4266,11 @@ function showSaleForm(clientId, clientName) {
         products: prod + (det ? " (" + det + ")" : ""),
         category: prod,
         status: "Collected",
-        paidDate: notPaidYet ? "" : fd(date),
+        processedBy: procBy,
+        // "pending" = still needs chasing and marking Paid later. "housebuild" is already resolved — it's
+        // deducted off the fitter's own invoice, not a cash/card payment Sinbad will ever personally collect.
+        paidDate: payMethod==="pending" ? "" : fd(date),
+        houseBuildInvoiced: payMethod==="housebuild",
         collectedDate: fd(date),
         source: "Direct Sale"
       }
@@ -4231,7 +4278,7 @@ function showSaleForm(clientId, clientName) {
     c.lastContact = fd(date);
     c.interactionType = "Sale";
     saveC();
-    toast(notPaidYet ? "£ Sale logged \u2014 payment pending \u2713" : "£ Sale logged \u2713");
+    toast(payMethod==="pending" ? "£ Sale logged \u2014 payment pending \u2713" : payMethod==="housebuild" ? "\uD83C\uDFD7\uFE0F Sale logged \u2014 House Build invoiced \u2713" : "£ Sale logged \u2713");
 
     if (!footfallBumped) {
       var selectedFootfall=document.getElementById("sl_footfall")?document.getElementById("sl_footfall").value:"";
@@ -5031,7 +5078,7 @@ function pickClientForAction(titleText,onPick){
   var hdr=document.createElement("div");hdr.style.cssText="background:var(--navy3);padding:13px 16px;color:#fff;font-weight:700";hdr.textContent=titleText;box.appendChild(hdr);
   var bd=document.createElement("div");bd.style.cssText="padding:16px;display:flex;flex-direction:column;gap:10px;overflow:hidden";
 
-  var searchInp=document.createElement("input");searchInp.type="text";searchInp.placeholder="Start typing a customer name...";
+  var searchInp=document.createElement("input");searchInp.type="text";searchInp.placeholder="Start typing a company or contact name...";
   searchInp.style.cssText="width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none";
   bd.appendChild(searchInp);
 
@@ -5042,7 +5089,11 @@ function pickClientForAction(titleText,onPick){
 
   function renderMatches(){
     var q=searchInp.value.trim().toLowerCase();
-    var matches=q?sortedClients.filter(function(c){return c.name.toLowerCase().indexOf(q)>-1;}):sortedClients;
+    var matches=q?sortedClients.filter(function(c){
+      return c.name.toLowerCase().indexOf(q)>-1
+        || (c.contact&&c.contact.toLowerCase().indexOf(q)>-1)
+        || (c.contact2&&c.contact2.toLowerCase().indexOf(q)>-1);
+    }):sortedClients;
     listWrap.innerHTML="";
     if(!matches.length){
       var none=document.createElement("div");none.style.cssText="padding:14px;font-size:12px;color:var(--muted);text-align:center";none.textContent="No matching customers";
@@ -5053,7 +5104,14 @@ function pickClientForAction(titleText,onPick){
       row.style.cssText="text-align:left;padding:10px 12px;border:none;border-bottom:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:inherit;color:var(--text)";
       row.onmouseenter=function(){row.style.background="var(--alt)";};
       row.onmouseleave=function(){row.style.background="var(--surface)";};
-      row.textContent=c.name+(c.binder?" · "+c.binder:"");
+      // If the match came from a contact name rather than the company name, show that contact so it's clear why this row matched.
+      var matchedContact = "";
+      if(q){
+        var nameHit = c.name.toLowerCase().indexOf(q)>-1;
+        if(!nameHit && c.contact && c.contact.toLowerCase().indexOf(q)>-1) matchedContact = c.contact;
+        else if(!nameHit && c.contact2 && c.contact2.toLowerCase().indexOf(q)>-1) matchedContact = c.contact2;
+      }
+      row.textContent=c.name+(matchedContact?" — "+matchedContact:(c.binder?" · "+c.binder:""));
       row.addEventListener("click",function(){document.body.removeChild(overlay);onPick(c);});
       listWrap.appendChild(row);
     });
@@ -5075,10 +5133,11 @@ function showQuickQuoteForClient(c){
   var bd=document.createElement("div");bd.style.cssText="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px";
   function fld(label,id,type,wide,ph){var w=document.createElement("label");w.style.cssText=(wide?"grid-column:1/-1;":"")+"display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted)";w.innerHTML=label+"<input id='"+id+"' type='"+(type||"text")+"' placeholder='"+(ph||"")+"' style='display:block;width:100%;margin-top:3px;padding:8px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px'>";return w;}
   bd.appendChild(fld("Quote ref","qq_ref","text",false,"e.g. Q1045"));bd.appendChild(fld("Value (£)","qq_val","number",false,"e.g. 850"));bd.appendChild(fld("Product / details","qq_prod","text",true,"e.g. Camaro Naked Blonde Oak — 8 packs"));bd.appendChild(fld("Expiry date","qq_exp","date",false,""));bd.appendChild(fld("Notes","qq_note","text",false,"Optional"));
+  var procWrap2=document.createElement("label");procWrap2.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted)";procWrap2.innerHTML="Processed by<select id='qq_procby' style='display:block;width:100%;margin-top:3px;padding:8px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit'><option value='Sinbad'>Sinbad</option><option value='Sales Office'>Sales Office</option></select>";bd.appendChild(procWrap2);
   var info=document.createElement("div");info.style.cssText="grid-column:1/-1;background:#eef4ff;border:1px solid #b8caf5;border-radius:var(--rs);padding:8px 10px;font-size:10px;color:var(--navy)";info.textContent="Starts as an Open Quote. Ordered, Paid or Collected automatically moves it into Sales / Order History.";bd.appendChild(info);box.appendChild(bd);
   var foot=document.createElement("div");foot.style.cssText="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px";
   var cancel=document.createElement("button");cancel.className="fcancel";cancel.textContent="Cancel";cancel.onclick=function(){document.body.removeChild(overlay);};
-  var save=document.createElement("button");save.className="fsave";save.textContent="Save quote";save.onclick=function(){var ref=document.getElementById("qq_ref").value.trim(),val=document.getElementById("qq_val").value,prod=document.getElementById("qq_prod").value.trim();if(!ref||!val||!prod){toast("Please enter quote ref, value and product/details");return;}if(!c.log)c.log=[];var now=new Date(),dateStr=String(now.getDate()).padStart(2,"0")+"/"+String(now.getMonth()+1).padStart(2,"0")+"/"+now.getFullYear();c.log.unshift({date:dateStr,type:"Quote",note:document.getElementById("qq_note").value.trim()||("Quote "+ref+" — "+prod),quote:{ref:ref,value:val,products:prod,category:prod,status:"Quote",expiry:document.getElementById("qq_exp").value}});c.lastContact=dateStr;c.interactionType="Quote";saveC();document.body.removeChild(overlay);toast("Quote logged ✓");renderQuotesView();};
+  var save=document.createElement("button");save.className="fsave";save.textContent="Save quote";save.onclick=function(){var ref=document.getElementById("qq_ref").value.trim(),val=document.getElementById("qq_val").value,prod=document.getElementById("qq_prod").value.trim();if(!ref||!val||!prod){toast("Please enter quote ref, value and product/details");return;}if(!c.log)c.log=[];var now=new Date(),dateStr=String(now.getDate()).padStart(2,"0")+"/"+String(now.getMonth()+1).padStart(2,"0")+"/"+now.getFullYear();c.log.unshift({date:dateStr,type:"Quote",note:document.getElementById("qq_note").value.trim()||("Quote "+ref+" — "+prod),quote:{ref:ref,value:val,products:prod,category:prod,status:"Quote",expiry:document.getElementById("qq_exp").value,processedBy:document.getElementById("qq_procby").value}});c.lastContact=dateStr;c.interactionType="Quote";saveC();document.body.removeChild(overlay);toast("Quote logged ✓");renderQuotesView();};
   foot.appendChild(cancel);foot.appendChild(save);box.appendChild(foot);overlay.appendChild(box);document.body.appendChild(overlay);
 }
 
@@ -9129,7 +9188,7 @@ function saleRefTimestamp(rec){
   var m = /-(\d+)$/.exec(rec.ref);
   return m ? parseInt(m[1],10) : null;
 }
-function getDaySaleDetail(year, month, day){
+function getDaySaleDetail(year, month, day, procFilter){
   var dd = String(day).padStart(2,"0"), mm = String(month+1).padStart(2,"0");
   var targetDate = dd+"/"+mm+"/"+year;
   var TXN_GAP_MS = 10*60*1000; // entries within 10 minutes of each other count as one transaction
@@ -9139,7 +9198,8 @@ function getDaySaleDetail(year, month, day){
     var txnId = 0, prevTs = null;
     for(var i=0;i<log.length;i++){
       var l = log[i];
-      if(!isSaleEntry(l) || recordDisplayDate(l)!==targetDate){ prevTs=null; continue; }
+      var matches = isSaleEntry(l) && recordDisplayDate(l)===targetDate && (!procFilter||procFilter==="All"||recordProcessedBy(l)===procFilter);
+      if(!matches){ prevTs=null; continue; }
       var ts = saleRefTimestamp(logRecord(l));
       if(prevTs===null || ts===null || Math.abs(prevTs-ts)>TXN_GAP_MS) txnId++;
       results.push({clientId:c.id, name:c.name, value:recordValue(l), product:recordProduct(l), txnKey:c.id+"-"+txnId});
@@ -9150,7 +9210,7 @@ function getDaySaleDetail(year, month, day){
 }
 function showDaySalesDetail(year, month, day){
   var monthNames=["January","February","March","April","May","June","July","August","September","October","November","December"];
-  var items = getDaySaleDetail(year, month, day);
+  var items = getDaySaleDetail(year, month, day, currentSalesProcBy);
   var dateLabel = day+" "+monthNames[month]+" "+year;
   var overlay = document.createElement("div");
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:250;display:flex;align-items:center;justify-content:center;padding:16px";
