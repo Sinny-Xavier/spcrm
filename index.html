@@ -1313,13 +1313,33 @@ async function syncProductSubcatsFromCloud(){
       if(row&&row.value&&Object.keys(row.value).length){
         for(var k in PRODUCT_SUBCATS){ delete PRODUCT_SUBCATS[k]; }
         for(var k2 in row.value){ PRODUCT_SUBCATS[k2]=row.value[k2]; }
+        normalizeProductSubcatRanges();
         try{localStorage.setItem(PRODUCT_SUBCATS_STORE,JSON.stringify(PRODUCT_SUBCATS));}catch(e){}
       }
     }
   }catch(e){ console.warn("product subcats cloud sync failed", e); }
 }
+// Ranges used to be plain strings (e.g. "da92"). To support a Type/Colour level underneath each range
+// (e.g. da92 -> Straight, Concave), every range now needs to be an object {name, types:[]} instead.
+// This upgrades any old string-format ranges in place, so nothing existing breaks — old data just
+// arrives with an empty types list, exactly as if it had always been in the new format.
+function normalizeProductSubcatRanges(){
+  for(var prod in PRODUCT_SUBCATS){
+    var items = PRODUCT_SUBCATS[prod];
+    if(!items||!items.length) continue;
+    items.forEach(function(item){
+      if(!item.ranges||!item.ranges.length) return;
+      item.ranges = item.ranges.map(function(r){
+        if(typeof r === "string") return {name:r, types:[]};
+        if(r && typeof r === "object"){ if(!r.types) r.types = []; return r; }
+        return {name:String(r), types:[]};
+      });
+    });
+  }
+}
 var PRODUCTS=loadProducts();
 var PRODUCT_SUBCATS=loadProductSubcats();
+normalizeProductSubcatRanges();
 syncProductsFromCloud();
 syncProductSubcatsFromCloud();
 var DOC_CATS_DEFAULT=["Fitting Instructions","Product Spec","Parts List","Price List","Safety Data","Brochure","Warranty","Other"];
@@ -2364,7 +2384,7 @@ function buildLogForm(cid){
   form.appendChild(smpF);
   var qf=document.createElement("div");qf.className="qfields";qf.id="qfields";
   var prodOpts=PRODUCTS.map(function(p){return'<option value="'+p+'">'+p+'</option>';}).join("");
-  qf.innerHTML='<div class="qfgrid"><div class="qf"><label>Quote ref</label><input id="qref" placeholder="e.g. QT-001"></div><div class="qf"><label>Value (&#163;)</label><input id="qval" placeholder="e.g. 2500" type="number"></div><div class="qf s2"><label>Product category</label><select id="qprod"><option value="">-- Select product --</option>'+prodOpts+'</select></div><div class="qf"><label>Qty / detail</label><input id="qqty" placeholder="e.g. 50m&#178;"></div><div class="qf s2" id="qother_wrap" style="display:none"><label>Specify product</label><input id="qother" placeholder="e.g. Stair rods, Door bars..."></div><div class="qf s2" id="qsubcat_wrap" style="display:none"><label id="qsubcat_lbl">Sub-category</label><select id="qsubcat"></select></div><div class="qf s2" id="qrange_wrap" style="display:none"><label>Range</label><select id="qrange"></select></div><div class="qf"><label>Status</label><select id="qstat"><option>Quote</option><option>Confirmed</option><option>Invoiced</option><option>Paid</option><option>Lost</option><option>Expired</option></select></div><div class="qf"><label>Expires</label><div style="display:flex;gap:5px"><input id="qexpiry" type="date" style="flex:1"><button type="button" id="qexpiry4wk" style="padding:0 10px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">+4wk</button></div></div></div>';
+  qf.innerHTML='<div class="qfgrid"><div class="qf"><label>Quote ref</label><input id="qref" placeholder="e.g. QT-001"></div><div class="qf"><label>Value (&#163;)</label><input id="qval" placeholder="e.g. 2500" type="number"></div><div class="qf s2"><label>Product category</label><select id="qprod"><option value="">-- Select product --</option>'+prodOpts+'</select></div><div class="qf"><label>Qty / detail</label><input id="qqty" placeholder="e.g. 50m&#178;"></div><div class="qf s2" id="qother_wrap" style="display:none"><label>Specify product</label><input id="qother" placeholder="e.g. Stair rods, Door bars..."></div><div class="qf s2" id="qsubcat_wrap" style="display:none"><label id="qsubcat_lbl">Sub-category</label><select id="qsubcat"></select></div><div class="qf s2" id="qrange_wrap" style="display:none"><label>Range</label><select id="qrange"></select></div><div class="qf s2" id="qtype_wrap" style="display:none"><label>Type / colour</label><select id="qtype"></select></div><div class="qf"><label>Status</label><select id="qstat"><option>Quote</option><option>Confirmed</option><option>Invoiced</option><option>Paid</option><option>Lost</option><option>Expired</option></select></div><div class="qf"><label>Expires</label><div style="display:flex;gap:5px"><input id="qexpiry" type="date" style="flex:1"><button type="button" id="qexpiry4wk" style="padding:0 10px;background:var(--surface);border:1px solid var(--navy);border-radius:var(--rs);color:var(--navy);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">+4wk</button></div></div></div>';
   form.appendChild(qf);
   setTimeout(function(){
     var qpEl2=document.getElementById('qprod');
@@ -2372,6 +2392,7 @@ function buildLogForm(cid){
       var ow=document.getElementById('qother_wrap');if(ow)ow.style.display=this.value==='Other'?'':'none';
       var sw=document.getElementById('qsubcat_wrap');var sSel=document.getElementById('qsubcat');var sLbl=document.getElementById('qsubcat_lbl');
       var rw=document.getElementById('qrange_wrap');var rSel=document.getElementById('qrange');
+      var tw=document.getElementById('qtype_wrap');var tSel=document.getElementById('qtype');
       var list=PRODUCT_SUBCATS[this.value];
       if(list&&sw&&sSel){
         sSel.innerHTML='<option value="">-- Select '+this.value+' category --</option>';
@@ -2383,21 +2404,43 @@ function buildLogForm(cid){
         if(sSel)sSel.innerHTML='';
       }
       if(rw){rw.style.display='none';if(rSel)rSel.innerHTML='';}
+      if(tw){tw.style.display='none';if(tSel)tSel.innerHTML='';}
     });}
     var qsEl=document.getElementById('qsubcat');
     if(qsEl){qsEl.addEventListener('change',function(){
       var rw=document.getElementById('qrange_wrap');var rSel=document.getElementById('qrange');
+      var tw=document.getElementById('qtype_wrap');var tSel=document.getElementById('qtype');
       var prodVal=document.getElementById('qprod').value;
       var list=PRODUCT_SUBCATS[prodVal]||[];
       var chosen=list.filter(function(item){return item.name===qsEl.value;})[0];
       var ranges=(chosen&&chosen.ranges)?chosen.ranges:[];
       if(ranges.length&&rw&&rSel){
         rSel.innerHTML='<option value="">-- Select range --</option>';
-        ranges.forEach(function(rg){var ro=document.createElement('option');ro.value=rg;ro.textContent=rg;rSel.appendChild(ro);});
+        ranges.forEach(function(rg){var ro=document.createElement('option');ro.value=rg.name;ro.textContent=rg.name;rSel.appendChild(ro);});
         rw.style.display='';
       } else if(rw){
         rw.style.display='none';
         if(rSel)rSel.innerHTML='';
+      }
+      if(tw){tw.style.display='none';if(tSel)tSel.innerHTML='';}
+    });}
+    var qrEl=document.getElementById('qrange');
+    if(qrEl){qrEl.addEventListener('change',function(){
+      var tw=document.getElementById('qtype_wrap');var tSel=document.getElementById('qtype');
+      var prodVal=document.getElementById('qprod').value;
+      var subVal=document.getElementById('qsubcat').value;
+      var list=PRODUCT_SUBCATS[prodVal]||[];
+      var chosen=list.filter(function(item){return item.name===subVal;})[0];
+      var ranges=(chosen&&chosen.ranges)?chosen.ranges:[];
+      var chosenRange=ranges.filter(function(rg){return rg.name===qrEl.value;})[0];
+      var types=(chosenRange&&chosenRange.types)?chosenRange.types:[];
+      if(types.length&&tw&&tSel){
+        tSel.innerHTML='<option value="">-- Select type/colour --</option>';
+        types.forEach(function(t){var to=document.createElement('option');to.value=t;to.textContent=t;tSel.appendChild(to);});
+        tw.style.display='';
+      } else if(tw){
+        tw.style.display='none';
+        if(tSel)tSel.innerHTML='';
       }
     });}
     var qexp4wkBtn=document.getElementById('qexpiry4wk');
@@ -2433,17 +2476,24 @@ function showQuoteEditForm(clientId, logIdx) {
   // Split sub-category strings like "Tools: Blades" back into product + sub-category
   var subDetail = "";
   var rangeDetail = "";
+  var typeDetail = "";
   Object.keys(PRODUCT_SUBCATS).forEach(function(prodName) {
     if (category.indexOf(prodName + ": ") === 0) {
       subDetail = category.substring((prodName + ": ").length);
       category = prodName;
     }
   });
-  // Further split "Cloud 9 - Cumulus" into subDetail="Cloud 9", rangeDetail="Cumulus"
+  // Further split "Cloud 9 - Cumulus - Frosted" into subDetail="Cloud 9", rangeDetail="Cumulus", typeDetail="Frosted"
   if (subDetail.indexOf(" - ") > -1) {
     var rangeSplit = subDetail.split(" - ");
-    rangeDetail = rangeSplit.pop();
-    subDetail = rangeSplit.join(" - ");
+    if (rangeSplit.length >= 3) {
+      typeDetail = rangeSplit.pop();
+      rangeDetail = rangeSplit.pop();
+      subDetail = rangeSplit.join(" - ");
+    } else {
+      rangeDetail = rangeSplit.pop();
+      subDetail = rangeSplit.join(" - ");
+    }
   }
 
   var overlay = document.createElement("div");
@@ -2499,12 +2549,30 @@ function showQuoteEditForm(clientId, logIdx) {
     if (!ranges.length) { rangeWrap.style.display = "none"; rangeSel.innerHTML = ""; return; }
     rangeSel.innerHTML = "";
     var rBlank = document.createElement("option"); rBlank.value=""; rBlank.textContent="-- Select range --"; rangeSel.appendChild(rBlank);
-    ranges.forEach(function(rg){ var ro=document.createElement("option"); ro.value=rg; ro.textContent=rg; if(rg===preselect)ro.selected=true; rangeSel.appendChild(ro); });
+    ranges.forEach(function(rg){ var ro=document.createElement("option"); ro.value=rg.name; ro.textContent=rg.name; if(rg.name===preselect)ro.selected=true; rangeSel.appendChild(ro); });
     rangeWrap.style.display = "block";
   }
   if (PRODUCT_SUBCATS[category] && subDetail) populateRange(category, subDetail, rangeDetail);
   rangeWrap.appendChild(mkFd("Range *", rangeSel));
   bd.appendChild(rangeWrap);
+
+  var typeWrap = document.createElement("div"); typeWrap.style.display = "none";
+  var typeSel = document.createElement("select"); typeSel.id="qe_type"; typeSel.style.cssText="width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
+  function populateType(prodName, subName, rangeName, preselect) {
+    var list = PRODUCT_SUBCATS[prodName] || [];
+    var item = list.filter(function(it){ return it.name === subName; })[0];
+    var ranges = (item && item.ranges) ? item.ranges : [];
+    var range = ranges.filter(function(rg){ return rg.name === rangeName; })[0];
+    var types = (range && range.types) ? range.types : [];
+    if (!types.length) { typeWrap.style.display = "none"; typeSel.innerHTML = ""; return; }
+    typeSel.innerHTML = "";
+    var tBlank = document.createElement("option"); tBlank.value=""; tBlank.textContent="-- Select type/colour --"; typeSel.appendChild(tBlank);
+    types.forEach(function(t){ var to=document.createElement("option"); to.value=t; to.textContent=t; if(t===preselect)to.selected=true; typeSel.appendChild(to); });
+    typeWrap.style.display = "block";
+  }
+  if (PRODUCT_SUBCATS[category] && subDetail && rangeDetail) populateType(category, subDetail, rangeDetail, typeDetail);
+  typeWrap.appendChild(mkFd("Type / colour *", typeSel));
+  bd.appendChild(typeWrap);
 
   prodSel.addEventListener("change", function(){
     otherWrap.style.display = this.value==="Other" ? "block" : "none";
@@ -2515,10 +2583,16 @@ function showQuoteEditForm(clientId, logIdx) {
       subcatWrap.style.display = "none";
     }
     rangeWrap.style.display = "none"; rangeSel.innerHTML = "";
+    typeWrap.style.display = "none"; typeSel.innerHTML = "";
   });
 
   subcatSel.addEventListener("change", function(){
     populateRange(prodSel.value, subcatSel.value, "");
+    typeWrap.style.display = "none"; typeSel.innerHTML = "";
+  });
+
+  rangeSel.addEventListener("change", function(){
+    populateType(prodSel.value, subcatSel.value, rangeSel.value, "");
   });
 
   var qtyInp = document.createElement("input"); qtyInp.id="qe_qty"; qtyInp.value=qtyDetail; qtyInp.placeholder="e.g. 50m\u00b2"; qtyInp.style.cssText="width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none";
@@ -2574,7 +2648,12 @@ function showQuoteEditForm(clientId, logIdx) {
       if (newSubItem && newSubItem.ranges && newSubItem.ranges.length && rangeWrap.style.display !== "none") {
         var newRange = rangeSel.value;
         if (!newRange) { toast("Please select a range"); return; }
-        finalCat = newCat + ": " + newSub + " - " + newRange;
+        var newType = "";
+        if (typeWrap.style.display !== "none") {
+          newType = typeSel.value;
+          if (!newType) { toast("Please select a type/colour"); return; }
+        }
+        finalCat = newCat + ": " + newSub + " - " + newRange + (newType ? " - " + newType : "");
       } else {
         finalCat = newCat + ": " + newSub;
       }
@@ -2619,7 +2698,13 @@ function saveLog(id){
       if(qSubItem&&qSubItem.ranges&&qSubItem.ranges.length&&qRangeEl&&qRangeEl.style.display!=="none"){
         var qRangeVal=(document.getElementById("qrange")||{}).value||"";
         if(!qRangeVal){toast("Please select a range");return;}
-        qpv=qpv+": "+qSubVal+" - "+qRangeVal;
+        var qTypeVal="";
+        var qTypeEl=document.getElementById("qtype_wrap");
+        if(qTypeEl&&qTypeEl.style.display!=="none"){
+          qTypeVal=(document.getElementById("qtype")||{}).value||"";
+          if(!qTypeVal){toast("Please select a type/colour");return;}
+        }
+        qpv=qpv+": "+qSubVal+" - "+qRangeVal+(qTypeVal?" - "+qTypeVal:"");
       } else {
         qpv=qpv+": "+qSubVal;
       }
@@ -4063,7 +4148,7 @@ function showSaleForm(clientId, clientName) {
   var overlay = document.createElement("div");
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px";
   var box = document.createElement("div");
-  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:420px;border-top:3px solid var(--gtxt)";
+  box.style.cssText = "background:var(--surface);border-radius:var(--r);width:100%;max-width:420px;max-height:90vh;overflow-y:auto;border-top:3px solid var(--gtxt)";
   var bh = document.createElement("div");
   bh.style.cssText = "background:var(--navy3);padding:13px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gtxt)";
   var bht = document.createElement("h2");
@@ -4130,13 +4215,22 @@ function showSaleForm(clientId, clientName) {
     rangeWrap.appendChild(mkF2("Range *", rangeSel));
     bd.appendChild(rangeWrap);
 
+    // Type/colour dropdown (third level) - hidden unless the chosen range has types defined
+    var typeWrap = document.createElement("div");
+    typeWrap.style.display = "none";
+    var typeSel = document.createElement("select");
+    typeSel.style.cssText = "width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+    typeWrap.appendChild(mkF2("Type / colour *", typeSel));
+    bd.appendChild(typeWrap);
+
     sel.addEventListener("change", function() {
       var chosen = list.filter(function(item) { return item.name === sel.value; })[0];
       var ranges = (chosen && chosen.ranges) ? chosen.ranges : [];
+      typeWrap.style.display = "none"; typeSel.innerHTML = "";
       if (ranges.length) {
         rangeSel.innerHTML = "";
         var rblank = document.createElement("option"); rblank.value = ""; rblank.textContent = "-- Select range --"; rangeSel.appendChild(rblank);
-        ranges.forEach(function(rg) { var ro = document.createElement("option"); ro.value = rg; ro.textContent = rg; rangeSel.appendChild(ro); });
+        ranges.forEach(function(rg) { var ro = document.createElement("option"); ro.value = rg.name; ro.textContent = rg.name; rangeSel.appendChild(ro); });
         rangeWrap.style.display = "";
       } else {
         rangeWrap.style.display = "none";
@@ -4144,7 +4238,23 @@ function showSaleForm(clientId, clientName) {
       }
     });
 
-    sl_subcat_wraps[prodName] = { wrap: w, sel: sel, rangeWrap: rangeWrap, rangeSel: rangeSel };
+    rangeSel.addEventListener("change", function() {
+      var chosen = list.filter(function(item) { return item.name === sel.value; })[0];
+      var ranges = (chosen && chosen.ranges) ? chosen.ranges : [];
+      var chosenRange = ranges.filter(function(rg){ return rg.name === rangeSel.value; })[0];
+      var types = (chosenRange && chosenRange.types) ? chosenRange.types : [];
+      if (types.length) {
+        typeSel.innerHTML = "";
+        var tblank = document.createElement("option"); tblank.value = ""; tblank.textContent = "-- Select type/colour --"; typeSel.appendChild(tblank);
+        types.forEach(function(t) { var to = document.createElement("option"); to.value = t; to.textContent = t; typeSel.appendChild(to); });
+        typeWrap.style.display = "";
+      } else {
+        typeWrap.style.display = "none";
+        typeSel.innerHTML = "";
+      }
+    });
+
+    sl_subcat_wraps[prodName] = { wrap: w, sel: sel, rangeWrap: rangeWrap, rangeSel: rangeSel, typeWrap: typeWrap, typeSel: typeSel };
   });
 
 
@@ -4155,7 +4265,7 @@ function showSaleForm(clientId, clientName) {
       var entry = sl_subcat_wraps[prodName];
       var show = (selectedProd === prodName);
       entry.wrap.style.display = show ? "" : "none";
-      if (!show) { entry.rangeWrap.style.display = "none"; entry.sel.value = ""; entry.rangeSel.innerHTML = ""; }
+      if (!show) { entry.rangeWrap.style.display = "none"; entry.sel.value = ""; entry.rangeSel.innerHTML = ""; entry.typeWrap.style.display = "none"; entry.typeSel.innerHTML = ""; }
     });
   });
 
@@ -4264,7 +4374,12 @@ function showSaleForm(clientId, clientName) {
       if (rangeWrapEntry.rangeWrap.style.display !== "none") {
         var rangeVal = rangeWrapEntry.rangeSel.value;
         if (!rangeVal) { toast("Please select a range"); return; }
-        prod = prod + ": " + subVal + " - " + rangeVal;
+        var typeVal = "";
+        if (rangeWrapEntry.typeWrap.style.display !== "none") {
+          typeVal = rangeWrapEntry.typeSel.value;
+          if (!typeVal) { toast("Please select a type/colour"); return; }
+        }
+        prod = prod + ": " + subVal + " - " + rangeVal + (typeVal ? " - " + typeVal : "");
       } else {
         prod = prod + ": " + subVal;
       }
@@ -4330,6 +4445,8 @@ function showSaleForm(clientId, clientName) {
         sl_subcat_wraps[prodName].wrap.style.display = "none";
         sl_subcat_wraps[prodName].rangeWrap.style.display = "none";
         sl_subcat_wraps[prodName].rangeSel.innerHTML = "";
+        sl_subcat_wraps[prodName].typeWrap.style.display = "none";
+        sl_subcat_wraps[prodName].typeSel.innerHTML = "";
       });
     } else {
       document.body.removeChild(overlay);
@@ -5159,7 +5276,7 @@ function showQuickSale(){pickClientForAction("£ New sale",function(c){showSaleF
 function showQuickQuote(){pickClientForAction("£ New quote",function(c){showQuickQuoteForClient(c);});}
 function showQuickQuoteForClient(c){
   var overlay=document.createElement("div");overlay.style.cssText="position:fixed;inset:0;background:rgba(10,15,25,.6);z-index:460;display:flex;align-items:center;justify-content:center;padding:16px";
-  var box=document.createElement("div");box.style.cssText="background:var(--surface);border-radius:var(--r);width:100%;max-width:500px;border-top:3px solid var(--navy);overflow:hidden";
+  var box=document.createElement("div");box.style.cssText="background:var(--surface);border-radius:var(--r);width:100%;max-width:500px;max-height:90vh;overflow-y:auto;border-top:3px solid var(--navy)";
   var hdr=document.createElement("div");hdr.style.cssText="background:var(--navy3);padding:13px 16px;color:#fff;font-weight:700";hdr.textContent="£ New quote — "+c.name;box.appendChild(hdr);
   var bd=document.createElement("div");bd.style.cssText="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px";
   function fld(label,id,type,wide,ph){var w=document.createElement("label");w.style.cssText=(wide?"grid-column:1/-1;":"")+"display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted)";w.innerHTML=label+"<input id='"+id+"' type='"+(type||"text")+"' placeholder='"+(ph||"")+"' style='display:block;width:100%;margin-top:3px;padding:8px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px'>";return w;}
@@ -5537,27 +5654,34 @@ function renderCatalogueNative(container) {
     var existingKeys = {};
     catalogItems.forEach(function(x){ existingKeys[(x.category+"|"+x.supplier+"|"+x.range+"|"+x.type).toLowerCase()] = true; });
     var toAdd = [];
-    function addIfNew(cat, supplier, range) {
-      var key = (cat+"|"+supplier+"|"+range+"|").toLowerCase();
+    function addIfNew(cat, supplier, range, type) {
+      var key = (cat+"|"+supplier+"|"+range+"|"+(type||"")).toLowerCase();
       if (existingKeys[key]) return;
       existingKeys[key] = true;
-      toAdd.push({category:cat, supplier:supplier||"", range:range||""});
+      toAdd.push({category:cat, supplier:supplier||"", range:range||"", type:type||""});
     }
     PRODUCTS.forEach(function(cat){
       var subcats = PRODUCT_SUBCATS[cat];
-      if (!subcats || !subcats.length) { addIfNew(cat, "", ""); return; }
+      if (!subcats || !subcats.length) { addIfNew(cat, "", "", ""); return; }
       subcats.forEach(function(item){
         var subName = (item && item.name) ? item.name : item;
         if (item && item.ranges && item.ranges.length) {
-          item.ranges.forEach(function(rg){ addIfNew(cat, subName, rg); });
+          item.ranges.forEach(function(rg){
+            var rangeName = (rg && rg.name) ? rg.name : rg;
+            if (rg && rg.types && rg.types.length) {
+              rg.types.forEach(function(t){ addIfNew(cat, subName, rangeName, t); });
+            } else {
+              addIfNew(cat, subName, rangeName, "");
+            }
+          });
         } else {
-          addIfNew(cat, subName, "");
+          addIfNew(cat, subName, "", "");
         }
       });
     });
     if (!toAdd.length) { toast("Nothing new to import \u2014 already up to date"); return; }
     toAdd.forEach(function(p){
-      catalogItems.unshift({ id:"CAT-"+Date.now()+"-"+Math.floor(Math.random()*100000), category:p.category, supplier:p.supplier, range:p.range, type:"", price:0, unit:"", notes:"" });
+      catalogItems.unshift({ id:"CAT-"+Date.now()+"-"+Math.floor(Math.random()*100000), category:p.category, supplier:p.supplier, range:p.range, type:p.type, price:0, unit:"", notes:"" });
     });
     saveCatalog();
     populateFilters();
@@ -5639,30 +5763,70 @@ function renderCatalogueNative(container) {
     var affected = catalogItems.filter(function(x){ return x.supplier === sup; });
     if (!affected.length) { toast("No products found for that supplier"); return; }
 
-    var summary = document.createElement("div"); summary.style.cssText = "font-size:11px;color:#8a5a00;font-weight:700;margin-bottom:8px"; summary.textContent = affected.length + " product" + (affected.length===1?"":"s") + " from " + sup + " will change by " + (pct>0?"+":"") + pct + "%:";
+    // Every item starts ticked — untick any that shouldn't be included in this particular price change
+    // (e.g. most of a supplier's range went up but a couple of lines didn't) before hitting Apply.
+    var checkedIds = new Set(affected.map(function(x){ return x.id; }));
+
+    var summary = document.createElement("div"); summary.id = "bulkPreviewSummary"; summary.style.cssText = "font-size:11px;color:#8a5a00;font-weight:700;margin-bottom:8px";
     bulkPreviewWrap.appendChild(summary);
 
+    var selRow = document.createElement("div"); selRow.style.cssText = "display:flex;gap:10px;margin-bottom:6px;font-size:11px";
+    var selAllBtn = document.createElement("button"); selAllBtn.textContent = "Select all"; selAllBtn.type = "button";
+    selAllBtn.style.cssText = "background:none;border:none;color:#8a5a00;text-decoration:underline;cursor:pointer;font-size:11px;padding:0";
+    var selNoneBtn = document.createElement("button"); selNoneBtn.textContent = "Select none"; selNoneBtn.type = "button";
+    selNoneBtn.style.cssText = "background:none;border:none;color:#8a5a00;text-decoration:underline;cursor:pointer;font-size:11px;padding:0";
+    selRow.appendChild(selAllBtn); selRow.appendChild(selNoneBtn);
+    bulkPreviewWrap.appendChild(selRow);
+
     var tbl = document.createElement("table"); tbl.style.cssText = "width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px";
+    var rowChecks = [];
     affected.forEach(function(item){
       var newPrice = Math.round(item.price * (1 + pct/100) * 100) / 100;
       var row = document.createElement("tr");
-      row.innerHTML = "<td style='padding:4px 0;color:var(--text)'>"+catalogLabel(item)+"</td><td style='padding:4px 0;text-align:right;color:var(--muted)'>\u00a3"+item.price.toFixed(2)+"</td><td style='padding:4px 8px;text-align:center;color:var(--muted)'>\u2192</td><td style='padding:4px 0;text-align:right;font-weight:700;color:var(--gtxt)'>\u00a3"+newPrice.toFixed(2)+"</td>";
+      var tdChk = document.createElement("td"); tdChk.style.cssText = "padding:4px 6px 4px 0";
+      var chk = document.createElement("input"); chk.type = "checkbox"; chk.checked = true;
+      chk.addEventListener("change", function(){
+        if (chk.checked) checkedIds.add(item.id); else checkedIds.delete(item.id);
+        updateSummaryAndButton();
+      });
+      tdChk.appendChild(chk); row.appendChild(tdChk);
+      rowChecks.push(chk);
+      var tdLabel = document.createElement("td"); tdLabel.style.cssText = "padding:4px 0;color:var(--text)"; tdLabel.textContent = catalogLabel(item);
+      var tdOld = document.createElement("td"); tdOld.style.cssText = "padding:4px 0;text-align:right;color:var(--muted)"; tdOld.textContent = "\u00a3"+item.price.toFixed(2);
+      var tdArrow = document.createElement("td"); tdArrow.style.cssText = "padding:4px 8px;text-align:center;color:var(--muted)"; tdArrow.textContent = "\u2192";
+      var tdNew = document.createElement("td"); tdNew.style.cssText = "padding:4px 0;text-align:right;font-weight:700;color:var(--gtxt)"; tdNew.textContent = "\u00a3"+newPrice.toFixed(2);
+      row.appendChild(tdLabel); row.appendChild(tdOld); row.appendChild(tdArrow); row.appendChild(tdNew);
       tbl.appendChild(row);
     });
     bulkPreviewWrap.appendChild(tbl);
 
-    var confirmBtn = document.createElement("button"); confirmBtn.textContent = "Apply to " + affected.length + " product" + (affected.length===1?"":"s");
+    selAllBtn.addEventListener("click", function(){ rowChecks.forEach(function(c){ c.checked = true; }); affected.forEach(function(x){ checkedIds.add(x.id); }); updateSummaryAndButton(); });
+    selNoneBtn.addEventListener("click", function(){ rowChecks.forEach(function(c){ c.checked = false; }); checkedIds.clear(); updateSummaryAndButton(); });
+
+    var confirmBtn = document.createElement("button");
     confirmBtn.style.cssText = "padding:7px 16px;background:#a5590f;border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer";
     confirmBtn.addEventListener("click", function(){
-      affected.forEach(function(item){ item.price = Math.round(item.price * (1 + pct/100) * 100) / 100; });
+      var toApply = affected.filter(function(x){ return checkedIds.has(x.id); });
+      if (!toApply.length) { toast("Nothing selected"); return; }
+      toApply.forEach(function(item){ item.price = Math.round(item.price * (1 + pct/100) * 100) / 100; });
       saveCatalog();
       bulkPreviewWrap.innerHTML = "";
       bulkPctInp.value = "";
-      toast("\uD83D\uDCB0 Updated " + affected.length + " product" + (affected.length===1?"":"s") + " from " + sup + " \u2713");
+      toast("\uD83D\uDCB0 Updated " + toApply.length + " product" + (toApply.length===1?"":"s") + " from " + sup + " \u2713");
       renderTable();
       populateFilters();
     });
     bulkPreviewWrap.appendChild(confirmBtn);
+
+    function updateSummaryAndButton() {
+      var n = checkedIds.size;
+      summary.textContent = n + " of " + affected.length + " product" + (affected.length===1?"":"s") + " from " + sup + " selected \u2014 will change by " + (pct>0?"+":"") + pct + "%:";
+      confirmBtn.textContent = "Apply to " + n + " product" + (n===1?"":"s");
+      confirmBtn.disabled = (n === 0);
+      confirmBtn.style.opacity = (n === 0) ? "0.5" : "1";
+      confirmBtn.style.cursor = (n === 0) ? "not-allowed" : "pointer";
+    }
+    updateSummaryAndButton();
   });
 
   // Tick multiple rows to delete them in one go, rather than one at a time.
@@ -9248,6 +9412,7 @@ function showProductManager() {
 
   var pmExpanded = null;
   var pmRangeExpanded = null; // key: prodName + "::" + itemName, identifies which item's ranges panel is open
+  var pmTypeExpanded = null; // key: prodName + "::" + itemName + "::" + rangeName, identifies which range's types panel is open
 
   function pmRenderList() {
     bd.innerHTML = "";
@@ -9465,16 +9630,33 @@ function showProductManager() {
     label.textContent = "Ranges for " + item.name;
     panel.appendChild(label);
 
-    item.ranges.forEach(function (rangeName, rangeIdx) {
+    item.ranges.forEach(function (range, rangeIdx) {
+      var rWrap = document.createElement("div");
+      rWrap.style.cssText = "display:flex;flex-direction:column;gap:0";
+
       var rRow = document.createElement("div");
       rRow.style.cssText = "display:flex;gap:6px;align-items:center;background:#fff;border:2px solid var(--border);border-radius:var(--rs);padding:4px 6px";
       var rInp = document.createElement("input");
-      rInp.value = rangeName;
+      rInp.value = range.name;
       rInp.style.cssText = "flex:1;border:none;outline:none;font-size:12px;font-family:inherit;min-width:0";
       rInp.addEventListener("blur", function () {
         var v = rInp.value.trim();
-        if (v) { item.ranges[rangeIdx] = v; saveProductSubcats(); }
+        if (v) { range.name = v; saveProductSubcats(); }
       });
+
+      var typeKey = prodName + "::" + item.name + "::" + range.name;
+      var hasTypes = !!(range.types && range.types.length);
+      var isTypeOpen = (pmTypeExpanded === typeKey);
+      var typeBtn = document.createElement("button");
+      typeBtn.type = "button";
+      typeBtn.textContent = hasTypes ? ("\u25B8 " + range.types.length) : "+ Type/colour";
+      typeBtn.title = "Manage type/colour options for this range";
+      typeBtn.style.cssText = "background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:10px;cursor:pointer;flex-shrink:0;padding:3px 7px;white-space:nowrap";
+      typeBtn.addEventListener("click", function () {
+        pmTypeExpanded = isTypeOpen ? null : typeKey;
+        pmRenderList();
+      });
+
       var rRm = document.createElement("button");
       rRm.textContent = "\u00d7";
       rRm.style.cssText = "background:none;border:none;color:var(--rtxt);font-size:14px;cursor:pointer;flex-shrink:0;padding:0 3px";
@@ -9484,8 +9666,14 @@ function showProductManager() {
         pmRenderList();
       });
       rRow.appendChild(rInp);
+      rRow.appendChild(typeBtn);
       rRow.appendChild(rRm);
-      panel.appendChild(rRow);
+      rWrap.appendChild(rRow);
+
+      if (isTypeOpen) {
+        rWrap.appendChild(pmRenderTypePanel(range));
+      }
+      panel.appendChild(rWrap);
     });
 
     var addRow = document.createElement("div");
@@ -9497,7 +9685,61 @@ function showProductManager() {
     addBtn.addEventListener("click", function () {
       var v = addInp.value.trim();
       if (!v) { toast("Enter a range name"); return; }
-      item.ranges.push(v);
+      item.ranges.push({name:v, types:[]});
+      saveProductSubcats();
+      pmRenderList();
+    });
+    addInp.addEventListener("keydown", function (e) { if (e.key === "Enter") { addBtn.click(); } });
+    addRow.appendChild(addInp);
+    addRow.appendChild(addBtn);
+    panel.appendChild(addRow);
+
+    return panel;
+  }
+
+  function pmRenderTypePanel(range) {
+    if (!range.types) { range.types = []; }
+    var panel = document.createElement("div");
+    panel.style.cssText = "padding:6px 6px 6px 16px;border:2px solid var(--border);border-top:none;border-radius:0 0 var(--rs) var(--rs);background:#f2f4f8;display:flex;flex-direction:column;gap:5px";
+
+    var label = document.createElement("div");
+    label.style.cssText = "font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px";
+    label.textContent = "Type / colour for " + range.name;
+    panel.appendChild(label);
+
+    range.types.forEach(function (typeName, typeIdx) {
+      var tRow = document.createElement("div");
+      tRow.style.cssText = "display:flex;gap:6px;align-items:center;background:#fff;border:2px solid var(--border);border-radius:var(--rs);padding:4px 6px";
+      var tInp = document.createElement("input");
+      tInp.value = typeName;
+      tInp.style.cssText = "flex:1;border:none;outline:none;font-size:12px;font-family:inherit;min-width:0";
+      tInp.addEventListener("blur", function () {
+        var v = tInp.value.trim();
+        if (v) { range.types[typeIdx] = v; saveProductSubcats(); }
+      });
+      var tRm = document.createElement("button");
+      tRm.textContent = "\u00d7";
+      tRm.style.cssText = "background:none;border:none;color:var(--rtxt);font-size:14px;cursor:pointer;flex-shrink:0;padding:0 3px";
+      tRm.addEventListener("click", function () {
+        range.types.splice(typeIdx, 1);
+        saveProductSubcats();
+        pmRenderList();
+      });
+      tRow.appendChild(tInp);
+      tRow.appendChild(tRm);
+      panel.appendChild(tRow);
+    });
+
+    var addRow = document.createElement("div");
+    addRow.style.cssText = "display:flex;gap:6px";
+    var addInp = document.createElement("input");
+    addInp.placeholder = "New type/colour, e.g. Concave";
+    addInp.style.cssText = "flex:1;padding:5px 8px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none";
+    var addBtn = pmSmallBtn("+ Add", "#2d6a0f");
+    addBtn.addEventListener("click", function () {
+      var v = addInp.value.trim();
+      if (!v) { toast("Enter a type/colour name"); return; }
+      range.types.push(v);
       saveProductSubcats();
       pmRenderList();
     });
