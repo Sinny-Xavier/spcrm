@@ -268,6 +268,7 @@ body{font-family:Arial,sans-serif;font-size:13px;background:var(--bg);color:var(
 @page { size: landscape; margin: 12mm; }
 @media print {
   #gateOverlay, .hdr, #sidebar, .no-print, .conf-overlay { display:none !important; }
+  .catalogue-print-header { display:block !important; }
   .main { width:100% !important; margin:0 !important; padding:0 !important; overflow:visible !important; }
   body, .app, .layout { overflow:visible !important; height:auto !important; }
   .page { color:#000 !important; }
@@ -688,11 +689,11 @@ async function ensureBirthdayReminders() {
 
 async function loadFromSupabase() {
   try {
-    var [c, r, s, b, comp, d, w, docs2, enq, tsk, arch, ff] = await Promise.all([
+    var [c, r, s, b, comp, d, w, docs2, enq, tsk, arch, ff, cat] = await Promise.all([
       sbGet("clients"), sbGet("reps"), sbGet("samples"),
       sbGet("birthdays"), sbGet("complaints"), sbGet("diary_events"),
       sbGet("websites"), sbGet("docs"), sbGet("enquiries"), sbGet("tasks"),
-      sbGet("archived_clients"), sbGet("footfall_entries")
+      sbGet("archived_clients"), sbGet("footfall_entries"), sbGet("catalog_items")
     ]);
 
     // CLIENTS: Supabase is master. If empty, push local up.
@@ -719,6 +720,7 @@ async function loadFromSupabase() {
     if (enq && enq.length > 0) enquiries = enq;
     if (tsk && tsk.length > 0) tasks = tsk;
     if (ff && ff.length > 0) footfallEntries = ff;
+    if (cat && cat.length > 0) catalogItems = cat;
     if (w && w.length > 0) websites = w;
     if (arch && arch.length > 0) {
       archivedClients = arch;
@@ -800,6 +802,10 @@ function saveReps() {
 function saveSamples() {
   try { localStorage.setItem(SSTORE, JSON.stringify(samples)); } catch(e) {}
   sbSaveAll("samples", samples, "id");
+}
+function saveCatalog() {
+  try { localStorage.setItem(CATSTORE, JSON.stringify(catalogItems)); } catch(e) {}
+  sbSaveAll("catalog_items", catalogItems, "id");
 }
 function saveBirthdays() {
   try { localStorage.setItem(BSTORE, JSON.stringify(birthdays)); } catch(e) {}
@@ -1215,7 +1221,7 @@ function grantAccess(){
 try{if(sessionStorage.getItem("sftc_auth")==="1"){var g=document.getElementById("gateOverlay");if(g)g.style.display="none";}}catch(e){}
 
 // ── DATA ──────────────────────────────────────────────────────────
-var STORE="sftc_v2",RSTORE="sftc_reps_v1",SSTORE="sftc_samples_v1",BSTORE="sftc_bdays_v1",CSTORE="sftc_complaints_v1";
+var STORE="sftc_v2",RSTORE="sftc_reps_v1",SSTORE="sftc_samples_v1",BSTORE="sftc_bdays_v1",CSTORE="sftc_complaints_v1",CATSTORE="sftc_catalog_v1";
 var ARCHIVE_STORE="spcrm_archive_v1";
 var archivedClients=[];
 var CLIENTS_DATA=[];
@@ -1401,7 +1407,7 @@ async function syncSourcingFromCloud(){
   }catch(e){ console.warn("sourcing cloud sync failed", e); }
 }
 syncSourcingFromCloud();
-var clients,reps,samples,birthdays,complaints;
+var clients,reps,samples,birthdays,complaints,catalogItems=[];
 var activeFilter="All",activeId=null,editId=null,showLF=false,pendingDel=null;
 var detLogTab="Sales / Orders";
 var currentSalesYear=new Date().getFullYear();
@@ -1423,6 +1429,7 @@ function loadReps(){
   var d=JSON.parse(JSON.stringify(DEFAULT_REPS));try{localStorage.setItem(RSTORE,JSON.stringify(d));}catch(e){}return d;
 }
 function loadSamples(){try{var r=localStorage.getItem(SSTORE);if(r)return JSON.parse(r);}catch(e){}return[];}
+function loadCatalog(){try{var r=localStorage.getItem(CATSTORE);if(r)return JSON.parse(r);}catch(e){}return[];}
 function loadBirthdays(){try{var r=localStorage.getItem(BSTORE);if(r)return JSON.parse(r);}catch(e){}return[];}
 function loadComplaints(){try{var r=localStorage.getItem(CSTORE);if(r)return JSON.parse(r);}catch(e){}return[];}
 
@@ -1821,7 +1828,7 @@ function renderDash(){
     diaryPanel.className = "dash-card";
     diaryPanel.style.cssText = "border-left:4px solid #e8a020";
     var dpHdr = document.createElement("div"); dpHdr.style.cssText = "display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--border)";
-    var dpTitle = document.createElement("div"); dpTitle.style.cssText = "font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; dpTitle.textContent = "Diary — Today";
+    var dpTitle = document.createElement("div"); dpTitle.style.cssText = "font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)"; dpTitle.textContent = "Diary — Upcoming";
     var dpBadge = document.createElement("span"); dpBadge.style.cssText = "background:#e8a020;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px"; dpBadge.textContent = allDiaryEvts.length+" event"+(allDiaryEvts.length!==1?"s":"");
     dpHdr.appendChild(dpTitle); dpHdr.appendChild(dpBadge); diaryPanel.appendChild(dpHdr);
     var typeColors2 = {"Meeting":"#305CDE","Site Visit":"#2ecc71","Call":"#f39c12","Rep Visit":"#9b59b6","Delivery":"#e67e22","Family Event":"#e91e8c","Birthday":"#e8a020","Anniversary":"#c0392b","Holiday":"#16a085","Other":"#7f8c8d"};
@@ -2157,7 +2164,9 @@ function renderDet(){
       qhdr.appendChild(qttl);qhdr.appendChild(qhdrRight);qbox.appendChild(qhdr);
       var qg=document.createElement("div");qg.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px";
       function qf2(lbl2,val2,wide2){var f=document.createElement("div");if(wide2)f.style.gridColumn="1/-1";var fl=document.createElement("div");fl.style.cssText="font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";fl.textContent=lbl2;var fv=document.createElement("div");fv.style.cssText="font-size:11px;color:var(--text)"+(wide2?";font-weight:700":"");fv.textContent=val2||"\u2014";f.appendChild(fl);f.appendChild(fv);return f;}
-      qg.appendChild(qf2(saleSide?"Sale / Quote Ref":"Quote Ref",rec.ref));qg.appendChild(qf2("Value",money(rec.value)));qg.appendChild(qf2("Product",rec.products,true));qbox.appendChild(qg);
+      qg.appendChild(qf2(saleSide?"Sale / Quote Ref":"Quote Ref",rec.ref));qg.appendChild(qf2("Value",money(rec.value)));qg.appendChild(qf2("Product",rec.products,true));
+      if(rec.egizmoRef) qg.appendChild(qf2("eGizmo order no.",rec.egizmoRef));
+      qbox.appendChild(qg);
       if(rec.lostReason){var lrDiv=document.createElement("div");lrDiv.style.cssText="font-size:11px;color:var(--rtxt);background:var(--rbg);border-radius:var(--rs);padding:6px 9px;margin-top:7px";lrDiv.innerHTML="<strong>Lost reason:</strong> "+rec.lostReason;qbox.appendChild(lrDiv);}
       if(rec.houseBuildInvoiced){var hbDiv=document.createElement("div");hbDiv.style.cssText="font-size:11px;color:#a5590f;background:#fff4e0;border-radius:var(--rs);padding:6px 9px;margin-top:7px";hbDiv.innerHTML="<strong>\uD83C\uDFD7\uFE0F House Build:</strong> invoiced to their fitting account \u2014 "+rec.paidDate;qbox.appendChild(hbDiv);}
       else if(rec.paidDate){var pdDiv=document.createElement("div");pdDiv.style.cssText="font-size:11px;color:#1a5c1a;background:#d0f0d0;border-radius:var(--rs);padding:6px 9px;margin-top:7px";pdDiv.innerHTML="<strong>Paid:</strong> "+rec.paidDate;qbox.appendChild(pdDiv);}
@@ -4198,6 +4207,14 @@ function showSaleForm(clientId, clientName) {
   procWrap.appendChild(procLbl); procWrap.appendChild(procSel);
   bd.appendChild(procWrap);
 
+  // eGizmo order number — so a sale found here can be looked up directly on the works system,
+  // and vice versa, without hunting by date/customer/amount alone.
+  var egizWrap = document.createElement("div");
+  var egizLbl = document.createElement("label"); egizLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; egizLbl.textContent = "eGizmo order no. (optional)";
+  var egizInp = document.createElement("input"); egizInp.type = "text"; egizInp.id = "sl_egizmo"; egizInp.placeholder = "e.g. 104582"; egizInp.style.cssText = "width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+  egizWrap.appendChild(egizLbl); egizWrap.appendChild(egizInp);
+  bd.appendChild(egizWrap);
+
   // Footfall link — preselect the likely visit type but allow a quick correction.
   var ffWrap=document.createElement("div");
   var ffLbl=document.createElement("label");ffLbl.style.cssText="display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px";ffLbl.textContent="Footfall visit type";
@@ -4258,6 +4275,7 @@ function showSaleForm(clientId, clientName) {
     var another = document.getElementById("sl_another").checked;
     var payMethod = (document.querySelector('input[name="sl_paymethod"]:checked')||{}).value || "paid";
     var procBy = document.getElementById("sl_procby").value;
+    var egizmoRef = document.getElementById("sl_egizmo").value.trim();
 
     if (!prod || !val) { toast("Please select a product and enter an amount"); return; }
 
@@ -4279,6 +4297,7 @@ function showSaleForm(clientId, clientName) {
         category: prod,
         status: "Collected",
         processedBy: procBy,
+        egizmoRef: egizmoRef,
         // "pending" = still needs chasing and marking Paid later. "housebuild" is already resolved — it's
         // deducted off the fitter's own invoice, not a cash/card payment Sinbad will ever personally collect.
         paidDate: payMethod==="pending" ? "" : fd(date),
@@ -5202,7 +5221,8 @@ function showWebsites() {
 
 var TOOLS_LIST = [
   { name: "Margin Calculator", desc: "Nett price + margin % \u2192 customer price ex/inc VAT, plus box pricing.", icon: "\uD83E\uDDEE", native: true, renderFn: renderMarginCalcNative },
-  { name: "Margin Cutter", desc: "Work out the discount needed to hit a target margin, inc/ex VAT.", icon: "\uD83D\uDCB0", url: "margin-cutter.html" }
+  { name: "Margin Cutter", desc: "Work out the discount needed to hit a target margin, inc/ex VAT.", icon: "\uD83D\uDCB0", url: "margin-cutter.html" },
+  { name: "Product Catalogue", desc: "Your own price list by product and supplier \u2014 with bulk % price rises by supplier.", icon: "\uD83D\uDCCB", native: true, renderFn: renderCatalogueNative }
 ];
 
 function renderToolsView() {
@@ -5405,6 +5425,411 @@ function renderMarginCalcNative(container) {
   custInc.inp.addEventListener("input", function(){ var v = parseFloat(this.value); if (!isNaN(v)) custEx.inp.value = (v / 1.2).toFixed(2); recalcMarginFromCust(); });
   nettInc.inp.addEventListener("input", function(){ var v = parseFloat(this.value); if (!isNaN(v)) nettEx.inp.value = (v / 1.2).toFixed(2); if (marginInp.value.trim() !== "") recalcFromNettMargin(); else recalcMarginFromCust(); });
   m2Box.addEventListener("input", updateBox);
+}
+
+// Product Catalogue — your own price list, kept separate from Log a Sale entirely (reference only).
+// Each item has its own supplier, so a bulk % rise can target one supplier's products specifically —
+// this doesn't need to match how Log a Sale groups things (e.g. Tools), since it's fully independent.
+function renderCatalogueNative(container) {
+  var wrap = document.createElement("div");
+  var editingId = null;
+  var selectedIds = new Set();
+
+  // Print-only header — invisible on screen, shows only when printed, so the price list reads
+  // sensibly on paper without any of the buttons/forms above it.
+  var printHdr = document.createElement("div");
+  printHdr.style.cssText = "display:none";
+  printHdr.className = "catalogue-print-header";
+  printHdr.innerHTML = "<h2 style='margin:0 0 4px'>Product Catalogue \u2014 Price List</h2><div style='font-size:12px;color:#666;margin-bottom:14px'>Printed " + new Date().toLocaleDateString("en-GB") + "</div>";
+  wrap.appendChild(printHdr);
+
+  var topBar = document.createElement("div");
+  topBar.className = "no-print";
+  topBar.style.cssText = "display:flex;justify-content:flex-end;margin-bottom:10px";
+  var printBtn = document.createElement("button");
+  printBtn.textContent = "\uD83D\uDDA8\uFE0F Print price list";
+  printBtn.style.cssText = "padding:7px 14px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer";
+  printBtn.addEventListener("click", function(){ window.print(); });
+  topBar.appendChild(printBtn);
+  wrap.appendChild(topBar);
+
+  var formCard = document.createElement("div");
+  formCard.className = "no-print";
+  formCard.style.cssText = "background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px";
+  var formTitle = document.createElement("div"); formTitle.id="catFormTitle"; formTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)"; formTitle.textContent = "Add a product";
+  formCard.appendChild(formTitle);
+
+  var formGrid = document.createElement("div");
+  formGrid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px;margin-bottom:10px";
+
+  function mkCf(lbl, inp) {
+    var w = document.createElement("div");
+    var l = document.createElement("label"); l.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; l.textContent = lbl;
+    w.appendChild(l); w.appendChild(inp); formGrid.appendChild(w);
+    return w;
+  }
+  function mkInp(id, type, placeholder, listId) {
+    var i = document.createElement("input"); i.id = id; i.type = type || "text"; i.placeholder = placeholder || ""; i.style.cssText = "width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+    if (listId) i.setAttribute("list", listId);
+    return i;
+  }
+
+  var catList = document.createElement("datalist"); catList.id = "catCategoryList";
+  var supList = document.createElement("datalist"); supList.id = "catSupplierList";
+  var rangeList = document.createElement("datalist"); rangeList.id = "catRangeList";
+  wrap.appendChild(catList); wrap.appendChild(supList); wrap.appendChild(rangeList);
+
+  // Category -> Supplier -> Range -> Type/size, matching how you actually think about a product
+  // (e.g. Adhesive -> F Ball -> F44 -> 5ltr, and separately F44 -> 15ltr as its own priced row).
+  mkCf("Category *", mkInp("cat_cat", "text", "e.g. Adhesive", "catCategoryList"));
+  mkCf("Supplier *", mkInp("cat_sup", "text", "e.g. F Ball", "catSupplierList"));
+  mkCf("Range", mkInp("cat_range", "text", "e.g. F44", "catRangeList"));
+  mkCf("Type / size / colour", mkInp("cat_type", "text", "e.g. 15ltr, 6mm, Blonde Oak"));
+  mkCf("Price (\u00a3)", mkInp("cat_price", "number", "e.g. 45.99"));
+  var unitSel = document.createElement("select"); unitSel.id = "cat_unit"; unitSel.style.cssText = "width:100%;padding:7px 9px;border:2px solid var(--border);border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);outline:none";
+  var unitBlank = document.createElement("option"); unitBlank.value = ""; unitBlank.textContent = "\u2014"; unitSel.appendChild(unitBlank);
+  ["m\u00b2","Pack","Tub","Each","Unit","Box"].forEach(function(u){ var o=document.createElement("option"); o.value=u; o.textContent=u; unitSel.appendChild(o); });
+  mkCf("Unit", unitSel);
+  formCard.appendChild(formGrid);
+  // Safely selects a unit value in the dropdown even if it's an older free-text value that predates
+  // this becoming a fixed list — adds it as a one-off extra option rather than silently losing it.
+  function setUnitValue(val) {
+    val = val || "";
+    var match = Array.prototype.find.call(unitSel.options, function(o){ return o.value === val; });
+    if (!match && val) {
+      var extra = document.createElement("option"); extra.value = val; extra.textContent = val + " (existing)";
+      unitSel.appendChild(extra);
+    }
+    unitSel.value = val;
+  }
+
+  var notesRow = document.createElement("div"); notesRow.style.cssText = "margin-bottom:10px";
+  var notesLbl = document.createElement("label"); notesLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;margin-bottom:2px"; notesLbl.textContent = "Notes (optional)";
+  var notesInp = mkInp("cat_notes", "text", "Anything worth remembering about this product");
+  notesRow.appendChild(notesLbl); notesRow.appendChild(notesInp);
+  formCard.appendChild(notesRow);
+
+  var formBtnRow = document.createElement("div"); formBtnRow.style.cssText = "display:flex;gap:8px";
+  var saveBtn = document.createElement("button"); saveBtn.textContent = "+ Add product"; saveBtn.id="catSaveBtn"; saveBtn.style.cssText = "padding:7px 16px;background:var(--gtxt);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer";
+  var cancelBtn = document.createElement("button"); cancelBtn.textContent = "Cancel edit"; cancelBtn.style.cssText = "padding:7px 16px;background:none;border:2px solid var(--border);border-radius:var(--rs);color:var(--muted);font-size:12px;cursor:pointer;display:none";
+  formBtnRow.appendChild(saveBtn); formBtnRow.appendChild(cancelBtn);
+  formCard.appendChild(formBtnRow);
+  wrap.appendChild(formCard);
+
+  // Import from Log a Sale dropdown — walks the actual PRODUCT_SUBCATS structure you've built up
+  // (category -> manufacturer -> range, e.g. Plywood -> Sanders & Fink PFP1 -> "PFP1 6mm") and adds one
+  // catalogue row per real dropdown option: Category, Supplier and Range filled in, Type/size left blank
+  // since Log a Sale doesn't record that level of detail — add size variants (like F44 5ltr / F44 15ltr)
+  // manually using the form above. Purely additive, safe to re-run.
+  var importCard = document.createElement("div");
+  importCard.className = "no-print";
+  importCard.style.cssText = "background:var(--teal-light);border:2px solid #9fd4c9;border-radius:var(--r);padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap";
+  var importText = document.createElement("div");
+  importText.style.cssText = "font-size:12px;color:var(--teal)";
+  importText.innerHTML = "<strong>Import from Log a Sale dropdown</strong><br><span style='font-size:11px;color:var(--muted)'>Pulls every category, supplier and range from the dropdown into Category/Supplier/Range \u2014 add Type/size variants yourself afterwards.</span>";
+  var importBtn = document.createElement("button");
+  importBtn.textContent = "\u2B07\uFE0F Import now";
+  importBtn.style.cssText = "padding:8px 16px;background:var(--teal);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap";
+  importCard.appendChild(importText); importCard.appendChild(importBtn);
+  wrap.appendChild(importCard);
+
+  importBtn.addEventListener("click", function(){
+    var existingKeys = {};
+    catalogItems.forEach(function(x){ existingKeys[(x.category+"|"+x.supplier+"|"+x.range+"|"+x.type).toLowerCase()] = true; });
+    var toAdd = [];
+    function addIfNew(cat, supplier, range) {
+      var key = (cat+"|"+supplier+"|"+range+"|").toLowerCase();
+      if (existingKeys[key]) return;
+      existingKeys[key] = true;
+      toAdd.push({category:cat, supplier:supplier||"", range:range||""});
+    }
+    PRODUCTS.forEach(function(cat){
+      var subcats = PRODUCT_SUBCATS[cat];
+      if (!subcats || !subcats.length) { addIfNew(cat, "", ""); return; }
+      subcats.forEach(function(item){
+        var subName = (item && item.name) ? item.name : item;
+        if (item && item.ranges && item.ranges.length) {
+          item.ranges.forEach(function(rg){ addIfNew(cat, subName, rg); });
+        } else {
+          addIfNew(cat, subName, "");
+        }
+      });
+    });
+    if (!toAdd.length) { toast("Nothing new to import \u2014 already up to date"); return; }
+    toAdd.forEach(function(p){
+      catalogItems.unshift({ id:"CAT-"+Date.now()+"-"+Math.floor(Math.random()*100000), category:p.category, supplier:p.supplier, range:p.range, type:"", price:0, unit:"", notes:"" });
+    });
+    saveCatalog();
+    populateFilters();
+    renderTable();
+    toast("\u2B07\uFE0F Imported " + toAdd.length + " row" + (toAdd.length===1?"":"s") + " \u2014 add prices and size variants when you're ready \u2713");
+  });
+
+  function catalogLabel(item) {
+    return [item.category, item.supplier, item.range, item.type].filter(Boolean).join(" \u2014 ");
+  }
+
+  function clearForm() {
+    ["cat_cat","cat_sup","cat_range","cat_type","cat_price","cat_unit","cat_notes"].forEach(function(id){ document.getElementById(id).value = ""; });
+    editingId = null;
+    document.getElementById("catFormTitle").textContent = "Add a product";
+    saveBtn.textContent = "+ Add product";
+    cancelBtn.style.display = "none";
+  }
+  cancelBtn.addEventListener("click", clearForm);
+
+  saveBtn.addEventListener("click", function(){
+    var cat = document.getElementById("cat_cat").value.trim();
+    var sup = document.getElementById("cat_sup").value.trim();
+    if (!cat || !sup) { toast("Category and Supplier are required"); return; }
+    var range = document.getElementById("cat_range").value.trim();
+    var type = document.getElementById("cat_type").value.trim();
+    var price = parseFloat(document.getElementById("cat_price").value) || 0;
+    var unit = document.getElementById("cat_unit").value.trim();
+    var notes = document.getElementById("cat_notes").value.trim();
+
+    if (editingId) {
+      var item = catalogItems.find(function(x){ return x.id === editingId; });
+      if (item) { item.category=cat; item.supplier=sup; item.range=range; item.type=type; item.price=price; item.unit=unit; item.notes=notes; }
+      toast("Product updated \u2713");
+    } else {
+      catalogItems.unshift({ id: "CAT-"+Date.now(), category:cat, supplier:sup, range:range, type:type, price:price, unit:unit, notes:notes });
+      toast("Product added \u2713");
+    }
+    saveCatalog();
+    clearForm();
+    renderTable();
+  });
+
+  // Search / filter bar
+  var filterRow = document.createElement("div"); filterRow.className = "no-print"; filterRow.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px";
+  var searchInp = document.createElement("input"); searchInp.type = "text"; searchInp.placeholder = "Search category, supplier, range or type..."; searchInp.style.cssText = "flex:1;min-width:180px;padding:8px 12px;border:2px solid var(--border);border-radius:20px;font-size:12px;font-family:inherit;outline:none";
+  var supFilterSel = document.createElement("select"); supFilterSel.style.cssText = "padding:8px 12px;border:2px solid var(--border);border-radius:20px;font-size:12px;font-family:inherit;color:var(--text)";
+  filterRow.appendChild(searchInp); filterRow.appendChild(supFilterSel);
+  wrap.appendChild(filterRow);
+
+  // Bulk supplier price rise
+  var bulkCard = document.createElement("div");
+  bulkCard.className = "no-print";
+  bulkCard.style.cssText = "background:#fff4e0;border:2px solid #f0c060;border-radius:var(--r);padding:14px;margin-bottom:16px";
+  var bulkTitle = document.createElement("div"); bulkTitle.style.cssText = "font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8a5a00;margin-bottom:10px"; bulkTitle.textContent = "Bulk price change by supplier";
+  bulkCard.appendChild(bulkTitle);
+  var bulkRow = document.createElement("div"); bulkRow.style.cssText = "display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end";
+  var bulkSupWrap = document.createElement("div");
+  var bulkSupLbl = document.createElement("label"); bulkSupLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:#8a5a00;letter-spacing:.4px;margin-bottom:2px"; bulkSupLbl.textContent = "Supplier";
+  var bulkSupSel = document.createElement("select"); bulkSupSel.style.cssText = "padding:7px 9px;border:2px solid #f0c060;border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text);min-width:160px";
+  bulkSupWrap.appendChild(bulkSupLbl); bulkSupWrap.appendChild(bulkSupSel);
+  var bulkPctWrap = document.createElement("div");
+  var bulkPctLbl = document.createElement("label"); bulkPctLbl.style.cssText = "display:block;font-size:9px;font-weight:700;text-transform:uppercase;color:#8a5a00;letter-spacing:.4px;margin-bottom:2px"; bulkPctLbl.textContent = "% change (e.g. 5 or -5)";
+  var bulkPctInp = document.createElement("input"); bulkPctInp.type = "number"; bulkPctInp.step = "0.1"; bulkPctInp.placeholder = "5"; bulkPctInp.style.cssText = "width:100px;padding:7px 9px;border:2px solid #f0c060;border-radius:var(--rs);font-size:12px;font-family:inherit;color:var(--text)";
+  bulkPctWrap.appendChild(bulkPctLbl); bulkPctWrap.appendChild(bulkPctInp);
+  var previewBtn = document.createElement("button"); previewBtn.textContent = "Preview change"; previewBtn.style.cssText = "padding:7px 14px;background:var(--navy);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer";
+  bulkRow.appendChild(bulkSupWrap); bulkRow.appendChild(bulkPctWrap); bulkRow.appendChild(previewBtn);
+  bulkCard.appendChild(bulkRow);
+  var bulkPreviewWrap = document.createElement("div"); bulkPreviewWrap.style.cssText = "margin-top:12px";
+  bulkCard.appendChild(bulkPreviewWrap);
+  wrap.appendChild(bulkCard);
+
+  previewBtn.addEventListener("click", function(){
+    var sup = bulkSupSel.value;
+    var pct = parseFloat(bulkPctInp.value);
+    bulkPreviewWrap.innerHTML = "";
+    if (!sup) { toast("Choose a supplier first"); return; }
+    if (isNaN(pct) || pct === 0) { toast("Enter a percentage \u2014 positive to raise, negative to lower"); return; }
+    var affected = catalogItems.filter(function(x){ return x.supplier === sup; });
+    if (!affected.length) { toast("No products found for that supplier"); return; }
+
+    var summary = document.createElement("div"); summary.style.cssText = "font-size:11px;color:#8a5a00;font-weight:700;margin-bottom:8px"; summary.textContent = affected.length + " product" + (affected.length===1?"":"s") + " from " + sup + " will change by " + (pct>0?"+":"") + pct + "%:";
+    bulkPreviewWrap.appendChild(summary);
+
+    var tbl = document.createElement("table"); tbl.style.cssText = "width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px";
+    affected.forEach(function(item){
+      var newPrice = Math.round(item.price * (1 + pct/100) * 100) / 100;
+      var row = document.createElement("tr");
+      row.innerHTML = "<td style='padding:4px 0;color:var(--text)'>"+catalogLabel(item)+"</td><td style='padding:4px 0;text-align:right;color:var(--muted)'>\u00a3"+item.price.toFixed(2)+"</td><td style='padding:4px 8px;text-align:center;color:var(--muted)'>\u2192</td><td style='padding:4px 0;text-align:right;font-weight:700;color:var(--gtxt)'>\u00a3"+newPrice.toFixed(2)+"</td>";
+      tbl.appendChild(row);
+    });
+    bulkPreviewWrap.appendChild(tbl);
+
+    var confirmBtn = document.createElement("button"); confirmBtn.textContent = "Apply to " + affected.length + " product" + (affected.length===1?"":"s");
+    confirmBtn.style.cssText = "padding:7px 16px;background:#a5590f;border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer";
+    confirmBtn.addEventListener("click", function(){
+      affected.forEach(function(item){ item.price = Math.round(item.price * (1 + pct/100) * 100) / 100; });
+      saveCatalog();
+      bulkPreviewWrap.innerHTML = "";
+      bulkPctInp.value = "";
+      toast("\uD83D\uDCB0 Updated " + affected.length + " product" + (affected.length===1?"":"s") + " from " + sup + " \u2713");
+      renderTable();
+      populateFilters();
+    });
+    bulkPreviewWrap.appendChild(confirmBtn);
+  });
+
+  // Tick multiple rows to delete them in one go, rather than one at a time.
+  var selBar = document.createElement("div");
+  selBar.className = "no-print";
+  selBar.style.cssText = "display:none;align-items:center;justify-content:space-between;gap:10px;background:var(--rbg);border:2px solid var(--rtxt);border-radius:var(--rs);padding:9px 12px;margin-bottom:10px";
+  var selText = document.createElement("div"); selText.style.cssText = "font-size:12px;font-weight:700;color:var(--rtxt)";
+  var selDeleteBtn = document.createElement("button"); selDeleteBtn.textContent = "\uD83D\uDDD1\uFE0F Delete selected";
+  selDeleteBtn.style.cssText = "padding:6px 14px;background:var(--rtxt);border:none;border-radius:var(--rs);color:#fff;font-size:12px;font-weight:700;cursor:pointer";
+  selBar.appendChild(selText); selBar.appendChild(selDeleteBtn);
+  wrap.appendChild(selBar);
+
+  function updateSelBar() {
+    if (selectedIds.size > 0) {
+      selBar.style.display = "flex";
+      selText.textContent = selectedIds.size + " product" + (selectedIds.size===1?"":"s") + " selected";
+    } else {
+      selBar.style.display = "none";
+    }
+  }
+
+  selDeleteBtn.addEventListener("click", function(){
+    var toDelete = catalogItems.filter(function(x){ return selectedIds.has(x.id); });
+    if (!toDelete.length) return;
+    var preview = toDelete.slice(0,5).map(function(x){ return "\u2022 " + catalogLabel(x); }).join("\n") + (toDelete.length > 5 ? "\n\u2026and " + (toDelete.length-5) + " more" : "");
+    if (!confirm("Remove " + toDelete.length + " product" + (toDelete.length===1?"":"s") + " from the catalogue?\n\n" + preview)) return;
+    catalogItems = catalogItems.filter(function(x){ return !selectedIds.has(x.id); });
+    saveCatalog();
+    selectedIds.clear();
+    updateSelBar();
+    renderTable();
+    populateFilters();
+    toast("\uD83D\uDDD1\uFE0F Removed " + toDelete.length + " product" + (toDelete.length===1?"":"s"));
+  });
+
+  var tableWrap = document.createElement("div");
+  wrap.appendChild(tableWrap);
+
+  function populateFilters() {
+    var cats = Array.from(new Set(catalogItems.map(function(x){return x.category;}).concat(PRODUCTS).filter(Boolean))).sort();
+    catList.innerHTML = ""; cats.forEach(function(c){ var o=document.createElement("option"); o.value=c; catList.appendChild(o); });
+    var sups = Array.from(new Set(catalogItems.map(function(x){return x.supplier;}).filter(Boolean))).sort();
+    supList.innerHTML = ""; sups.forEach(function(s){ var o=document.createElement("option"); o.value=s; supList.appendChild(o); });
+    var ranges = Array.from(new Set(catalogItems.map(function(x){return x.range;}).filter(Boolean))).sort();
+    rangeList.innerHTML = ""; ranges.forEach(function(r){ var o=document.createElement("option"); o.value=r; rangeList.appendChild(o); });
+    var curSel = bulkSupSel.value;
+    bulkSupSel.innerHTML = "<option value=''>-- Choose supplier --</option>";
+    sups.forEach(function(s){ var o=document.createElement("option"); o.value=s; o.textContent=s; if(s===curSel)o.selected=true; bulkSupSel.appendChild(o); });
+    var curFilter = supFilterSel.value;
+    supFilterSel.innerHTML = "<option value=''>All suppliers</option>";
+    sups.forEach(function(s){ var o=document.createElement("option"); o.value=s; o.textContent=s; if(s===curFilter)o.selected=true; supFilterSel.appendChild(o); });
+  }
+
+  function renderTable() {
+    tableWrap.innerHTML = "";
+    var q = searchInp.value.trim().toLowerCase();
+    var supFilter = supFilterSel.value;
+    var items = catalogItems.filter(function(x){
+      if (supFilter && x.supplier !== supFilter) return false;
+      if (q && catalogLabel(x).toLowerCase().indexOf(q)===-1) return false;
+      return true;
+    });
+    // Alphabetical throughout, same convention as the sale-log category dropdown — category first,
+    // then supplier, then range, then type/size. numeric:true makes 5ltr sort before 15ltr (not "1"
+    // before "5" as plain string comparison would), so size variants like F44's land in sane order.
+    items.sort(function(a,b){
+      return (a.category||"").localeCompare(b.category||"", undefined, {numeric:true, sensitivity:"base"})
+        || (a.supplier||"").localeCompare(b.supplier||"", undefined, {numeric:true, sensitivity:"base"})
+        || (a.range||"").localeCompare(b.range||"", undefined, {numeric:true, sensitivity:"base"})
+        || (a.type||"").localeCompare(b.type||"", undefined, {numeric:true, sensitivity:"base"});
+    });
+    if (!items.length) {
+      var none = document.createElement("div"); none.style.cssText = "font-size:12px;color:var(--muted);padding:20px 0;text-align:center"; none.textContent = catalogItems.length ? "No products match that search." : "No products yet \u2014 add your first one above.";
+      tableWrap.appendChild(none);
+      return;
+    }
+    var tbl = document.createElement("table"); tbl.style.cssText = "width:100%;border-collapse:collapse;font-size:12px";
+    var thead = document.createElement("tr");
+    var thChk = document.createElement("th"); thChk.className = "no-print"; thChk.style.cssText = "padding:0 8px 8px 0;border-bottom:2px solid var(--border);width:20px";
+    var selectAllChk = document.createElement("input"); selectAllChk.type = "checkbox";
+    selectAllChk.checked = items.length > 0 && items.every(function(x){ return selectedIds.has(x.id); });
+    selectAllChk.addEventListener("change", function(){
+      if (selectAllChk.checked) items.forEach(function(x){ selectedIds.add(x.id); });
+      else items.forEach(function(x){ selectedIds.delete(x.id); });
+      updateSelBar();
+      renderTable();
+    });
+    thChk.appendChild(selectAllChk); thead.appendChild(thChk);
+    ["Category","Supplier","Range","Type / size","Price","Unit",""].forEach(function(h,i){
+      var th = document.createElement("th"); th.textContent = h; th.style.cssText = "text-align:"+(i===4?"right":"left")+";font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;padding:0 0 8px;border-bottom:2px solid var(--border)";
+      if (i===6) th.className = "no-print";
+      thead.appendChild(th);
+    });
+    tbl.appendChild(thead);
+    var prevCategory = null;
+    items.forEach(function(item){
+      var row = document.createElement("tr");
+      var isNewCategory = item.category !== prevCategory;
+      prevCategory = item.category;
+      var dividerStyle = isNewCategory ? "border-top:2px solid #e8a020;" : "";
+      var tdChk = document.createElement("td"); tdChk.className = "no-print"; tdChk.style.cssText = "padding:8px 8px 8px 0;border-bottom:1px solid var(--border);"+dividerStyle;
+      var chk = document.createElement("input"); chk.type = "checkbox"; chk.checked = selectedIds.has(item.id);
+      chk.addEventListener("change", function(){
+        if (chk.checked) selectedIds.add(item.id); else selectedIds.delete(item.id);
+        updateSelBar();
+      });
+      tdChk.appendChild(chk); row.appendChild(tdChk);
+      var tdCat = document.createElement("td"); tdCat.style.cssText = "padding:8px 0;border-bottom:1px solid var(--border);font-weight:700;color:var(--text);"+dividerStyle; tdCat.textContent = item.category || "\u2014";
+      var tdSup = document.createElement("td"); tdSup.style.cssText = "padding:8px 0;border-bottom:1px solid var(--border);color:var(--text);"+dividerStyle; tdSup.textContent = item.supplier || "\u2014";
+      var tdRange = document.createElement("td"); tdRange.style.cssText = "padding:8px 0;border-bottom:1px solid var(--border);color:var(--muted);"+dividerStyle; tdRange.textContent = item.range || "\u2014";
+      var tdType = document.createElement("td"); tdType.style.cssText = "padding:8px 0;border-bottom:1px solid var(--border);color:var(--muted);"+dividerStyle; tdType.textContent = item.type || "\u2014";
+      var tdPrice = document.createElement("td"); tdPrice.style.cssText = "padding:8px 0;border-bottom:1px solid var(--border);text-align:right;font-weight:700;color:var(--gtxt);"+dividerStyle; tdPrice.textContent = "\u00a3"+item.price.toFixed(2);
+      var tdUnit = document.createElement("td"); tdUnit.style.cssText = "padding:8px 0;border-bottom:1px solid var(--border);color:var(--muted);"+dividerStyle; tdUnit.textContent = item.unit || "\u2014";
+      var tdActions = document.createElement("td"); tdActions.className = "no-print"; tdActions.style.cssText = "padding:8px 0;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;"+dividerStyle;
+      var editBtn = document.createElement("button"); editBtn.textContent = "\u270E"; editBtn.title="Edit"; editBtn.style.cssText = "background:none;border:none;cursor:pointer;font-size:13px;padding:2px 6px";
+      editBtn.addEventListener("click", function(){
+        editingId = item.id;
+        document.getElementById("cat_cat").value = item.category || "";
+        document.getElementById("cat_sup").value = item.supplier || "";
+        document.getElementById("cat_range").value = item.range || "";
+        document.getElementById("cat_type").value = item.type || "";
+        document.getElementById("cat_price").value = item.price || "";
+        setUnitValue(item.unit);
+        document.getElementById("cat_notes").value = item.notes || "";
+        document.getElementById("catFormTitle").textContent = "Editing: " + catalogLabel(item);
+        saveBtn.textContent = "Save changes";
+        cancelBtn.style.display = "inline-block";
+        formCard.scrollIntoView({behavior:"smooth", block:"start"});
+      });
+      var dupBtn = document.createElement("button"); dupBtn.textContent = "\u2398"; dupBtn.title="Duplicate as a new size/variant"; dupBtn.style.cssText = "background:none;border:none;cursor:pointer;font-size:13px;padding:2px 6px";
+      dupBtn.addEventListener("click", function(){
+        editingId = null;
+        document.getElementById("cat_cat").value = item.category || "";
+        document.getElementById("cat_sup").value = item.supplier || "";
+        document.getElementById("cat_range").value = item.range || "";
+        document.getElementById("cat_type").value = "";
+        document.getElementById("cat_price").value = "";
+        setUnitValue(item.unit);
+        document.getElementById("cat_notes").value = "";
+        document.getElementById("catFormTitle").textContent = "Add another size/variant of " + [item.category,item.supplier,item.range].filter(Boolean).join(" \u2014 ");
+        saveBtn.textContent = "+ Add product";
+        cancelBtn.style.display = "inline-block";
+        formCard.scrollIntoView({behavior:"smooth", block:"start"});
+        document.getElementById("cat_type").focus();
+      });
+      var delBtn = document.createElement("button"); delBtn.textContent = "\u00d7"; delBtn.title="Delete"; delBtn.style.cssText = "background:none;border:none;cursor:pointer;font-size:15px;color:var(--rtxt);padding:2px 6px";
+      delBtn.addEventListener("click", function(){
+        if (!confirm("Remove \""+catalogLabel(item)+"\" from the catalogue?")) return;
+        catalogItems = catalogItems.filter(function(x){ return x.id !== item.id; });
+        saveCatalog();
+        renderTable();
+        populateFilters();
+        toast("Product removed");
+      });
+      tdActions.appendChild(editBtn); tdActions.appendChild(dupBtn); tdActions.appendChild(delBtn);
+      row.appendChild(tdCat); row.appendChild(tdSup); row.appendChild(tdRange); row.appendChild(tdType); row.appendChild(tdPrice); row.appendChild(tdUnit); row.appendChild(tdActions);
+      tbl.appendChild(row);
+    });
+    tableWrap.appendChild(tbl);
+  }
+
+  searchInp.addEventListener("input", renderTable);
+  supFilterSel.addEventListener("change", renderTable);
+
+  populateFilters();
+  renderTable();
+  container.appendChild(wrap);
 }
 
 // Footfall Pattern Analyzer — enter weekly footfall counts by category (same
@@ -9214,7 +9639,7 @@ function getDaySaleDetail(year, month, day, procFilter){
       if(!matches){ prevTs=null; continue; }
       var ts = saleRefTimestamp(logRecord(l));
       if(prevTs===null || ts===null || Math.abs(prevTs-ts)>TXN_GAP_MS) txnId++;
-      results.push({clientId:c.id, name:c.name, value:recordValue(l), product:recordProduct(l), txnKey:c.id+"-"+txnId});
+      results.push({clientId:c.id, name:c.name, value:recordValue(l), product:recordProduct(l), egizmoRef:(logRecord(l)||{}).egizmoRef||"", txnKey:c.id+"-"+txnId});
       prevTs = ts;
     }
   });
@@ -9245,7 +9670,7 @@ function showDaySalesDetail(year, month, day){
       var row = document.createElement("div"); row.style.cssText="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)";
       var left = document.createElement("div");
       if(showName){ var nm = document.createElement("div"); nm.style.cssText="font-weight:700;font-size:13px;color:var(--text)"; nm.textContent = it.name; left.appendChild(nm); }
-      if(it.product){ var pr = document.createElement("div"); pr.style.cssText="font-size:11px;color:var(--muted)"; pr.textContent = it.product; left.appendChild(pr); }
+      if(it.product){ var pr = document.createElement("div"); pr.style.cssText="font-size:11px;color:var(--muted)"; pr.textContent = it.product+(it.egizmoRef?" \u00b7 eGizmo #"+it.egizmoRef:""); left.appendChild(pr); }
       var val = document.createElement("div"); val.style.cssText="font-weight:700;font-size:13px;color:var(--gtxt);flex-shrink:0;margin-left:10px"; val.textContent = "\u00a3"+it.value.toLocaleString("en-GB");
       row.appendChild(left); row.appendChild(val);
       return row;
@@ -9436,7 +9861,7 @@ navFns.forEach(function(fn) {
 
 // ── INIT ──────────────────────────────────────────────────────────
 function init(){
-  clients=loadClients();migrateSalesQuoteModelV2();reps=loadReps();samples=loadSamples();birthdays=loadBirthdays();complaints=loadComplaints();
+  clients=loadClients();migrateSalesQuoteModelV2();reps=loadReps();samples=loadSamples();birthdays=loadBirthdays();complaints=loadComplaints();catalogItems=loadCatalog();
   websites=loadWebsites();
   archivedClients=loadArchive();
   docs=loadDocs();
